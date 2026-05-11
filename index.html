@@ -7,6 +7,8 @@
   <title>Ủy ban Kiểm tra Đảng ủy phường Tân Mỹ — Hệ thống giám sát dữ liệu</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root{
@@ -349,6 +351,11 @@
     .module-toast b{display:block;font-weight:900;color:#1f2a44}
     .module-toast p{font-size:.86rem;color:#64748b;margin-top:.25rem;line-height:1.5}
 
+
+    .db-online{background:rgba(107,203,119,.15)!important;color:#23883a!important;border-color:rgba(107,203,119,.28)!important}
+    .db-offline{background:#f8fafc!important;color:#64748b!important;border-color:#e2e8f0!important}
+    .db-error{background:rgba(255,107,107,.15)!important;color:#dc2626!important;border-color:rgba(255,107,107,.28)!important}
+
     @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
   </style>
 </head>
@@ -411,7 +418,8 @@
                 <p class="text-xs text-slate-500">ỦY BAN KIỂM TRA ĐẢNG ỦY PHƯỜNG TÂN MỸ</p>
               </div>
             </div>
-            <div class="flex gap-2">
+            <div class="flex gap-2 items-center flex-wrap justify-end">
+              <span id="dbStatusBadge" class="badge b-gray hidden sm:inline-flex">CSDL: đang kiểm tra</span>
               <button onclick="openTaskModal()" class="btn btn-primary">+ Nhập nhiệm vụ</button>
               <button onclick="openClosePeriodModal()" class="btn btn-ghost hidden sm:inline-flex">Chốt kỳ</button>
             </div>
@@ -998,7 +1006,188 @@
       if (savedConclusions) conclusions = JSON.parse(savedConclusions);
     } catch(e) { console.warn("Không đọc được dữ liệu localStorage", e); }
 
-    function persistLocal(){
+
+    const DB_TABLES = {
+      tasks: "ubkt_tasks",
+      periods: "ubkt_periods",
+      opinions: "ubkt_opinions",
+      conclusions: "ubkt_conclusions",
+      audit: "ubkt_audit_logs"
+    };
+
+    let supabaseClient = null;
+    let databaseReady = false;
+    let databaseSaveTimer = null;
+    let databaseLoading = false;
+
+    function getSupabaseConfig(){
+      return {
+        url: (window.UBKT_SUPABASE_URL || "").trim(),
+        anonKey: (window.UBKT_SUPABASE_ANON_KEY || "").trim(),
+        authMode: (window.UBKT_AUTH_MODE || "local").trim().toLowerCase()
+      };
+    }
+
+    function isSupabaseConfigured(){
+      const cfg=getSupabaseConfig();
+      return !!(cfg.url && cfg.anonKey && window.supabase);
+    }
+
+    function updateDbStatus(text, cls="db-offline"){
+      const el=document.getElementById("dbStatusBadge");
+      if(!el) return;
+      el.classList.remove("db-online","db-offline","db-error","hidden");
+      el.classList.add(cls);
+      el.textContent=text;
+    }
+
+    function getSupabaseClient(){
+      if(!isSupabaseConfigured()) return null;
+      if(!supabaseClient){
+        const cfg=getSupabaseConfig();
+        supabaseClient = window.supabase.createClient(cfg.url, cfg.anonKey);
+      }
+      return supabaseClient;
+    }
+
+    function normalizeRowId(item){
+      if(!item.id) item.id = "id-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+      return String(item.id);
+    }
+
+    function rowsFromItems(items){
+      return items.map(item=>{
+        const id=normalizeRowId(item);
+        return {
+          id,
+          data: item,
+          updated_at: new Date().toISOString()
+        };
+      });
+    }
+
+    async function upsertItems(table, items){
+      if(!databaseReady || !items) return;
+      const client=getSupabaseClient();
+      if(!client || !items.length) return;
+      const rows=rowsFromItems(items);
+      const {error}=await client.from(table).upsert(rows,{onConflict:"id"});
+      if(error) throw error;
+    }
+
+    async function deleteFromDatabase(table, id){
+      if(!databaseReady || !id) return;
+      const client=getSupabaseClient();
+      if(!client) return;
+      const {error}=await client.from(table).delete().eq("id", String(id));
+      if(error) {
+        console.warn("Không xóa được trên Supabase", error);
+        showModuleToast?.("Cảnh báo CSDL", "Đã xóa trên giao diện nhưng chưa xóa được trên Supabase. Kiểm tra quyền RLS.");
+      }
+    }
+
+    async function fetchCollection(table){
+      const client=getSupabaseClient();
+      const {data,error}=await client.from(table).select("id,data,updated_at").order("updated_at",{ascending:true});
+      if(error) throw error;
+      return (data||[]).map(row=>row.data).filter(Boolean);
+    }
+
+    async function seedIfEmpty(table, items){
+      const client=getSupabaseClient();
+      const {count,error}=await client.from(table).select("id",{count:"exact",head:true});
+      if(error) throw error;
+      if((count||0)===0 && items && items.length){
+        await upsertItems(table, items);
+        return true;
+      }
+      return false;
+    }
+
+    async function loadFromDatabase(){
+      const client=getSupabaseClient();
+      if(!client) {
+        updateDbStatus("CSDL: chưa cấu hình","db-offline");
+        return false;
+      }
+      if(databaseLoading) return false;
+      databaseLoading=true;
+      try{
+        updateDbStatus("CSDL: đang tải","db-offline");
+
+        // If tables are empty, seed current packaged data once.
+        await seedIfEmpty(DB_TABLES.tasks, tasks);
+        await seedIfEmpty(DB_TABLES.periods, periods);
+        await seedIfEmpty(DB_TABLES.opinions, opinions);
+        await seedIfEmpty(DB_TABLES.conclusions, conclusions);
+        await seedIfEmpty(DB_TABLES.audit, auditLogs);
+
+        const [remoteTasks, remotePeriods, remoteOpinions, remoteConclusions, remoteAudit] = await Promise.all([
+          fetchCollection(DB_TABLES.tasks),
+          fetchCollection(DB_TABLES.periods),
+          fetchCollection(DB_TABLES.opinions),
+          fetchCollection(DB_TABLES.conclusions),
+          fetchCollection(DB_TABLES.audit)
+        ]);
+
+        if(remoteTasks.length) tasks = remoteTasks;
+        if(remotePeriods.length) periods = remotePeriods;
+        if(remoteOpinions.length) opinions = remoteOpinions;
+        if(remoteConclusions.length) conclusions = remoteConclusions;
+        if(remoteAudit.length) auditLogs = remoteAudit;
+
+        databaseReady=true;
+        updateDbStatus("CSDL: đã kết nối","db-online");
+        persistLocal(false);
+        render();
+        generateReport();
+        return true;
+      }catch(error){
+        console.error("Lỗi tải Supabase", error);
+        databaseReady=false;
+        updateDbStatus("CSDL: lỗi kết nối","db-error");
+        showModuleToast?.("Lỗi kết nối CSDL", error.message || "Không tải được dữ liệu từ Supabase.");
+        return false;
+      }finally{
+        databaseLoading=false;
+      }
+    }
+
+    async function saveAllToDatabase(){
+      if(!databaseReady) return;
+      try{
+        await Promise.all([
+          upsertItems(DB_TABLES.tasks, tasks),
+          upsertItems(DB_TABLES.periods, periods),
+          upsertItems(DB_TABLES.opinions, opinions),
+          upsertItems(DB_TABLES.conclusions, conclusions),
+          upsertItems(DB_TABLES.audit, auditLogs)
+        ]);
+        updateDbStatus("CSDL: đã lưu","db-online");
+      }catch(error){
+        console.error("Không lưu được Supabase", error);
+        updateDbStatus("CSDL: lỗi lưu","db-error");
+        showModuleToast?.("Lỗi lưu CSDL", error.message || "Không lưu được dữ liệu lên Supabase.");
+      }
+    }
+
+    function queueDatabaseSave(){
+      if(!databaseReady) return;
+      clearTimeout(databaseSaveTimer);
+      databaseSaveTimer=setTimeout(saveAllToDatabase, 650);
+    }
+
+    async function signInWithSupabase(email, password){
+      const client=getSupabaseClient();
+      if(!client) throw new Error("Chưa cấu hình Supabase URL hoặc anon key.");
+      const {data,error}=await client.auth.signInWithPassword({email,password});
+      if(error) throw error;
+      databaseReady=true;
+      return data;
+    }
+
+
+    function persistLocal(syncDatabase=true){
       try {
         localStorage.setItem("ubkt_tanmy_tasks_v1", JSON.stringify(tasks));
         localStorage.setItem("ubkt_tanmy_periods_v1", JSON.stringify(periods));
@@ -1006,6 +1195,7 @@
         localStorage.setItem("ubkt_tanmy_opinions_v1", JSON.stringify(opinions));
         localStorage.setItem("ubkt_tanmy_conclusions_v1", JSON.stringify(conclusions));
       } catch(e) { console.warn("Không lưu được localStorage", e); }
+      if(syncDatabase) queueDatabaseSave();
     }
 
     const filters = {keyword:"",group:"",unit:"",status:"",deadline:"",doc:"",quick:""};
@@ -1053,7 +1243,7 @@
       if(btn) btn.textContent=show?"Ẩn":"Hiện";
     }
 
-    function login(){
+    async function login(){
       const userInput=document.getElementById("loginUser");
       const passInput=document.getElementById("loginPass");
       const u=userInput.value.trim();
@@ -1070,15 +1260,36 @@
         return;
       }
 
-      if(u==="admin" && p==="123456"){
+      const cfg=getSupabaseConfig();
+      const useSupabaseAuth = cfg.authMode==="supabase" && isSupabaseConfigured();
+
+      try{
+        if(useSupabaseAuth){
+          setLoginMessage("Đang xác thực với cơ sở dữ liệu...");
+          await signInWithSupabase(u,p);
+        }else{
+          if(!(u==="admin" && p==="123456")){
+            setLoginMessage("Sai tài khoản hoặc mật khẩu.");
+            passInput.focus();
+            return;
+          }
+        }
+
         clearLoginMessage();
         document.getElementById("loginScreen").classList.remove("active");
         document.getElementById("appScreen").classList.add("active");
         render();
         revealInit();
-      }else{
-        setLoginMessage("Sai tài khoản hoặc mật khẩu.");
-        passInput.focus();
+
+        if(isSupabaseConfigured()){
+          await loadFromDatabase();
+        }else{
+          updateDbStatus("CSDL: chưa cấu hình","db-offline");
+        }
+      }catch(error){
+        console.error("Đăng nhập/CSDL lỗi", error);
+        setLoginMessage(error.message || "Không đăng nhập được.");
+        updateDbStatus("CSDL: lỗi kết nối","db-error");
       }
     }
 
@@ -1662,6 +1873,7 @@
       tasks.splice(idx,1);
       addAudit("Xóa nhiệm vụ", t, "Đã xóa khỏi danh sách theo dõi");
       persistLocal();
+      deleteFromDatabase(DB_TABLES.tasks, t.id);
       render();
     }
 
@@ -2111,6 +2323,8 @@
     document.addEventListener("DOMContentLoaded",()=>{
       render();
       generateReport();
+      if(isSupabaseConfigured()) updateDbStatus("CSDL: chờ đăng nhập","db-offline");
+      else updateDbStatus("CSDL: chưa cấu hình","db-offline");
 
       const pass=document.getElementById("loginPass");
       const user=document.getElementById("loginUser");
