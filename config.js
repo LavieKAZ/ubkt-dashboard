@@ -1,0 +1,3 @@
+window.UBKT_SUPABASE_URL = "https://hbygfheibcrqaqzoaass.supabase.co";
+window.UBKT_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhieWdmaGVpYmNycWFxem9hYXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDg0MTcsImV4cCI6MjA5NDA4NDQxN30.AM-uMmKKuRIPZLtVyV-N0aj5EXuBIrOoyFL-gotb_Qg";
+window.UBKT_AUTH_MODE = "supabase";
