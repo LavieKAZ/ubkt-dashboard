@@ -2384,38 +2384,629 @@ function filtered(){
 
 
     function sourceIcon(source){
-      const paths='<path d="M4 5h16v10H7l-3 3z"/><path d="M8 9h8"/><path d="M8 12h5"/>';
-      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
-    }
-    function sentimentBadge(s){const cls=s==="tích cực"?"sentiment-positive":s==="tiêu cực"?"sentiment-negative":"sentiment-neutral";return `<span class="badge ${cls}">${s}</span>`}
-    function riskBadge(r){const cls=r==="cao"?"risk-high":r==="trung bình"?"risk-mid":"risk-low";return `<span class="badge ${cls}">rủi ro ${r}</span>`}
+  const paths='<path d="M4 5h16v10H7l-3 3z"/><path d="M8 9h8"/><path d="M8 12h5"/>';
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+}
 
-    function filteredOpinions(){return opinions.filter(o=>{if(opinionFilters.source&&o.source!==opinionFilters.source)return false;if(opinionFilters.sentiment&&o.sentiment!==opinionFilters.sentiment)return false;if(opinionFilters.keyword&&!norm(Object.values(o).join(" ")).includes(norm(opinionFilters.keyword)))return false;return true})}
-    function renderOpinion(){
-      if(!document.getElementById("opinionList"))return;
-      const data=filteredOpinions();
-      const sourceList=[...new Set(opinions.map(o=>o.source))];
-      opFilterSource.innerHTML=`<option value="">Tất cả nguồn</option>`+sourceList.map(s=>`<option ${opinionFilters.source===s?"selected":""}>${s}</option>`).join("");
-      opSearch.value=opinionFilters.keyword;opFilterSentiment.value=opinionFilters.sentiment;
-      opTotal.textContent=opinions.length;opPositive.textContent=opinions.filter(o=>o.sentiment==="tích cực").length;opNeutral.textContent=opinions.filter(o=>o.sentiment==="trung tính").length;opNegative.textContent=opinions.filter(o=>o.sentiment==="tiêu cực").length;opVerify.textContent=opinions.filter(o=>o.status==="đang xác minh"||o.risk==="cao").length;
-      const entities=Object.entries(countBy(opinions,o=>o.entity||"Chưa xác định")).sort((a,b)=>b[1]-a[1]).slice(0,5);
-      opinionEntityList.innerHTML=entities.map(([e,c])=>`<div class="entity-card"><b>${escapeHtml(e)}</b><p class="text-xs text-slate-500 mt-1">${c} lượt phản ánh/nhắc đến</p></div>`).join("");
-      opinionList.innerHTML=data.map(o=>`<article class="opinion-card"><div class="flex flex-wrap items-center gap-2 mb-3"><span class="source-pill">${sourceIcon(o.source)}${escapeHtml(o.source)}</span>${sentimentBadge(o.sentiment)}${riskBadge(o.risk)}</div><h4 class="font-extrabold leading-6">${escapeHtml(o.entity||"Chưa xác định đối tượng")}</h4><p class="text-sm text-slate-500 mt-1">${fmt(o.date)} • ${escapeHtml(o.unit||"")}</p><p class="mt-3 text-sm leading-6">${escapeHtml(o.content)}</p><div class="mt-3 rounded-2xl bg-slate-50 border border-slate-200 p-3 text-sm"><b>Hướng xử lý:</b> ${escapeHtml(o.action||"Chưa có")}</div><div class="mt-3 flex items-center justify-between gap-2"><span class="badge b-gray">${escapeHtml(o.status||"mới ghi nhận")}</span><div class="flex gap-2"><button onclick="convertOpinionToTask(this.dataset.id)" data-id="${escapeHtml(o.id)}" class="btn btn-ghost py-2 px-3">Chuyển theo dõi</button><button onclick="deleteOpinion(this.dataset.id)" data-id="${escapeHtml(o.id)}" class="btn btn-danger py-2 px-3">Xóa</button></div></div></article>`).join("")||`<div class="text-center text-slate-500 py-10">Không có phản ánh phù hợp.</div>`;
-      renderOpinionCharts();
+function opinionText(value){
+  return String(value ?? "").replace(/\s+/g," ").trim();
+}
+
+function opinionNorm(value){
+  return opinionText(value).toLowerCase();
+}
+
+function opinionGet(o, key, fallback=""){
+  if(!o) return fallback;
+  if(o[key] !== undefined && o[key] !== null) return o[key];
+  if(o.data && o.data[key] !== undefined && o.data[key] !== null) return o.data[key];
+  return fallback;
+}
+
+function opinionIsDeleted(o){
+  const deleted = opinionGet(o,"is_deleted", opinionGet(o,"isDeleted", false));
+  return deleted === true || String(deleted).toLowerCase() === "true";
+}
+
+function normalize1374Opinion(raw){
+  const id = opinionGet(raw,"id", raw?.id || ("1374-" + Date.now()));
+
+  const sourceGroup =
+    opinionGet(raw,"sourceGroup","") ||
+    opinionGet(raw,"source","") ||
+    "Đơn thư, phản ánh của nhân dân";
+
+  const sourceChannel =
+    opinionGet(raw,"sourceChannel","") ||
+    opinionGet(raw,"sourceDetail","") ||
+    "";
+
+  const level =
+    opinionGet(raw,"level","") ||
+    opinionGet(raw,"severityLevel","") ||
+    opinionGet(raw,"sentiment","") ||
+    "Thông tin tham khảo";
+
+  const contentSummary =
+    opinionGet(raw,"contentSummary","") ||
+    opinionGet(raw,"summary","") ||
+    opinionGet(raw,"content","") ||
+    "";
+
+  const contentDetail =
+    opinionGet(raw,"contentDetail","") ||
+    opinionGet(raw,"detail","") ||
+    opinionGet(raw,"content","") ||
+    "";
+
+  const relatedUnit =
+    opinionGet(raw,"relatedUnit","") ||
+    opinionGet(raw,"entity","") ||
+    opinionGet(raw,"unit","") ||
+    "Chưa xác định";
+
+  return {
+    id,
+    title: opinionGet(raw,"title","") || relatedUnit || "Thông tin phản ánh 1374",
+    receivedDate: opinionGet(raw,"receivedDate","") || opinionGet(raw,"date","") || todayISO(),
+    sourceGroup,
+    sourceChannel,
+    sourceDetail: opinionGet(raw,"sourceDetail",""),
+    contentSummary,
+    contentDetail,
+    relatedPerson: opinionGet(raw,"relatedPerson",""),
+    relatedUnit,
+    area: opinionGet(raw,"area",""),
+    field: opinionGet(raw,"field","Khác"),
+    level,
+    authorityLevel: opinionGet(raw,"authorityLevel","Chưa xác định"),
+    handlingDirection: opinionGet(raw,"handlingDirection","") || opinionGet(raw,"action","Theo dõi, nắm tình hình"),
+    status: opinionGet(raw,"status","Mới tiếp nhận"),
+    assignedUnit: opinionGet(raw,"assignedUnit",""),
+    result: opinionGet(raw,"result",""),
+    attachment: opinionGet(raw,"attachment","") || opinionGet(raw,"documents",""),
+    updates: Array.isArray(opinionGet(raw,"updates",[])) ? opinionGet(raw,"updates",[]) : [],
+    is_deleted: opinionIsDeleted(raw)
+  };
+}
+
+function levelBadge(level){
+  const n = opinionNorm(level);
+  let cls = "b-gray";
+
+  if(n.includes("vi phạm") || n.includes("vi pham")) cls = "b-coral";
+  else if(n.includes("phức tạp") || n.includes("phuc tap") || n.includes("dư luận") || n.includes("du luan")) cls = "b-coral";
+  else if(n.includes("rà soát") || n.includes("ra soat")) cls = "b-yellow";
+  else cls = "b-blue";
+
+  return `<span class="badge ${cls}">${escapeHtml(level || "Thông tin tham khảo")}</span>`;
+}
+
+function authorityBadge(authority){
+  const n = opinionNorm(authority);
+  let cls = "b-gray";
+
+  if(n.includes("phường") || n.includes("phuong")) cls = "b-green";
+  else if(n.includes("thành phố") || n.includes("thanh pho")) cls = "b-blue";
+  else if(n.includes("trung ương") || n.includes("trung uong")) cls = "b-yellow";
+  else if(n.includes("chuyển") || n.includes("chuyen")) cls = "b-coral";
+
+  return `<span class="badge ${cls}">${escapeHtml(authority || "Chưa xác định")}</span>`;
+}
+
+function status1374Badge(status){
+  const n = opinionNorm(status);
+  let cls = "b-gray";
+
+  if(n.includes("mới") || n.includes("moi")) cls = "b-blue";
+  else if(n.includes("rà soát") || n.includes("ra soat")) cls = "b-yellow";
+  else if(n.includes("chuyển") || n.includes("chuyen")) cls = "b-blue";
+  else if(n.includes("kết quả") || n.includes("ket qua")) cls = "b-green";
+  else if(n.includes("lưu") || n.includes("luu")) cls = "b-gray";
+
+  return `<span class="badge ${cls}">${escapeHtml(status || "Mới tiếp nhận")}</span>`;
+}
+
+function filteredOpinions(){
+  const source = opinionFilters.source || "";
+  const level = opinionFilters.sentiment || "";
+  const keyword = opinionNorm(opinionFilters.keyword || "");
+
+  return opinions
+    .map(normalize1374Opinion)
+    .filter(o=>{
+      if(opinionIsDeleted(o)) return false;
+      if(source && o.sourceGroup !== source) return false;
+      if(level && o.level !== level) return false;
+
+      if(keyword){
+        const haystack = opinionNorm([
+          o.title,
+          o.sourceGroup,
+          o.sourceChannel,
+          o.contentSummary,
+          o.contentDetail,
+          o.relatedPerson,
+          o.relatedUnit,
+          o.field,
+          o.authorityLevel,
+          o.handlingDirection,
+          o.status,
+          o.result
+        ].join(" "));
+
+        if(!haystack.includes(keyword)) return false;
+      }
+
+      return true;
+    });
+}
+
+function renderOpinion(){
+  if(!document.getElementById("opinionList")) return;
+
+  const activeOpinions = opinions
+    .map(normalize1374Opinion)
+    .filter(o=>!opinionIsDeleted(o));
+
+  const data = filteredOpinions();
+
+  const sourceList = [
+    "Báo chí, truyền thông",
+    "Giám sát của cơ quan dân cử, MTTQ",
+    "Tổ chức, đoàn thể",
+    "Đơn thư, phản ánh của nhân dân"
+  ];
+
+  if(typeof opFilterSource !== "undefined"){
+    opFilterSource.innerHTML =
+      `<option value="">Tất cả nguồn 1374</option>` +
+      sourceList.map(s=>`<option value="${escapeHtml(s)}" ${opinionFilters.source===s?"selected":""}>${escapeHtml(s)}</option>`).join("");
+  }
+
+  if(typeof opSearch !== "undefined") opSearch.value = opinionFilters.keyword || "";
+  if(typeof opFilterSentiment !== "undefined") opFilterSentiment.value = opinionFilters.sentiment || "";
+
+  opTotal.textContent = activeOpinions.length;
+  opPositive.textContent = activeOpinions.filter(o=>o.status==="Mới tiếp nhận").length;
+  opNeutral.textContent = activeOpinions.filter(o=>o.status==="Đang rà soát").length;
+  opNegative.textContent = activeOpinions.filter(o=>o.level==="Có dấu hiệu vi phạm").length;
+  opVerify.textContent = activeOpinions.filter(o=>o.level==="Phức tạp, dư luận quan tâm").length;
+
+  if(typeof opResultDone !== "undefined"){
+    opResultDone.textContent = activeOpinions.filter(o=>o.status==="Đã có kết quả").length;
+  }
+
+  const entities = Object.entries(countBy(activeOpinions, o=>o.relatedUnit || "Chưa xác định"))
+    .sort((a,b)=>b[1]-a[1])
+    .slice(0,5);
+
+  opinionEntityList.innerHTML = entities.length
+    ? entities.map(([e,c])=>`
+        <div class="entity-card">
+          <b>${escapeHtml(e)}</b>
+          <p class="text-xs text-slate-500 mt-1">${c} thông tin phản ánh</p>
+        </div>
+      `).join("")
+    : `<div class="text-sm text-slate-500">Chưa có đơn vị/đối tượng liên quan.</div>`;
+
+  opinionList.innerHTML = data.map(o=>`
+    <article class="opinion-card">
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <span class="source-pill">${sourceIcon(o.sourceGroup)}${escapeHtml(o.sourceGroup)}</span>
+        ${levelBadge(o.level)}
+        ${authorityBadge(o.authorityLevel)}
+        ${status1374Badge(o.status)}
+      </div>
+
+      <h4 class="font-extrabold leading-6">${escapeHtml(o.title)}</h4>
+
+      <p class="text-sm text-slate-500 mt-1">
+        ${fmt(o.receivedDate)} • ${escapeHtml(o.sourceChannel || "Chưa ghi kênh cụ thể")}
+      </p>
+
+      <p class="mt-3 text-sm leading-6 line-clamp-3">
+        ${escapeHtml(o.contentSummary || o.contentDetail || "Chưa có nội dung tóm tắt.")}
+      </p>
+
+      <div class="mt-3 rounded-2xl bg-slate-50 border border-slate-200 p-3 text-sm">
+        <b>Đơn vị/đối tượng liên quan:</b> ${escapeHtml(o.relatedUnit || "Chưa xác định")}
+        ${o.relatedPerson ? `<br><b>Cá nhân/tổ chức:</b> ${escapeHtml(o.relatedPerson)}` : ""}
+      </div>
+
+      <div class="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <span class="text-xs text-slate-500">
+          Hướng xử lý: ${escapeHtml(o.handlingDirection || "Theo dõi, nắm tình hình")}
+        </span>
+
+        <div class="flex flex-wrap gap-2">
+          <button onclick="viewOpinion(this.dataset.id)" data-id="${escapeHtml(o.id)}" class="btn btn-ghost py-2 px-3">
+            Xem
+          </button>
+
+          <button onclick="openOpinionModal(this.dataset.id)" data-id="${escapeHtml(o.id)}" class="btn btn-ghost py-2 px-3">
+            Sửa
+          </button>
+
+          <button onclick="convertOpinionToTask(this.dataset.id)" data-id="${escapeHtml(o.id)}" class="btn btn-ghost py-2 px-3">
+            Tạo nhiệm vụ
+          </button>
+
+          <button onclick="deleteOpinion(this.dataset.id)" data-id="${escapeHtml(o.id)}" class="btn btn-danger py-2 px-3">
+            Xóa mềm
+          </button>
+        </div>
+      </div>
+    </article>
+  `).join("") || `<div class="text-center text-slate-500 py-10">Không có thông tin 1374 phù hợp.</div>`;
+
+  renderOpinionCharts();
+}
+
+function renderOpinionCharts(){
+  const activeOpinions = opinions
+    .map(normalize1374Opinion)
+    .filter(o=>!opinionIsDeleted(o));
+
+  const sources = [
+    "Báo chí, truyền thông",
+    "Giám sát của cơ quan dân cử, MTTQ",
+    "Tổ chức, đoàn thể",
+    "Đơn thư, phản ánh của nhân dân"
+  ];
+
+  if(charts.opinionSource) charts.opinionSource.destroy();
+
+  charts.opinionSource = new Chart(opinionSourceChart,{
+    type:"bar",
+    data:{
+      labels:sources,
+      datasets:[{
+        label:"Số thông tin",
+        data:sources.map(s=>activeOpinions.filter(o=>o.sourceGroup===s).length),
+        backgroundColor:"#4D96FF",
+        borderRadius:10
+      }]
+    },
+    options:{...chartOpts(),plugins:{legend:{display:false}},scales:{y:{ticks:{precision:0}}}}
+  });
+
+  const labels = [
+    "Thông tin tham khảo",
+    "Có dấu hiệu cần rà soát",
+    "Có dấu hiệu vi phạm",
+    "Phức tạp, dư luận quan tâm"
+  ];
+
+  if(charts.opinionSentiment) charts.opinionSentiment.destroy();
+
+  charts.opinionSentiment = new Chart(opinionSentimentChart,{
+    type:"doughnut",
+    data:{
+      labels,
+      datasets:[{
+        data:labels.map(s=>activeOpinions.filter(o=>o.level===s).length),
+        backgroundColor:["#cbd5e1","#FFD93D","#FF6B6B","#b91c1c"],
+        borderColor:"#fff",
+        borderWidth:3
+      }]
+    },
+    options:chartOpts()
+  });
+}
+
+function clearOpinionForm(){
+  opInId.value = "";
+  opInTitle.value = "";
+  opInDate.value = todayISO();
+  opInSource.value = "Đơn thư, phản ánh của nhân dân";
+  opInSourceChannel.value = "";
+  opInSentiment.value = "Thông tin tham khảo";
+  opInAuthority.value = "Chưa xác định";
+  opInStatus.value = "Mới tiếp nhận";
+  opInDirection.value = "Theo dõi, nắm tình hình";
+  opInEntity.value = "";
+  opInRelatedPerson.value = "";
+  opInField.value = "Khác";
+  opInAttachment.value = "";
+  opInContent.value = "";
+  opInDetail.value = "";
+  opInAction.value = "";
+  opInResult.value = "";
+}
+
+function openOpinionModal(id=""){
+  clearOpinionForm();
+
+  if(id){
+    const found = opinions.find(x=>String(opinionGet(x,"id",x.id))===String(id));
+    if(found){
+      const o = normalize1374Opinion(found);
+
+      opinionModalTitle.textContent = "Cập nhật thông tin 1374";
+      opInId.value = o.id;
+      opInTitle.value = o.title || "";
+      opInDate.value = o.receivedDate || todayISO();
+      opInSource.value = o.sourceGroup || "Đơn thư, phản ánh của nhân dân";
+      opInSourceChannel.value = o.sourceChannel || "";
+      opInSentiment.value = o.level || "Thông tin tham khảo";
+      opInAuthority.value = o.authorityLevel || "Chưa xác định";
+      opInStatus.value = o.status || "Mới tiếp nhận";
+      opInDirection.value = o.handlingDirection || "Theo dõi, nắm tình hình";
+      opInEntity.value = o.relatedUnit || "";
+      opInRelatedPerson.value = o.relatedPerson || "";
+      opInField.value = o.field || "Khác";
+      opInAttachment.value = o.attachment || "";
+      opInContent.value = o.contentSummary || "";
+      opInDetail.value = o.contentDetail || "";
+      opInAction.value = opinionGet(found,"initialAssessment","") || o.handlingDirection || "";
+      opInResult.value = o.result || "";
     }
-    function renderOpinionCharts(){
-      const sources=[...new Set(opinions.map(o=>o.source))];
-      if(charts.opinionSource)charts.opinionSource.destroy();
-      charts.opinionSource=new Chart(opinionSourceChart,{type:"bar",data:{labels:sources,datasets:[{label:"Số phản ánh",data:sources.map(s=>opinions.filter(o=>o.source===s).length),backgroundColor:"#4D96FF",borderRadius:10}]},options:{...chartOpts(),plugins:{legend:{display:false}},scales:{y:{ticks:{precision:0}}}}});
-      const labels=["tích cực","trung tính","tiêu cực"];
-      if(charts.opinionSentiment)charts.opinionSentiment.destroy();
-      charts.opinionSentiment=new Chart(opinionSentimentChart,{type:"doughnut",data:{labels,datasets:[{data:labels.map(s=>opinions.filter(o=>o.sentiment===s).length),backgroundColor:["#6BCB77","#cbd5e1","#FF6B6B"],borderColor:"#fff",borderWidth:3}]},options:chartOpts()});
+  }else{
+    opinionModalTitle.textContent = "Ghi nhận thông tin 1374";
+  }
+
+  opinionModal.classList.add("open");
+  lockScroll();
+}
+
+function closeOpinionModal(){
+  opinionModal.classList.remove("open");
+  unlockScroll();
+}
+
+function saveOpinion(){
+  const title = opInTitle.value.trim();
+  const summary = opInContent.value.trim();
+  const detail = opInDetail.value.trim();
+
+  if(!title){
+    alert("Chưa nhập tiêu đề thông tin 1374.");
+    return;
+  }
+
+  if(!summary && !detail){
+    alert("Chưa nhập nội dung tóm tắt hoặc nội dung chi tiết.");
+    return;
+  }
+
+  const editingId = opInId.value.trim();
+  const now = new Date().toISOString();
+
+  const item = {
+    id: editingId || ("1374-" + Date.now()),
+    title,
+    receivedDate: opInDate.value || todayISO(),
+    sourceGroup: opInSource.value,
+    sourceChannel: opInSourceChannel.value.trim(),
+    sourceDetail: opInSourceChannel.value.trim(),
+    contentSummary: summary,
+    contentDetail: detail,
+    relatedPerson: opInRelatedPerson.value.trim(),
+    relatedUnit: normalizeUnitName(opInEntity.value.trim() || "Chưa xác định"),
+    entity: normalizeUnitName(opInEntity.value.trim() || "Chưa xác định"),
+    area: "",
+    field: opInField.value,
+    level: opInSentiment.value,
+    sentiment: opInSentiment.value,
+    authorityLevel: opInAuthority.value,
+    handlingDirection: opInDirection.value,
+    action: opInAction.value.trim(),
+    initialAssessment: opInAction.value.trim(),
+    status: opInStatus.value,
+    assignedUnit: "",
+    result: opInResult.value.trim(),
+    attachment: opInAttachment.value.trim(),
+    documents: opInAttachment.value.trim(),
+    is_deleted: false,
+    updatedAt: now
+  };
+
+  if(editingId){
+    const idx = opinions.findIndex(x=>String(opinionGet(x,"id",x.id))===String(editingId));
+    if(idx >= 0){
+      const old = normalize1374Opinion(opinions[idx]);
+      item.createdAt = opinionGet(opinions[idx],"createdAt", opinionGet(opinions[idx],"created_at", now));
+      item.updates = Array.isArray(old.updates) ? old.updates : [];
+      item.updates.push({
+        date: todayISO(),
+        content: "Cập nhật thông tin 1374.",
+        user: currentUser?.username || currentUser?.email || "người dùng"
+      });
+      opinions[idx] = item;
+      addAudit("Cập nhật thông tin 1374",{doc:item.id,unit:item.relatedUnit,task:item.title},`Trạng thái: ${item.status}`);
     }
-    function openOpinionModal(){opInDate.value=todayISO();opinionModal.classList.add("open");lockScroll()}
-    function closeOpinionModal(){opinionModal.classList.remove("open");unlockScroll()}
-    function saveOpinion(){const content=opInContent.value.trim();if(!content){alert("Chưa nhập nội dung phản ánh/dư luận.");return}const o={id:"DL-"+Date.now(),source:opInSource.value,date:opInDate.value||todayISO(),sentiment:opInSentiment.value,risk:opInRisk.value,entity:normalizeUnitName(opInEntity.value.trim()||"Chưa xác định"),unit:"",content,action:opInAction.value.trim(),status:opInStatus.value};opinions.unshift(o);addAudit("Ghi nhận dư luận",{doc:o.id,unit:o.entity,task:o.content},`Nguồn: ${o.source}`);persistLocal();renderOpinion();closeOpinionModal()}
-    function convertOpinionToTask(id){const o=opinions.find(x=>String(x.id)===String(id));if(!o)return;openTaskModal();inGroup.value="Khác";inType.value="phản ánh/dư luận";inDoc.value=o.id;inDate.value=o.date;inSummary.value=`Nắm bắt dư luận từ ${o.source}`;inTask.value=`Theo dõi, xác minh phản ánh: ${o.content}`;inUnit.value=o.unit||"Chưa phân công";inConclusion.value=o.action||"Cần xác minh, phân loại và tham mưu hướng xử lý.";if(typeof inHorizon!=="undefined")inHorizon.value="ngắn hạn"}
-    async function deleteOpinion(id){const o=opinions.find(x=>String(x.id)===String(id));if(!o)return;if(!confirm(`Xóa phản ánh/dư luận ${o.id}?`))return;opinions=opinions.filter(x=>String(x.id)!==String(id));addAudit("Xóa dư luận",{doc:o.id,unit:o.entity,task:o.content},`Nguồn: ${o.source}`);persistLocal();await deleteFromDatabase(DB_TABLES.opinions,id);renderOpinion();}
+  }else{
+    item.createdAt = now;
+    item.updates = [{
+      date: todayISO(),
+      content: "Tiếp nhận, phân loại ban đầu thông tin 1374.",
+      user: currentUser?.username || currentUser?.email || "người dùng"
+    }];
+    opinions.unshift(item);
+    addAudit("Ghi nhận thông tin 1374",{doc:item.id,unit:item.relatedUnit,task:item.title},`Nguồn: ${item.sourceGroup}`);
+  }
+
+  persistLocal();
+  renderOpinion();
+  closeOpinionModal();
+}
+
+function viewOpinion(id){
+  const found = opinions.find(x=>String(opinionGet(x,"id",x.id))===String(id));
+  if(!found) return;
+
+  const o = normalize1374Opinion(found);
+
+  const updates = Array.isArray(o.updates) && o.updates.length
+    ? o.updates.map(u=>`
+        <div class="watch-item">
+          <b>${escapeHtml(u.date || "")}</b>
+          <p class="text-sm mt-1">${escapeHtml(u.content || "")}</p>
+          <p class="text-xs text-slate-500 mt-1">${escapeHtml(u.user || "")}</p>
+        </div>
+      `).join("")
+    : `<div class="text-sm text-slate-500">Chưa có diễn biến cập nhật.</div>`;
+
+  const html = `
+    <div class="space-y-4">
+      <div>
+        <h3 class="text-xl font-extrabold">${escapeHtml(o.title)}</h3>
+        <p class="text-sm text-slate-500 mt-1">
+          Mã: ${escapeHtml(o.id)} • Ngày tiếp nhận: ${fmt(o.receivedDate)}
+        </p>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <span class="source-pill">${sourceIcon(o.sourceGroup)}${escapeHtml(o.sourceGroup)}</span>
+        ${levelBadge(o.level)}
+        ${authorityBadge(o.authorityLevel)}
+        ${status1374Badge(o.status)}
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-3">
+        <div class="entity-card">
+          <b>Nguồn tiếp nhận</b>
+          <p class="text-sm mt-1">${escapeHtml(o.sourceGroup)}</p>
+          <p class="text-xs text-slate-500 mt-1">${escapeHtml(o.sourceChannel || "Chưa ghi kênh cụ thể")}</p>
+        </div>
+
+        <div class="entity-card">
+          <b>Đối tượng/đơn vị liên quan</b>
+          <p class="text-sm mt-1">${escapeHtml(o.relatedUnit || "Chưa xác định")}</p>
+          <p class="text-xs text-slate-500 mt-1">${escapeHtml(o.relatedPerson || "Chưa xác định cá nhân/tổ chức cụ thể")}</p>
+        </div>
+
+        <div class="entity-card">
+          <b>Lĩnh vực</b>
+          <p class="text-sm mt-1">${escapeHtml(o.field || "Khác")}</p>
+        </div>
+
+        <div class="entity-card">
+          <b>Hướng xử lý</b>
+          <p class="text-sm mt-1">${escapeHtml(o.handlingDirection || "Theo dõi, nắm tình hình")}</p>
+        </div>
+      </div>
+
+      <div class="entity-card">
+        <b>Nội dung tóm tắt</b>
+        <p class="text-sm leading-6 mt-2">${escapeHtml(o.contentSummary || "Chưa có")}</p>
+      </div>
+
+      <div class="entity-card">
+        <b>Nội dung chi tiết</b>
+        <p class="text-sm leading-6 mt-2 whitespace-pre-line">${escapeHtml(o.contentDetail || "Chưa có")}</p>
+      </div>
+
+      <div class="entity-card">
+        <b>Nhận định ban đầu / đề xuất xử lý</b>
+        <p class="text-sm leading-6 mt-2">${escapeHtml(opinionGet(found,"initialAssessment","") || opinionGet(found,"action","") || "Chưa có")}</p>
+      </div>
+
+      <div class="entity-card">
+        <b>Kết quả cập nhật</b>
+        <p class="text-sm leading-6 mt-2">${escapeHtml(o.result || "Chưa có kết quả")}</p>
+      </div>
+
+      ${
+        o.attachment
+          ? `<div class="entity-card">
+              <b>Tài liệu/link kèm theo</b>
+              <p class="text-sm leading-6 mt-2 break-all">${escapeHtml(o.attachment)}</p>
+            </div>`
+          : ""
+      }
+
+      <div class="entity-card">
+        <b>Diễn biến cập nhật</b>
+        <div class="watch-timeline mt-3">${updates}</div>
+      </div>
+
+      <div class="flex flex-wrap justify-end gap-2">
+        <button onclick="closeGenericInfoModal()" class="btn btn-ghost">Đóng</button>
+        <button onclick="closeGenericInfoModal();openOpinionModal('${escapeHtml(o.id)}')" class="btn btn-primary">Chỉnh sửa</button>
+      </div>
+    </div>
+  `;
+
+  openGenericInfoModal("Chi tiết thông tin 1374", html);
+}
+
+function openGenericInfoModal(title, html){
+  let modal = document.getElementById("genericInfoModal");
+
+  if(!modal){
+    modal = document.createElement("div");
+    modal.id = "genericInfoModal";
+    modal.className = "modal";
+    modal.innerHTML = `
+      <div class="modal-card card rounded-[2rem] w-full max-w-5xl">
+        <div class="p-5 border-b border-slate-200 flex items-start justify-between gap-3">
+          <div>
+            <h3 id="genericInfoTitle" class="text-xl font-extrabold"></h3>
+            <p class="text-sm text-slate-500">Thông tin chi tiết</p>
+          </div>
+          <button onclick="closeGenericInfoModal()" class="icon-btn">✕</button>
+        </div>
+        <div id="genericInfoBody" class="p-5"></div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+
+  document.getElementById("genericInfoTitle").textContent = title;
+  document.getElementById("genericInfoBody").innerHTML = html;
+  modal.classList.add("open");
+  lockScroll();
+}
+
+function closeGenericInfoModal(){
+  const modal = document.getElementById("genericInfoModal");
+  if(modal) modal.classList.remove("open");
+  unlockScroll();
+}
+
+function convertOpinionToTask(id){
+  const found = opinions.find(x=>String(opinionGet(x,"id",x.id))===String(id));
+  if(!found) return;
+
+  const o = normalize1374Opinion(found);
+
+  openTaskModal();
+
+  inGroup.value = "Thông tin phản ánh 1374";
+  inType.value = "theo dõi thông tin phản ánh";
+  inDoc.value = o.id;
+  inDate.value = o.receivedDate || todayISO();
+  inSummary.value = `Theo dõi thông tin 1374 từ ${o.sourceGroup}`;
+  inTask.value = `Theo dõi, rà soát thông tin phản ánh theo Quy định 1374-QĐ/TU: ${o.title}`;
+  inUnit.value = o.assignedUnit || o.relatedUnit || "Chưa phân công";
+  inConclusion.value = o.handlingDirection || "Rà soát, xác minh thông tin và tham mưu hướng xử lý.";
+  inStatus.value = "đang thực hiện";
+
+  if(typeof inHorizon !== "undefined") inHorizon.value = "ngắn hạn";
+}
+
+function deleteOpinion(id){
+  const idx = opinions.findIndex(x=>String(opinionGet(x,"id",x.id))===String(id));
+  if(idx < 0) return;
+
+  const o = normalize1374Opinion(opinions[idx]);
+
+  if(!confirm(`Xóa mềm thông tin 1374 này khỏi danh sách theo dõi?\n\n${o.title}`)) return;
+
+  opinions[idx] = {
+    ...opinions[idx],
+    is_deleted: true,
+    isDeleted: true,
+    deletedAt: new Date().toISOString(),
+    deletedBy: currentUser?.username || currentUser?.email || "người dùng"
+  };
+
+  addAudit("Xóa mềm thông tin 1374",{doc:o.id,unit:o.relatedUnit,task:o.title},`Nguồn: ${o.sourceGroup}`);
+  persistLocal();
+  renderOpinion();
+}
 
     function filteredConclusions(){return conclusions.filter(c=>{if(conclusionFilters.issuer&&c.issuer!==conclusionFilters.issuer)return false;if(conclusionFilters.status&&c.status!==conclusionFilters.status)return false;if(conclusionFilters.keyword&&!norm(Object.values(c).join(" ")).includes(norm(conclusionFilters.keyword)))return false;return true})}
     function renderConclusions(){
