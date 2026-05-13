@@ -567,7 +567,7 @@
                 <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-3 pb-4">
                   <select id="fGroup" onchange="filters.group=this.value;render()" class="field"><option value="">Tất cả nhóm văn bản</option></select>
                   <select id="fUnit" onchange="filters.unit=this.value;render()" class="field"><option value="">Tất cả đơn vị</option></select>
-                  <select id="fStatus" onchange="filters.status=this.value;render()" class="field"><option value="">Tất cả trạng thái</option><option>chưa thực hiện</option><option>đang thực hiện</option><option>hoàn thành</option><option>quá hạn</option></select>
+                  <select id="fStatus" onchange="filters.status=this.value;render()" class="field"><option value="">Tất cả trạng thái</option><option value="new">chưa thực hiện</option><option value="processing">đang thực hiện</option><option value="done">hoàn thành</option><option value="late">quá hạn</option></select>
                   <select id="fDeadline" onchange="filters.deadline=this.value;render()" class="field"><option value="">Tất cả thời hạn</option><option value="overdue">Quá hạn</option><option value="soon7">Sắp đến hạn trong 7 ngày</option><option value="noResult">Chưa có kết quả</option></select>
                   <input id="fDoc" oninput="filters.doc=this.value;render()" class="field" placeholder="Số văn bản">
                 </div>
@@ -1950,23 +1950,89 @@ function calcStats(arr=tasks){
       return norm(Object.values(raw).join(" "));
     }
 
-    function filtered(){
-      return tasks.filter(t=>{
-        if(!taskMatchesQuick(t, filters.quick)) return false;
-        if(filters.group && taskGroup(t)!==filters.group)return false;
-        if(filters.unit && taskUnit(t)!==filters.unit)return false;
-        if(filters.status && !taskMatchesQuick(t, filters.status))return false;
-        if(filters.doc && !norm(taskDoc(t)).includes(norm(filters.doc)))return false;
-        if(filters.deadline==="overdue" && !taskIsLateUnified(t))return false;
-        if(filters.deadline==="soon7"){
-          const d=diffDays(taskDeadline(t));
-          if(!(d!==null&&d>=0&&d<=7&&!taskIsDone(t)))return false;
-        }
-        if(filters.deadline==="noResult" && !taskHasNoResult(t))return false;
-        if(filters.keyword && !fullText(t).includes(norm(filters.keyword)))return false;
-        return true;
-      })
+    function statusFilterMatch(t, statusFilter){
+  if(!statusFilter) return true;
+
+  const f = norm(statusFilter);
+
+  // "Đang thực hiện" theo yêu cầu nghiệp vụ:
+  // tất cả nhiệm vụ chưa hoàn thành.
+  if(
+    f === "processing" ||
+    f === "dang thuc hien" ||
+    f === "dang xu ly"
+  ){
+    return !taskIsDone(t);
+  }
+
+  if(
+    f === "done" ||
+    f === "hoan thanh"
+  ){
+    return taskIsDone(t);
+  }
+
+  if(
+    f === "late" ||
+    f === "qua han" ||
+    f === "no qua han"
+  ){
+    return taskIsLateUnified(t);
+  }
+
+  if(
+    f === "new" ||
+    f === "chua thuc hien" ||
+    f === "chua xu ly"
+  ){
+    return taskIsNewUnified(t);
+  }
+
+  return true;
+}
+
+function filtered(){
+  // Đọc trực tiếp lại giá trị trên thanh lọc trước khi lọc,
+  // tránh trường hợp dropdown đã đổi nhưng biến filters chưa cập nhật.
+  const fGroupEl = document.getElementById("fGroup");
+  const fUnitEl = document.getElementById("fUnit");
+  const fStatusEl = document.getElementById("fStatus");
+  const fDeadlineEl = document.getElementById("fDeadline");
+  const fDocEl = document.getElementById("fDoc");
+  const quickSearchEl = document.getElementById("quickSearch");
+
+  if(fGroupEl) filters.group = fGroupEl.value || "";
+  if(fUnitEl) filters.unit = fUnitEl.value || "";
+  if(fStatusEl) filters.status = fStatusEl.value || "";
+  if(fDeadlineEl) filters.deadline = fDeadlineEl.value || "";
+  if(fDocEl) filters.doc = fDocEl.value || "";
+  if(quickSearchEl) filters.keyword = quickSearchEl.value || "";
+
+  return tasks.filter(t=>{
+    if(!taskMatchesQuick(t, filters.quick)) return false;
+
+    if(filters.group && taskGroup(t)!==filters.group) return false;
+
+    if(filters.unit && taskUnit(t)!==filters.unit) return false;
+
+    if(filters.status && !statusFilterMatch(t, filters.status)) return false;
+
+    if(filters.doc && !norm(taskDoc(t)).includes(norm(filters.doc))) return false;
+
+    if(filters.deadline==="overdue" && !taskIsLateUnified(t)) return false;
+
+    if(filters.deadline==="soon7"){
+      const d=diffDays(taskDeadline(t));
+      if(!(d!==null && d>=0 && d<=7 && !taskIsDone(t))) return false;
     }
+
+    if(filters.deadline==="noResult" && !taskHasNoResult(t)) return false;
+
+    if(filters.keyword && !fullText(t).includes(norm(filters.keyword))) return false;
+
+    return true;
+  });
+}
 
     function statusBadge(s){
       const cls=s==="hoàn thành"?"b-green":s==="đang thực hiện"?"b-blue":s==="quá hạn"?"b-coral":"b-gray";
