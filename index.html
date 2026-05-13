@@ -601,41 +601,118 @@
           </section>
 
 
-          <!-- OPINION MONITORING PAGE -->
-          <section id="page-opinion" class="page hidden space-y-5">
-            <div class="card rounded-3xl p-5">
-              <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                <div>
-                  <h3 class="text-xl font-extrabold">Nắm bắt dư luận, ý kiến nhân dân và đảng viên</h3>
-                  <p class="text-sm text-slate-500 mt-1">Theo dõi phản ánh tại họp chi bộ, họp cử tri, tiếp xúc cử tri, báo chí, mạng xã hội về cán bộ, đảng viên và hệ thống chính trị phường.</p>
-                </div>
-                <button onclick="openOpinionModal()" class="btn btn-primary">+ Ghi nhận dư luận</button>
-              </div>
-              <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-4">
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Tổng phản ánh</p><b id="opTotal">0</b></div>
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Tích cực</p><b id="opPositive" class="text-[#6BCB77]">0</b></div>
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Trung tính</p><b id="opNeutral">0</b></div>
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Tiêu cực/rủi ro</p><b id="opNegative" class="text-[#FF6B6B]">0</b></div>
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Cần xác minh</p><b id="opVerify" class="text-[#B89400]">0</b></div>
-              </div>
-            </div>
-            <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
-              <div class="card rounded-3xl p-4 xl:col-span-5"><h3 class="font-extrabold mb-3">Cơ cấu nguồn dư luận</h3><div class="chart-box-sm"><canvas id="opinionSourceChart"></canvas></div></div>
-              <div class="card rounded-3xl p-4 xl:col-span-4"><h3 class="font-extrabold mb-3">Sắc thái dư luận</h3><div class="chart-box-sm"><canvas id="opinionSentimentChart"></canvas></div></div>
-              <div class="card rounded-3xl p-4 xl:col-span-3"><h3 class="font-extrabold mb-3">Đối tượng được nhắc nhiều</h3><div id="opinionEntityList" class="space-y-2"></div></div>
-            </div>
-            <div class="card rounded-3xl p-4">
-              <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
-                <div><h3 class="font-extrabold">Danh sách phản ánh/dư luận</h3><p class="text-sm text-slate-500">Ưu tiên xử lý nội dung tiêu cực, rủi ro cao hoặc liên quan nhiều nguồn.</p></div>
-                <div class="flex flex-col sm:flex-row gap-2">
-                  <input id="opSearch" oninput="opinionFilters.keyword=this.value;renderOpinion()" class="field sm:w-80" placeholder="Tìm nội dung, cán bộ, đơn vị...">
-                  <select id="opFilterSource" onchange="opinionFilters.source=this.value;renderOpinion()" class="field sm:w-56"><option value="">Tất cả nguồn</option></select>
-                  <select id="opFilterSentiment" onchange="opinionFilters.sentiment=this.value;renderOpinion()" class="field sm:w-56"><option value="">Tất cả sắc thái</option><option>tích cực</option><option>trung tính</option><option>tiêu cực</option></select>
-                </div>
-              </div>
-              <div id="opinionList" class="opinion-grid"></div>
-            </div>
-          </section>
+          <!-- MODULE 1374 PAGE -->
+<section id="page-opinion" class="page hidden space-y-5">
+  <div class="card rounded-3xl p-5">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div>
+        <h3 class="text-xl font-extrabold">Tổ công tác 1374</h3>
+        <p class="text-sm text-slate-500 mt-1">
+          Theo dõi thông tin phản ánh theo Quy định 1374-QĐ/TU; tiếp nhận, phân loại, xác định thẩm quyền và theo dõi xử lý thông tin liên quan tổ chức đảng, cán bộ, đảng viên.
+        </p>
+      </div>
+
+      <button onclick="openOpinionModal()" class="btn btn-primary">
+        + Ghi nhận thông tin 1374
+      </button>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-6 gap-3 mt-4">
+      <div class="period-kpi">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">Tổng thông tin</p>
+        <b id="opTotal">0</b>
+      </div>
+
+      <div class="period-kpi">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">Mới tiếp nhận</p>
+        <b id="opPositive" class="text-[#4D96FF]">0</b>
+      </div>
+
+      <div class="period-kpi">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">Đang rà soát</p>
+        <b id="opNeutral" class="text-[#B89400]">0</b>
+      </div>
+
+      <div class="period-kpi">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">Có dấu hiệu vi phạm</p>
+        <b id="opNegative" class="text-[#FF6B6B]">0</b>
+      </div>
+
+      <div class="period-kpi">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">Phức tạp</p>
+        <b id="opVerify" class="text-[#FF6B6B]">0</b>
+      </div>
+
+      <div class="period-kpi">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">Đã có kết quả</p>
+        <b id="opResultDone" class="text-[#6BCB77]">0</b>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
+    <div class="card rounded-3xl p-4 xl:col-span-5">
+      <h3 class="font-extrabold mb-3">Cơ cấu nguồn theo 1374</h3>
+      <div class="chart-box-sm">
+        <canvas id="opinionSourceChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card rounded-3xl p-4 xl:col-span-4">
+      <h3 class="font-extrabold mb-3">Mức độ thông tin</h3>
+      <div class="chart-box-sm">
+        <canvas id="opinionSentimentChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card rounded-3xl p-4 xl:col-span-3">
+      <h3 class="font-extrabold mb-3">Đơn vị/đối tượng liên quan</h3>
+      <div id="opinionEntityList" class="space-y-2"></div>
+    </div>
+  </div>
+
+  <div class="card rounded-3xl p-4">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+      <div>
+        <h3 class="font-extrabold">Danh sách thông tin phản ánh 1374</h3>
+        <p class="text-sm text-slate-500">
+          Hiển thị gọn theo tiêu đề, nguồn, thẩm quyền, mức độ và trạng thái; bấm “Xem” để đọc nội dung chi tiết.
+        </p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-2">
+        <input
+          id="opSearch"
+          oninput="opinionFilters.keyword=this.value;renderOpinion()"
+          class="field sm:w-80"
+          placeholder="Tìm tiêu đề, nội dung, cán bộ, đơn vị..."
+        >
+
+        <select
+          id="opFilterSource"
+          onchange="opinionFilters.source=this.value;renderOpinion()"
+          class="field sm:w-60"
+        >
+          <option value="">Tất cả nguồn 1374</option>
+        </select>
+
+        <select
+          id="opFilterSentiment"
+          onchange="opinionFilters.sentiment=this.value;renderOpinion()"
+          class="field sm:w-60"
+        >
+          <option value="">Tất cả mức độ</option>
+          <option>Thông tin tham khảo</option>
+          <option>Có dấu hiệu cần rà soát</option>
+          <option>Có dấu hiệu vi phạm</option>
+          <option>Phức tạp, dư luận quan tâm</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="opinionList" class="opinion-grid"></div>
+  </div>
+</section>
 
           <!-- UBKT CONCLUSION TRACKER PAGE -->
           <section id="page-conclusions" class="page hidden space-y-5">
@@ -911,23 +988,194 @@
     </div>
   </div>
 
-  <!-- OPINION MODAL -->
-  <div id="opinionModal" class="modal">
-    <div class="modal-card card rounded-[2rem] w-full max-w-4xl">
-      <div class="p-5 border-b border-slate-200 flex items-start justify-between gap-3"><div><h3 class="text-xl font-extrabold">Ghi nhận dư luận/ý kiến phản ánh</h3><p class="text-sm text-slate-500">Dùng để nắm bắt thông tin ban đầu, chưa kết luận đúng sai khi chưa xác minh.</p></div><button onclick="closeOpinionModal()" class="btn btn-ghost px-3">✕</button></div>
-      <div class="p-5 grid md:grid-cols-2 gap-4">
-        <label class="text-sm font-bold">Nguồn thông tin<select id="opInSource" class="field mt-1"><option>Họp chi bộ</option><option>Họp cử tri</option><option>Tiếp xúc cử tri</option><option>Tiếp công dân</option><option>Báo chí</option><option>Mạng xã hội</option><option>Đảng viên phản ánh</option><option>Nhân dân phản ánh</option></select></label>
-        <label class="text-sm font-bold">Sắc thái<select id="opInSentiment" class="field mt-1"><option>trung tính</option><option>tích cực</option><option>tiêu cực</option></select></label>
-        <label class="text-sm font-bold">Mức độ rủi ro<select id="opInRisk" class="field mt-1"><option>thấp</option><option>trung bình</option><option>cao</option></select></label>
-        <label class="text-sm font-bold">Trạng thái xử lý<select id="opInStatus" class="field mt-1"><option>mới ghi nhận</option><option>đang xác minh</option><option>đã chuyển xử lý</option><option>đã kết thúc</option></select></label>
-        <label class="text-sm font-bold">Cán bộ/đảng viên/đơn vị liên quan<input id="opInEntity" class="field mt-1" placeholder="VD: cán bộ phụ trách địa bàn, đơn vị..."></label>
-        <label class="text-sm font-bold">Ngày ghi nhận<input id="opInDate" class="field mt-1" type="date"></label>
-        <label class="text-sm font-bold md:col-span-2">Nội dung phản ánh<textarea id="opInContent" class="field mt-1" rows="4"></textarea></label>
-        <label class="text-sm font-bold md:col-span-2">Hướng xử lý ban đầu<textarea id="opInAction" class="field mt-1" rows="3" placeholder="VD: giao xác minh, theo dõi thêm, chuyển UBKT..."></textarea></label>
+ <!-- MODULE 1374 MODAL -->
+<div id="opinionModal" class="modal">
+  <div class="modal-card card rounded-[2rem] w-full max-w-5xl">
+    <div class="p-5 border-b border-slate-200 flex items-start justify-between gap-3">
+      <div>
+        <h3 id="opinionModalTitle" class="text-xl font-extrabold">Ghi nhận thông tin 1374</h3>
+        <p class="text-sm text-slate-500">
+          Tiếp nhận, phân loại và theo dõi thông tin phản ánh theo Quy định 1374-QĐ/TU.
+        </p>
       </div>
-      <div class="p-5 border-t border-slate-200 flex justify-end gap-2"><button onclick="closeOpinionModal()" class="btn btn-ghost">Hủy</button><button onclick="saveOpinion()" class="btn btn-primary">Lưu phản ánh</button></div>
+
+      <button onclick="closeOpinionModal()" class="icon-btn">✕</button>
+    </div>
+
+    <div class="p-5 grid md:grid-cols-2 gap-4">
+      <input id="opInId" type="hidden">
+
+      <label class="text-sm font-bold md:col-span-2">
+        Tiêu đề thông tin
+        <input
+          id="opInTitle"
+          class="field mt-1"
+          placeholder="VD: Phản ánh về thái độ tiếp dân tại bộ phận một cửa"
+        >
+      </label>
+
+      <label class="text-sm font-bold">
+        Ngày tiếp nhận
+        <input id="opInDate" class="field mt-1" type="date">
+      </label>
+
+      <label class="text-sm font-bold">
+        Nguồn chính theo 1374
+        <select id="opInSource" class="field mt-1">
+          <option>Báo chí, truyền thông</option>
+          <option>Giám sát của cơ quan dân cử, MTTQ</option>
+          <option>Tổ chức, đoàn thể</option>
+          <option>Đơn thư, phản ánh của nhân dân</option>
+        </select>
+      </label>
+
+      <label class="text-sm font-bold">
+        Kênh phát sinh cụ thể
+        <input
+          id="opInSourceChannel"
+          class="field mt-1"
+          placeholder="VD: điểm báo, mạng xã hội, tiếp xúc cử tri, họp chi bộ, tiếp dân..."
+        >
+      </label>
+
+      <label class="text-sm font-bold">
+        Mức độ thông tin
+        <select id="opInSentiment" class="field mt-1">
+          <option>Thông tin tham khảo</option>
+          <option>Có dấu hiệu cần rà soát</option>
+          <option>Có dấu hiệu vi phạm</option>
+          <option>Phức tạp, dư luận quan tâm</option>
+        </select>
+      </label>
+
+      <label class="text-sm font-bold">
+        Thẩm quyền xử lý
+        <select id="opInAuthority" class="field mt-1">
+          <option>Phường xử lý</option>
+          <option>Kiến nghị cấp Thành phố</option>
+          <option>Kiến nghị cấp Trung ương</option>
+          <option>Chuyển cơ quan có thẩm quyền</option>
+          <option>Chưa xác định</option>
+        </select>
+      </label>
+
+      <label class="text-sm font-bold">
+        Trạng thái xử lý
+        <select id="opInStatus" class="field mt-1">
+          <option>Mới tiếp nhận</option>
+          <option>Đang rà soát</option>
+          <option>Đã chuyển xử lý</option>
+          <option>Đang theo dõi kết quả</option>
+          <option>Đã có kết quả</option>
+          <option>Lưu theo dõi</option>
+        </select>
+      </label>
+
+      <label class="text-sm font-bold">
+        Hướng xử lý
+        <select id="opInDirection" class="field mt-1">
+          <option>Theo dõi, nắm tình hình</option>
+          <option>Rà soát, xác minh thông tin</option>
+          <option>Mời làm việc / trao đổi</option>
+          <option>Chuyển UBKT xem xét</option>
+          <option>Đề xuất kiểm tra</option>
+          <option>Đề xuất giám sát</option>
+          <option>Chuyển cơ quan có thẩm quyền</option>
+          <option>Lưu theo dõi, chưa đủ cơ sở</option>
+        </select>
+      </label>
+
+      <label class="text-sm font-bold">
+        Đơn vị liên quan
+        <input
+          id="opInEntity"
+          class="field mt-1"
+          placeholder="VD: UBND phường, chi bộ khu phố, cán bộ phụ trách..."
+        >
+      </label>
+
+      <label class="text-sm font-bold">
+        Cán bộ/đảng viên/tổ chức liên quan
+        <input
+          id="opInRelatedPerson"
+          class="field mt-1"
+          placeholder="Có thể để trống nếu chưa xác định"
+        >
+      </label>
+
+      <label class="text-sm font-bold">
+        Lĩnh vực
+        <select id="opInField" class="field mt-1">
+          <option>Xây dựng Đảng</option>
+          <option>Kiểm tra, giám sát</option>
+          <option>Cán bộ, công chức</option>
+          <option>Đạo đức công vụ</option>
+          <option>Tiếp dân, giải quyết hồ sơ</option>
+          <option>Đất đai, xây dựng</option>
+          <option>Trật tự đô thị</option>
+          <option>An ninh trật tự</option>
+          <option>Tài chính, tài sản công</option>
+          <option>Dân sinh, xã hội</option>
+          <option>Khác</option>
+        </select>
+      </label>
+
+      <label class="text-sm font-bold">
+        Link/tài liệu kèm theo
+        <input
+          id="opInAttachment"
+          class="field mt-1"
+          placeholder="Dán link bài báo, file scan, hình ảnh, tài liệu..."
+        >
+      </label>
+
+      <label class="text-sm font-bold md:col-span-2">
+        Nội dung tóm tắt
+        <textarea
+          id="opInContent"
+          class="field mt-1"
+          rows="3"
+          placeholder="Tóm tắt ngắn nội dung phản ánh..."
+        ></textarea>
+      </label>
+
+      <label class="text-sm font-bold md:col-span-2">
+        Nội dung chi tiết
+        <textarea
+          id="opInDetail"
+          class="field mt-1"
+          rows="5"
+          placeholder="Nhập đầy đủ nội dung phản ánh, diễn biến, thông tin liên quan..."
+        ></textarea>
+      </label>
+
+      <label class="text-sm font-bold md:col-span-2">
+        Nhận định ban đầu / đề xuất xử lý
+        <textarea
+          id="opInAction"
+          class="field mt-1"
+          rows="3"
+          placeholder="VD: giao rà soát, chuyển UBKT xem xét, lưu theo dõi..."
+        ></textarea>
+      </label>
+
+      <label class="text-sm font-bold md:col-span-2">
+        Kết quả cập nhật
+        <textarea
+          id="opInResult"
+          class="field mt-1"
+          rows="3"
+          placeholder="Cập nhật kết quả xử lý nếu đã có..."
+        ></textarea>
+      </label>
+    </div>
+
+    <div class="p-5 border-t border-slate-200 flex flex-col sm:flex-row justify-end gap-2">
+      <button onclick="closeOpinionModal()" class="btn btn-ghost">Hủy</button>
+      <button onclick="saveOpinion()" class="btn btn-primary">Lưu thông tin 1374</button>
     </div>
   </div>
+</div>
 
   <!-- CONCLUSION MODAL -->
   <div id="conclusionModal" class="modal">
