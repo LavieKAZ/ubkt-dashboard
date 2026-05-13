@@ -4202,31 +4202,65 @@ function deleteOpinion(id){
         nhiệm vụ dài hạn/nhiệm kỳ; nhóm này cần mốc kiểm tra định kỳ theo quý hoặc 6 tháng.
       </span>
     </div>
-
-    <h4>5. Nắm bắt dư luận và kết luận UBKT</h4>
+    
+    <h4>5. Tổ công tác 1374 và kết luận UBKT</h4>
 
     <div class="report-line">
       <span class="report-dot dot-blue"></span>
       <span>
-        Đã ghi nhận <span class="num-blue">${opinions.length}</span>
-        nguồn dư luận/ý kiến phản ánh; trong đó có
-        <span class="num-red">${opinions.filter(o=>o.sentiment==='tiêu cực'||o.risk==='cao').length}</span>
-        nội dung cần quan tâm, xác minh.
+        Tổ công tác 1374 đã ghi nhận
+        <span class="num-blue">
+          ${opinions.map(normalize1374Opinion).filter(o=>!opinionIsDeleted(o)).length}
+        </span>
+        thông tin phản ánh theo Quy định 1374-QĐ/TU.
+      </span>
+    </div>
+
+    <div class="report-line">
+      <span class="report-dot dot-yellow"></span>
+      <span>
+        Trong đó có
+        <span class="num-yellow">
+          ${opinions.map(normalize1374Opinion).filter(o=>!opinionIsDeleted(o) && o.status==="Đang rà soát").length}
+        </span>
+        thông tin đang rà soát, xác minh.
       </span>
     </div>
 
     <div class="report-line">
       <span class="report-dot dot-red"></span>
       <span>
-        Đang theo dõi <span class="num-blue">${conclusions.length}</span>
-        kết luận thanh tra/kiểm tra/giám sát; có
+        Có
         <span class="num-red">
-          ${conclusions.filter(c=>c.status==='quá hạn' || (diffDays(c.deadline)<0 && c.status!=='hoàn thành')).length}
+          ${opinions.map(normalize1374Opinion).filter(o=>!opinionIsDeleted(o) && (o.level==="Có dấu hiệu vi phạm" || o.level==="Phức tạp, dư luận quan tâm")).length}
         </span>
-        kết luận quá hạn/cần đôn đốc.
+        thông tin có dấu hiệu vi phạm hoặc phức tạp, dư luận quan tâm.
       </span>
     </div>
 
+    <div class="report-line">
+      <span class="report-dot dot-green"></span>
+      <span>
+        Đã có kết quả xử lý đối với
+        <span class="num-green">
+          ${opinions.map(normalize1374Opinion).filter(o=>!opinionIsDeleted(o) && o.status==="Đã có kết quả").length}
+        </span>
+        thông tin.
+      </span>
+    </div>
+
+    <div class="report-line">
+      <span class="report-dot dot-blue"></span>
+      <span>
+        Đang theo dõi
+        <span class="num-blue">${conclusions.length}</span>
+        kết luận thanh tra, kiểm tra, giám sát; trong đó có
+        <span class="num-red">
+          ${conclusions.filter(c=>c.status==="quá hạn" || (diffDays(c.deadline)<0 && c.status!=="hoàn thành")).length}
+        </span>
+        kết luận quá hạn hoặc cần đôn đốc.
+      </span>
+    </div>
     <h4>6. Kiến nghị</h4>
 
     <div class="report-line">
