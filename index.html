@@ -419,7 +419,7 @@
         <nav class="space-y-2">
           <button class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16V9"/><path d="M12 16V6"/><path d="M16 16v-4"/></svg></span><span class="nav-label">Dashboard</span></button>
           <button class="nav-item" data-page="tasks" onclick="switchPage('tasks')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h16"/><path d="M6 4h8l4 4v9a2 2 0 0 1-2 2H6z"/><path d="M14 4v5h5"/><path d="M8 13h8"/><path d="M8 16h5"/></svg></span><span class="nav-label">Nhiệm vụ</span></button>
-          <button class="nav-item" data-page="opinion" onclick="switchPage('opinion')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16v10H7l-3 3z"/><path d="M8 9h8"/><path d="M8 12h5"/></svg></span><span class="nav-label">Nắm bắt dư luận</span></button>
+          <button class="nav-item" data-page="opinion" onclick="switchPage('opinion')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16v10H7l-3 3z"/><path d="M8 9h8"/><path d="M8 12h5"/></svg></span><span class="nav-label">Tổ Công tác 1374</span></button>
           <button class="nav-item" data-page="conclusions" onclick="switchPage('conclusions')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3h10l3 3v15H6z"/><path d="M15 3v4h4"/><path d="M9 12l2 2 4-5"/><path d="M9 17h7"/></svg></span><span class="nav-label">Kết luận UBKT</span></button>
           <button class="nav-item" data-page="baseorgs" onclick="switchPage('baseorgs')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h16"/><path d="M6 20V8l6-4 6 4v12"/><path d="M9 20v-7h6v7"/></svg></span><span class="nav-label">Theo dõi Cơ sở Đảng</span></button>
           <button class="nav-item" data-page="dossiers" onclick="switchPage('dossiers')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h6l2 2h8v10H4z"/><path d="M8 13h8"/><path d="M8 16h5"/></svg></span><span class="nav-label">Hồ sơ KTGS</span></button>
@@ -1941,7 +1941,7 @@
 
     function requestInternalAccess(page){
       pendingInternalPage=page;
-      const label=page==="opinion" ? "Nắm bắt dư luận" : (page==="dossiers" ? "Hồ sơ sau kiểm tra, giám sát" : "Kết luận UBKT/Đảng ủy");
+      const label=page==="opinion" ? "Tổ Công tác 1374" : (page==="dossiers" ? "Hồ sơ sau kiểm tra, giám sát" : "Kết luận UBKT/Đảng ủy");
       internalAccessHint.textContent=`Bạn đang mở tab “${label}”. Vui lòng nhập mật khẩu nội bộ UBKT để tiếp tục.`;
       internalErr.classList.add("hidden");
       internalPass.value="";
@@ -1996,7 +1996,7 @@
       document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
       document.getElementById("page-"+page).classList.remove("hidden");
       document.querySelectorAll(".nav-item").forEach(n=>n.classList.toggle("active",n.dataset.page===page));
-      const titles={dashboard:"Dashboard giám sát",tasks:"Nhập và quản lý nhiệm vụ",opinion:"Nắm bắt dư luận",conclusions:"Kết luận UBKT/Đảng ủy",baseorgs:"Theo dõi Cơ sở Đảng",dossiers:"Hồ sơ sau kiểm tra, giám sát",periods:"Chốt kỳ báo cáo",reports:"Báo cáo một trang"};
+      const titles={dashboard:"Dashboard giám sát",tasks:"Nhập và quản lý nhiệm vụ",opinion:"Tổ Công tác 1374",conclusions:"Kết luận UBKT/Đảng ủy",baseorgs:"Theo dõi Cơ sở Đảng",dossiers:"Hồ sơ sau kiểm tra, giám sát",periods:"Chốt kỳ báo cáo",reports:"Báo cáo một trang"};
       document.getElementById("pageTitle").textContent=titles[page];
       const showHeaderActions = page==="dashboard" || page==="tasks";
       const taskBtn=document.getElementById("headerTaskBtn");
@@ -2004,7 +2004,7 @@
       if(taskBtn) taskBtn.style.display = showHeaderActions ? "" : "none";
       if(periodBtn) periodBtn.style.display = showHeaderActions ? "" : "none";
       if(page==="opinion"){
-        showModuleToast("Tab Nắm bắt dư luận", "Đây là khu vực ghi nhận thông tin ban đầu từ họp chi bộ, cử tri, báo chí, mạng xã hội. Nội dung chỉ phục vụ theo dõi, chưa phải kết luận khi chưa xác minh.");
+        showModuleToast("Tab Tổ Công tác 1374", "Đây là khu vực ghi nhận thông tin ban đầu từ họp chi bộ, cử tri, báo chí, mạng xã hội. Nội dung chỉ phục vụ theo dõi, chưa phải kết luận khi chưa xác minh.");
       }
       if(page==="conclusions"){
         showModuleToast("Tab Kết luận UBKT/Đảng ủy", "Đây là khu vực theo dõi riêng các kết luận kiểm tra, giám sát, thanh tra và thông báo kết luận; có thể tạo nhiệm vụ đôn đốc từ từng kết luận.");
