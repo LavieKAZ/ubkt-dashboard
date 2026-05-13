@@ -1754,14 +1754,22 @@
       const d=diffDays(t.deadline);
       return !taskIsDone(t) && (norm(t.status)==="qua han" || (d!==null && d<0));
     }
+
+    // Lưu ý logic đồng bộ:
+    // - "Đang thực hiện" là trạng thái nghiệp vụ do người dùng nhập.
+    // - "Quá hạn" là cảnh báo theo hạn xử lý.
+    // Hai nhóm này có thể giao nhau: một nhiệm vụ đang thực hiện nhưng đã quá hạn
+    // vẫn phải hiện khi bấm cả ô "Đang thực hiện" và ô "Quá hạn".
     function taskIsDoingUnified(t){
-      return !taskIsDone(t) && !taskIsLateUnified(t) && norm(t.status)==="dang thuc hien";
+      return !taskIsDone(t) && norm(t.status)==="dang thuc hien";
     }
+
     function taskIsNewUnified(t){
-      return !taskIsDone(t) && !taskIsLateUnified(t) && norm(t.status)==="chua thuc hien";
+      return !taskIsDone(t) && norm(t.status)==="chua thuc hien";
     }
+
     function taskIsTenure(t){
-      return t.horizon==="dài hạn/nhiệm kỳ" || ["Nghị quyết","Chương trình làm việc"].includes(t.group);
+      return !taskIsDone(t) && (t.horizon==="dài hạn/nhiệm kỳ" || ["Nghị quyết","Chương trình làm việc"].includes(t.group));
     }
     function taskMatchesQuick(t, quick){
       if(!quick || quick==="all") return true;
@@ -2222,9 +2230,9 @@
     function renderStatusCommand(){
       if(!document.getElementById("compactActions"))return;
       const c=statusCountsDynamic();
-      const soon7=tasks.filter(t=>{const d=diffDays(t.deadline); return d!==null && d>=0 && d<=7 && t.status!=="hoàn thành"}).length;
+      const soon7=tasks.filter(t=>{const d=diffDays(t.deadline); return !taskIsDone(t) && d!==null && d>=0 && d<=7}).length;
       const noResult=tasks.filter(taskHasNoResult).length;
-      const noOwner=tasks.filter(t=>t.status!=="hoàn thành" && taskHasNoOwner(t)).length;
+      const noOwner=tasks.filter(t=>!taskIsDone(t) && taskHasNoOwner(t)).length;
 
       const actions=[
         {label:"Quá hạn cần xử lý",value:c.late,filter:"quá hạn",cls:"text-[#FF6B6B]",note:"Tự tính theo hạn"},
@@ -2235,7 +2243,7 @@
       compactActions.innerHTML=actions.map(a=>`<button class="compact-action" onclick="setActionFilter('${a.filter}')"><b class="${a.cls}">${a.value}</b><span>${a.label}</span><small>${a.note}</small></button>`).join("");
 
       const urgent=tasks
-        .filter(t=>t.status!=="hoàn thành")
+        .filter(t=>!taskIsDone(t))
         .map(t=>({...t,_score:(taskIsLate(t)?100:0)+(taskHasNoResult(t)?20:0)+(taskHasNoOwner(t)?15:0)+((diffDays(t.deadline)!==null&&diffDays(t.deadline)>=0&&diffDays(t.deadline)<=7)?30:0),_days:diffDays(t.deadline)}))
         .sort((a,b)=>b._score-a._score || (a._days??999)-(b._days??999))
         .slice(0,5);
@@ -2276,7 +2284,7 @@
     }
 
     function renderDeadlines(){
-      const items=tasks.filter(t=>t.status!=="hoàn thành").map(t=>({...t,d:diffDays(t.deadline)})).filter(t=>t.d!==null && t.d<=30).sort((a,b)=>a.d-b.d);
+      const items=tasks.filter(t=>!taskIsDone(t)).map(t=>({...t,d:diffDays(t.deadline)})).filter(t=>t.d!==null && t.d<=30).sort((a,b)=>a.d-b.d);
       deadlineList.innerHTML=items.map(t=>`<button onclick="resetTaskFilters('');filters.keyword=${jsArg(t.deadline)};render();document.getElementById('taskList')?.scrollIntoView({behavior:'smooth',block:'start'});" class="w-full text-left rounded-2xl border border-slate-200 bg-white p-3 soft hover:bg-blue-50">
         <div class="flex items-center justify-between gap-3"><b>${fmt(t.deadline)}</b>${deadlineBadge(t.deadline)}</div>
         <p class="text-sm text-slate-600 mt-1 line-clamp-2">${escapeHtml(t.task||"")}</p>
