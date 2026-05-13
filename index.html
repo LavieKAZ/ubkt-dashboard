@@ -2579,39 +2579,6 @@ function filteredOpinions(){
       return true;
     });
 }
-  const source = opinionFilters.source || "";
-  const level = opinionFilters.sentiment || "";
-  const keyword = opinionNorm(opinionFilters.keyword || "");
-
-  return opinions
-    .map(normalize1374Opinion)
-    .filter(o=>{
-      if(opinionIsDeleted(o)) return false;
-      if(source && o.sourceGroup !== source) return false;
-      if(level && o.level !== level) return false;
-
-      if(keyword){
-        const haystack = opinionNorm([
-          o.title,
-          o.sourceGroup,
-          o.sourceChannel,
-          o.contentSummary,
-          o.contentDetail,
-          o.relatedPerson,
-          o.relatedUnit,
-          o.field,
-          o.authorityLevel,
-          o.handlingDirection,
-          o.status,
-          o.result
-        ].join(" "));
-
-        if(!haystack.includes(keyword)) return false;
-      }
-
-      return true;
-    });
-}
 
 function renderOpinion(){
   if(!document.getElementById("opinionList")) return;
