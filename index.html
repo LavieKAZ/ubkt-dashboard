@@ -1740,37 +1740,86 @@
       return Math.ceil((d-TODAY)/86400000);
     }
     function fmt(s){if(!s)return"—";const [y,m,d]=s.split("-");return `${d}/${m}/${y}`}
-    function norm(s){return (s||"").toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()}
+    function norm(value){
+      return String(value ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+    }
     function groupBy(arr,fn){return arr.reduce((a,x)=>{const k=fn(x);(a[k]??=[]).push(x);return a},{})}
     function countBy(arr,fn){return arr.reduce((a,x)=>{const k=fn(x);a[k]=(a[k]||0)+1;return a},{})}
 
-    // Một nguồn logic duy nhất cho trạng thái hiển thị.
-    // KPI, biểu đồ, Dashboard và tab Nhiệm vụ đều dùng các hàm này để tránh lệch số liệu.
-    function taskIsDone(t){
-      const s=norm(t.status);
-      return s==="hoan thanh" || s==="da khac phuc" || s==="da giai quyet";
-    }
-    function taskIsLateUnified(t){
-      const d=diffDays(t.deadline);
-      return !taskIsDone(t) && (norm(t.status)==="qua han" || (d!==null && d<0));
+    // V26: một lớp đọc dữ liệu duy nhất cho cả dữ liệu đóng gói, localState và Supabase row.data.
+    // Mọi KPI, biểu đồ và danh sách tương tác phải đi qua các hàm này để tránh đếm 0 dù database có dữ liệu.
+    function taskValue(t, key, fallback=""){
+      if(!t) return fallback;
+      if(t[key] !== undefined && t[key] !== null) return t[key];
+      if(t.data && t.data[key] !== undefined && t.data[key] !== null) return t.data[key];
+      return fallback;
     }
 
-    // Lưu ý logic đồng bộ:
-    // - "Đang thực hiện" là trạng thái nghiệp vụ do người dùng nhập.
-    // - "Quá hạn" là cảnh báo theo hạn xử lý.
-    // Hai nhóm này có thể giao nhau: một nhiệm vụ đang thực hiện nhưng đã quá hạn
-    // vẫn phải hiện khi bấm cả ô "Đang thực hiện" và ô "Quá hạn".
+    function normalizeUnitName(unitName){
+      const raw=String(unitName ?? "").replace(/\s+/g," ").trim();
+      if(!raw) return "Chưa xác định đơn vị";
+      const n=norm(raw);
+      if(n.includes("ban xd") || n.includes("ban x d") || n.includes("ban xay dung dang")) return "Ban Xây dựng Đảng";
+      if(n.includes("cong an") || n.includes("bch cong an")) return "Đảng uỷ - BCH Công an phường";
+      return raw;
+    }
+
+    function taskStatus(t){return norm(taskValue(t,"status"));}
+    function taskUnit(t){return normalizeUnitName(taskValue(t,"unit", taskValue(t,"coUnit", "Chưa xác định đơn vị")));}
+    function taskGroup(t){return String(taskValue(t,"group","") || "").trim();}
+    function taskHorizon(t){return norm(taskValue(t,"horizon"));}
+    function taskDeadline(t){return String(taskValue(t,"deadline","") || "").trim();}
+    function taskResult(t){return String(taskValue(t,"result","") || "").trim();}
+    function taskOwner(t){return String(taskValue(t,"owner","") || "").trim();}
+    function taskDoc(t){return String(taskValue(t,"doc","") || "").trim();}
+
+    function taskIsDone(t){
+      const s=taskStatus(t);
+      return s==="hoan thanh" || s==="da hoan thanh" || s==="done" || s==="completed" || s==="da khac phuc" || s==="da giai quyet";
+    }
+
+    function taskIsLateUnified(t){
+      if(taskIsDone(t)) return false;
+      const s=taskStatus(t);
+      if(s==="qua han" || s==="no qua han" || s.includes("qua han")) return true;
+      const d=diffDays(taskDeadline(t));
+      return d!==null && d<0;
+    }
+
+    // Đang thực hiện = trạng thái văn bản ghi nhận là đang thực hiện.
+    // Không loại trừ quá hạn, vì một nhiệm vụ có thể vừa đang thực hiện vừa quá hạn.
     function taskIsDoingUnified(t){
-      return !taskIsDone(t) && norm(t.status)==="dang thuc hien";
+      if(taskIsDone(t)) return false;
+      const s=taskStatus(t);
+      return s==="dang thuc hien" || s==="dang theo doi" || s==="dang don doc" || s.includes("dang thuc hien");
     }
 
     function taskIsNewUnified(t){
-      return !taskIsDone(t) && norm(t.status)==="chua thuc hien";
+      if(taskIsDone(t)) return false;
+      const s=taskStatus(t);
+      return s==="chua thuc hien" || s==="moi ghi nhan" || s==="chua xu ly";
     }
 
     function taskIsTenure(t){
-      return !taskIsDone(t) && (t.horizon==="dài hạn/nhiệm kỳ" || ["Nghị quyết","Chương trình làm việc"].includes(t.group));
+      const h=taskHorizon(t);
+      const g=norm(taskGroup(t));
+      return !taskIsDone(t) && (h.includes("dai han") || h.includes("nhiem ky") || g.includes("nghi quyet") || g.includes("chuong trinh lam viec"));
     }
+
+    function taskHasNoOwner(t){
+      const owner=norm(taskOwner(t));
+      return !owner || owner.includes("chua phan cong");
+    }
+
+    function taskHasNoResult(t){
+      return !taskIsDone(t) && !taskResult(t).trim();
+    }
+
     function taskMatchesQuick(t, quick){
       if(!quick || quick==="all") return true;
       if(quick==="hoàn thành") return taskIsDone(t);
@@ -1778,7 +1827,7 @@
       if(quick==="chưa thực hiện") return taskIsNewUnified(t);
       if(quick==="quá hạn") return taskIsLateUnified(t);
       if(quick==="soon7"){
-        const d=diffDays(t.deadline);
+        const d=diffDays(taskDeadline(t));
         return !taskIsDone(t) && d!==null && d>=0 && d<=7;
       }
       if(quick==="tenure") return taskIsTenure(t);
@@ -1790,30 +1839,34 @@
     }
 
     function calcStats(arr=tasks){
+      const source=Array.isArray(arr)?arr:[];
       return {
-        total:arr.length,
-        done:arr.filter(taskIsDone).length,
-        doing:arr.filter(taskIsDoingUnified).length,
-        late:arr.filter(taskIsLateUnified).length,
-        soon:arr.filter(t=>{const d=diffDays(t.deadline); return !taskIsDone(t) && d!==null && d>=0 && d<=7}).length,
-        noResult:arr.filter(t=>!taskIsDone(t) && !(t.result||"").trim()).length,
-        open:arr.filter(t=>!taskIsDone(t)).length,
-        tenure:arr.filter(taskIsTenure).length
+        total:source.length,
+        done:source.filter(taskIsDone).length,
+        doing:source.filter(taskIsDoingUnified).length,
+        late:source.filter(taskIsLateUnified).length,
+        soon:source.filter(t=>{const d=diffDays(taskDeadline(t)); return !taskIsDone(t) && d!==null && d>=0 && d<=7}).length,
+        noResult:source.filter(taskHasNoResult).length,
+        open:source.filter(t=>!taskIsDone(t)).length,
+        tenure:source.filter(taskIsTenure).length
       }
     }
 
-    function fullText(t){return norm(Object.values(t).join(" "))}
+    function fullText(t){
+      const raw=(t && t.data && typeof t.data==="object") ? {...t.data, ...t} : (t || {});
+      return norm(Object.values(raw).join(" "));
+    }
 
     function filtered(){
       return tasks.filter(t=>{
         if(!taskMatchesQuick(t, filters.quick)) return false;
-        if(filters.group && t.group!==filters.group)return false;
-        if(filters.unit && t.unit!==filters.unit)return false;
+        if(filters.group && taskGroup(t)!==filters.group)return false;
+        if(filters.unit && taskUnit(t)!==filters.unit)return false;
         if(filters.status && !taskMatchesQuick(t, filters.status))return false;
-        if(filters.doc && !norm(t.doc).includes(norm(filters.doc)))return false;
+        if(filters.doc && !norm(taskDoc(t)).includes(norm(filters.doc)))return false;
         if(filters.deadline==="overdue" && !taskIsLateUnified(t))return false;
         if(filters.deadline==="soon7"){
-          const d=diffDays(t.deadline);
+          const d=diffDays(taskDeadline(t));
           if(!(d!==null&&d>=0&&d<=7&&!taskIsDone(t)))return false;
         }
         if(filters.deadline==="noResult" && !taskHasNoResult(t))return false;
@@ -2176,10 +2229,10 @@
     }
 
     function renderFilters(){
-      const groups=[...new Set(tasks.map(t=>t.group))];
-      const units=[...new Set(tasks.map(t=>t.unit))];
-      fGroup.innerHTML=`<option value="">Tất cả nhóm văn bản</option>`+groups.map(g=>`<option ${filters.group===g?"selected":""}>${g}</option>`).join("");
-      fUnit.innerHTML=`<option value="">Tất cả đơn vị</option>`+units.map(u=>`<option ${filters.unit===u?"selected":""}>${u}</option>`).join("");
+      const groups=[...new Set(tasks.map(taskGroup).filter(Boolean))];
+      const units=[...new Set(tasks.map(taskUnit).filter(Boolean))];
+      fGroup.innerHTML=`<option value="">Tất cả nhóm văn bản</option>`+groups.map(g=>`<option ${filters.group===g?"selected":""}>${escapeHtml(g)}</option>`).join("");
+      fUnit.innerHTML=`<option value="">Tất cả đơn vị</option>`+units.map(u=>`<option ${filters.unit===u?"selected":""}>${escapeHtml(u)}</option>`).join("");
       fStatus.value=filters.status;
       fDeadline.value=filters.deadline;
       fDoc.value=filters.doc;
@@ -2250,9 +2303,9 @@
       urgentTasks.innerHTML=urgent.map(t=>`<div class="urgent-strip-item ${taskIsLate(t)?"":"good"}" onclick="openEditTask(this.dataset.id)" data-id="${escapeHtml(t.id)}">
         <div class="flex items-center justify-between gap-2">
           <b class="line-clamp-1">${escapeHtml(t.unit||"Chưa phân công")}</b>
-          ${deadlineBadge(t.deadline)}
+          ${deadlineBadge(taskDeadline(t))}
         </div>
-        <p class="text-sm text-slate-600 mt-1 line-clamp-2">${escapeHtml(t.task||"")}</p>
+        <p class="text-sm text-slate-600 mt-1 line-clamp-2">${escapeHtml(taskValue(t,"task","")||"")}</p>
         <p class="text-xs text-slate-400 mt-1">${escapeHtml(t.doc||t.docFull||"")}</p>
       </div>`).join("") || `<p class="text-sm text-slate-500">Không có việc cần xử lý ngay.</p>`;
     }
@@ -2270,25 +2323,25 @@
 
 
     function renderCharts(){
-      const units=[...new Set(tasks.map(t=>t.unit))];
+      const units=[...new Set(tasks.map(taskUnit).filter(Boolean))];
       if(charts.unit)charts.unit.destroy();
       charts.unit=new Chart(unitChart,{type:"bar",data:{labels:units,datasets:[
-        {label:"Hoàn thành",data:units.map(u=>tasks.filter(t=>t.unit===u&&taskIsDone(t)).length),backgroundColor:"#6BCB77",borderRadius:8},
-        {label:"Đang thực hiện",data:units.map(u=>tasks.filter(t=>t.unit===u&&taskIsDoingUnified(t)).length),backgroundColor:"#4D96FF",borderRadius:8},
-        {label:"Quá hạn",data:units.map(u=>tasks.filter(t=>t.unit===u&&taskIsLateUnified(t)).length),backgroundColor:"#FF6B6B",borderRadius:8}
+        {label:"Hoàn thành",data:units.map(u=>tasks.filter(t=>taskUnit(t)===u&&taskIsDone(t)).length),backgroundColor:"#6BCB77",borderRadius:8},
+        {label:"Đang thực hiện",data:units.map(u=>tasks.filter(t=>taskUnit(t)===u&&taskIsDoingUnified(t)).length),backgroundColor:"#4D96FF",borderRadius:8},
+        {label:"Quá hạn",data:units.map(u=>tasks.filter(t=>taskUnit(t)===u&&taskIsLateUnified(t)).length),backgroundColor:"#FF6B6B",borderRadius:8}
       ]},options:{...chartOpts(),indexAxis:"y",scales:{x:{stacked:true,ticks:{precision:0}},y:{stacked:true}},onClick:(_,els)=>{if(els.length){filters.unit=units[els[0].index];filters.quick="";render();document.getElementById("taskList").scrollIntoView({behavior:"smooth"})}}}});
 
-      const groups=[...new Set(tasks.map(t=>t.group))];
+      const groups=[...new Set(tasks.map(taskGroup).filter(Boolean))];
       if(charts.group)charts.group.destroy();
-      charts.group=new Chart(groupChart,{type:"bar",data:{labels:groups,datasets:[{label:"Số nhiệm vụ",data:groups.map(g=>tasks.filter(t=>t.group===g).length),backgroundColor:["#4D96FF","#FF6B6B","#6BCB77","#FFD93D","#94a3b8","#60a5fa"],borderRadius:10}]},options:{...chartOpts(),plugins:{legend:{display:false}},scales:{y:{ticks:{precision:0}}},onClick:(_,els)=>{if(els.length){filters.group=groups[els[0].index];filters.quick="";render();document.getElementById("taskList").scrollIntoView({behavior:"smooth"})}}}});
+      charts.group=new Chart(groupChart,{type:"bar",data:{labels:groups,datasets:[{label:"Số nhiệm vụ",data:groups.map(g=>tasks.filter(t=>taskGroup(t)===g).length),backgroundColor:["#4D96FF","#FF6B6B","#6BCB77","#FFD93D","#94a3b8","#60a5fa"],borderRadius:10}]},options:{...chartOpts(),plugins:{legend:{display:false}},scales:{y:{ticks:{precision:0}}},onClick:(_,els)=>{if(els.length){filters.group=groups[els[0].index];filters.quick="";render();document.getElementById("taskList").scrollIntoView({behavior:"smooth"})}}}});
     }
 
     function renderDeadlines(){
-      const items=tasks.filter(t=>!taskIsDone(t)).map(t=>({...t,d:diffDays(t.deadline)})).filter(t=>t.d!==null && t.d<=30).sort((a,b)=>a.d-b.d);
-      deadlineList.innerHTML=items.map(t=>`<button onclick="resetTaskFilters('');filters.keyword=${jsArg(t.deadline)};render();document.getElementById('taskList')?.scrollIntoView({behavior:'smooth',block:'start'});" class="w-full text-left rounded-2xl border border-slate-200 bg-white p-3 soft hover:bg-blue-50">
-        <div class="flex items-center justify-between gap-3"><b>${fmt(t.deadline)}</b>${deadlineBadge(t.deadline)}</div>
-        <p class="text-sm text-slate-600 mt-1 line-clamp-2">${escapeHtml(t.task||"")}</p>
-        <p class="text-xs text-slate-400 mt-1">${escapeHtml(t.unit||"")}</p>
+      const items=tasks.filter(t=>!taskIsDone(t)).map(t=>({...t,d:diffDays(taskDeadline(t))})).filter(t=>t.d!==null && t.d<=30).sort((a,b)=>a.d-b.d);
+      deadlineList.innerHTML=items.map(t=>`<button onclick="resetTaskFilters('');filters.keyword=${jsArg(taskDeadline(t))};render();document.getElementById('taskList')?.scrollIntoView({behavior:'smooth',block:'start'});" class="w-full text-left rounded-2xl border border-slate-200 bg-white p-3 soft hover:bg-blue-50">
+        <div class="flex items-center justify-between gap-3"><b>${fmt(taskDeadline(t))}</b>${deadlineBadge(taskDeadline(t))}</div>
+        <p class="text-sm text-slate-600 mt-1 line-clamp-2">${escapeHtml(taskValue(t,"task","")||"")}</p>
+        <p class="text-xs text-slate-400 mt-1">${escapeHtml(taskUnit(t)||"")}</p>
       </button>`).join("")||`<p class="text-sm text-slate-500">Không có hạn xử lý trong 30 ngày tới.</p>`;
     }
 
@@ -2321,7 +2374,7 @@
           <div class="xl:col-span-1"><span class="badge b-gray">${t.sourceTable}</span><span class="badge b-gray mt-1">STT ${t.order||"—"}</span></div>
           <div class="xl:col-span-5"><p class="font-bold leading-6">${t.task}</p><p class="text-sm text-slate-500 mt-1 line-clamp-2">${t.conclusion}</p></div>
           <div class="xl:col-span-2"><p class="text-sm font-bold">${t.unit}</p><p class="text-xs text-slate-500">${t.owner||"Chưa phân công"}</p></div>
-          <div class="xl:col-span-2 flex flex-wrap gap-2">${deadlineBadge(t.deadline)}${statusBadge(t.status)}${(t.horizon==='dài hạn/nhiệm kỳ'||['Nghị quyết','Chương trình làm việc'].includes(t.group))?'<span class="badge tenure-chip">nhiệm kỳ</span>':''}</div>
+          <div class="xl:col-span-2 flex flex-wrap gap-2">${deadlineBadge(taskDeadline(t))}${statusBadge(t.status)}${(t.horizon==='dài hạn/nhiệm kỳ'||['Nghị quyết','Chương trình làm việc'].includes(t.group))?'<span class="badge tenure-chip">nhiệm kỳ</span>':''}</div>
           <div class="xl:col-span-2 flex gap-2 xl:justify-end"><button onclick="openEditTask(this.dataset.id)" data-id="${escapeHtml(t.id)}" class="icon-btn icon-edit" title="Chỉnh sửa nhiệm vụ">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
 </button>
@@ -2368,10 +2421,10 @@
             </button>
           </div>
         </div>
-        <p class="task-card-title mt-3">${escapeHtml(t.task||"")}</p>
+        <p class="task-card-title mt-3">${escapeHtml(taskValue(t,"task","")||"")}</p>
         <p class="text-sm text-slate-500 mt-2 line-clamp-2">${escapeHtml(t.summary||t.conclusion||"")}</p>
         <div class="task-card-meta">
-          ${deadlineBadge(t.deadline)}${statusBadge(t.status)}
+          ${deadlineBadge(taskDeadline(t))}${statusBadge(t.status)}
           <span class="badge b-gray">${escapeHtml(t.unit||"Chưa phân công")}</span>
           ${(t.horizon==="dài hạn/nhiệm kỳ"||["Nghị quyết","Chương trình làm việc"].includes(t.group))?'<span class="badge tenure-chip">nhiệm kỳ</span>':''}
         </div>
