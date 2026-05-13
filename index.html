@@ -1741,117 +1741,210 @@
     }
     function fmt(s){if(!s)return"—";const [y,m,d]=s.split("-");return `${d}/${m}/${y}`}
     function norm(value){
-      return String(value ?? "")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/\s+/g, " ")
-        .trim()
-        .toLowerCase();
-    }
-    function groupBy(arr,fn){return arr.reduce((a,x)=>{const k=fn(x);(a[k]??=[]).push(x);return a},{})}
-    function countBy(arr,fn){return arr.reduce((a,x)=>{const k=fn(x);a[k]=(a[k]||0)+1;return a},{})}
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
 
-    // V26: một lớp đọc dữ liệu duy nhất cho cả dữ liệu đóng gói, localState và Supabase row.data.
-    // Mọi KPI, biểu đồ và danh sách tương tác phải đi qua các hàm này để tránh đếm 0 dù database có dữ liệu.
-    function taskValue(t, key, fallback=""){
-      if(!t) return fallback;
-      if(t[key] !== undefined && t[key] !== null) return t[key];
-      if(t.data && t.data[key] !== undefined && t.data[key] !== null) return t.data[key];
-      return fallback;
-    }
+function groupBy(arr,fn){return arr.reduce((a,x)=>{const k=fn(x);(a[k]??=[]).push(x);return a},{})}
+function countBy(arr,fn){return arr.reduce((a,x)=>{const k=fn(x);a[k]=(a[k]||0)+1;return a},{})}
 
-    function normalizeUnitName(unitName){
-      const raw=String(unitName ?? "").replace(/\s+/g," ").trim();
-      if(!raw) return "Chưa xác định đơn vị";
-      const n=norm(raw);
-      if(n.includes("ban xd") || n.includes("ban x d") || n.includes("ban xay dung dang")) return "Ban Xây dựng Đảng";
-      if(n.includes("cong an") || n.includes("bch cong an")) return "Đảng uỷ - BCH Công an phường";
-      return raw;
-    }
+function taskValue(t, key, fallback=""){
+  if(!t) return fallback;
+  if(t[key] !== undefined && t[key] !== null) return t[key];
+  if(t.data && t.data[key] !== undefined && t.data[key] !== null) return t.data[key];
+  return fallback;
+}
 
-    function taskStatus(t){return norm(taskValue(t,"status"));}
-    function taskUnit(t){return normalizeUnitName(taskValue(t,"unit", taskValue(t,"coUnit", "Chưa xác định đơn vị")));}
-    function taskGroup(t){return String(taskValue(t,"group","") || "").trim();}
-    function taskHorizon(t){return norm(taskValue(t,"horizon"));}
-    function taskDeadline(t){return String(taskValue(t,"deadline","") || "").trim();}
-    function taskResult(t){return String(taskValue(t,"result","") || "").trim();}
-    function taskOwner(t){return String(taskValue(t,"owner","") || "").trim();}
-    function taskDoc(t){return String(taskValue(t,"doc","") || "").trim();}
+function normalizeUnitName(unitName){
+  const raw=String(unitName ?? "").replace(/\s+/g," ").trim();
+  if(!raw) return "Chưa xác định đơn vị";
+  const n=norm(raw);
+  if(n.includes("ban xd") || n.includes("ban x d") || n.includes("ban xay dung dang")) return "Ban Xây dựng Đảng";
+  if(n.includes("cong an") || n.includes("bch cong an")) return "Đảng uỷ - BCH Công an phường";
+  return raw;
+}
 
-    function taskIsDone(t){
-      const s=taskStatus(t);
-      return s==="hoan thanh" || s==="da hoan thanh" || s==="done" || s==="completed" || s==="da khac phuc" || s==="da giai quyet";
-    }
+function taskStatus(t){
+  return norm(taskValue(t,"status"));
+}
 
-    function taskIsLateUnified(t){
-      if(taskIsDone(t)) return false;
-      const s=taskStatus(t);
-      if(s==="qua han" || s==="no qua han" || s.includes("qua han")) return true;
+function taskUnit(t){
+  return normalizeUnitName(taskValue(t,"unit", taskValue(t,"coUnit", "Chưa xác định đơn vị")));
+}
+
+function taskGroup(t){
+  return String(taskValue(t,"group","") || "").trim();
+}
+
+function taskHorizon(t){
+  return norm(taskValue(t,"horizon"));
+}
+
+function taskDeadline(t){
+  return String(taskValue(t,"deadline","") || "").trim();
+}
+
+function taskResult(t){
+  return String(taskValue(t,"result","") || "").trim();
+}
+
+function taskOwner(t){
+  return String(taskValue(t,"owner","") || "").trim();
+}
+
+function taskDoc(t){
+  return String(taskValue(t,"doc","") || "").trim();
+}
+
+function taskIsDone(t){
+  const s=taskStatus(t);
+  return (
+    s==="hoan thanh" ||
+    s==="da hoan thanh" ||
+    s==="done" ||
+    s==="completed" ||
+    s==="da khac phuc" ||
+    s==="da giai quyet"
+  );
+}
+
+function taskIsProcessing(t){
+  // Logic chuẩn: Đang xử lý = tất cả nhiệm vụ chưa hoàn thành
+  return !taskIsDone(t);
+}
+
+function taskIsDoingUnified(t){
+  // Giữ tên hàm cũ để không phá các chỗ đang gọi trong code
+  return taskIsProcessing(t);
+}
+
+function taskIsLateUnified(t){
+  if(taskIsDone(t)) return false;
+
+  const s=taskStatus(t);
+
+  if(
+    s.includes("qua han") ||
+    s.includes("no qua han") ||
+    s.includes("qua thoi han")
+  ){
+    return true;
+  }
+
+  const d=diffDays(taskDeadline(t));
+  return d!==null && d<0;
+}
+
+function taskIsNewUnified(t){
+  if(taskIsDone(t)) return false;
+
+  const s=taskStatus(t);
+
+  return (
+    s==="chua thuc hien" ||
+    s==="moi ghi nhan" ||
+    s==="chua xu ly"
+  );
+}
+
+function taskIsTenure(t){
+  const h=taskHorizon(t);
+  const g=norm(taskGroup(t));
+
+  return !taskIsDone(t) && (
+    h.includes("dai han") ||
+    h.includes("nhiem ky") ||
+    g.includes("nghi quyet") ||
+    g.includes("chuong trinh lam viec")
+  );
+}
+
+function taskHasNoOwner(t){
+  const owner=norm(taskOwner(t));
+  return !owner || owner.includes("chua phan cong");
+}
+
+function taskHasNoResult(t){
+  return !taskIsDone(t) && !taskResult(t).trim();
+}
+
+function taskMatchesQuick(t, quick){
+  if(!quick || quick==="all") return true;
+
+  const q=norm(quick);
+
+  if(
+    q==="hoan thanh" ||
+    q==="done" ||
+    q==="completed"
+  ){
+    return taskIsDone(t);
+  }
+
+  if(
+    q==="dang thuc hien" ||
+    q==="dang xu ly" ||
+    q==="dang theo doi" ||
+    q==="processing" ||
+    q==="doing"
+  ){
+    return taskIsProcessing(t);
+  }
+
+  if(
+    q==="chua thuc hien" ||
+    q==="chua xu ly" ||
+    q==="moi ghi nhan"
+  ){
+    return taskIsNewUnified(t);
+  }
+
+  if(
+    q==="qua han" ||
+    q==="no qua han" ||
+    q==="late" ||
+    q==="overdue"
+  ){
+    return taskIsLateUnified(t);
+  }
+
+  if(quick==="soon7"){
+    const d=diffDays(taskDeadline(t));
+    return !taskIsDone(t) && d!==null && d>=0 && d<=7;
+  }
+
+  if(q==="tenure" || q==="nhiem ky" || q==="dai han"){
+    return taskIsTenure(t);
+  }
+
+  if(quick==="noOwner"){
+    return !taskIsDone(t) && taskHasNoOwner(t);
+  }
+
+  return true;
+}
+
+function calcStats(arr=tasks){
+  const source=Array.isArray(arr)?arr:[];
+
+  return {
+    total:source.length,
+    done:source.filter(taskIsDone).length,
+    doing:source.filter(taskIsProcessing).length,
+    late:source.filter(taskIsLateUnified).length,
+    soon:source.filter(t=>{
       const d=diffDays(taskDeadline(t));
-      return d!==null && d<0;
-    }
-
-    // Đang thực hiện = trạng thái văn bản ghi nhận là đang thực hiện.
-    // Không loại trừ quá hạn, vì một nhiệm vụ có thể vừa đang thực hiện vừa quá hạn.
-    function taskIsDoingUnified(t){
-      if(taskIsDone(t)) return false;
-      const s=taskStatus(t);
-      return s==="dang thuc hien" || s==="dang theo doi" || s==="dang don doc" || s.includes("dang thuc hien");
-    }
-
-    function taskIsNewUnified(t){
-      if(taskIsDone(t)) return false;
-      const s=taskStatus(t);
-      return s==="chua thuc hien" || s==="moi ghi nhan" || s==="chua xu ly";
-    }
-
-    function taskIsTenure(t){
-      const h=taskHorizon(t);
-      const g=norm(taskGroup(t));
-      return !taskIsDone(t) && (h.includes("dai han") || h.includes("nhiem ky") || g.includes("nghi quyet") || g.includes("chuong trinh lam viec"));
-    }
-
-    function taskHasNoOwner(t){
-      const owner=norm(taskOwner(t));
-      return !owner || owner.includes("chua phan cong");
-    }
-
-    function taskHasNoResult(t){
-      return !taskIsDone(t) && !taskResult(t).trim();
-    }
-
-    function taskMatchesQuick(t, quick){
-      if(!quick || quick==="all") return true;
-      if(quick==="hoàn thành") return taskIsDone(t);
-      if(quick==="đang thực hiện") return taskIsDoingUnified(t);
-      if(quick==="chưa thực hiện") return taskIsNewUnified(t);
-      if(quick==="quá hạn") return taskIsLateUnified(t);
-      if(quick==="soon7"){
-        const d=diffDays(taskDeadline(t));
-        return !taskIsDone(t) && d!==null && d>=0 && d<=7;
-      }
-      if(quick==="tenure") return taskIsTenure(t);
-      if(quick==="noOwner") return !taskIsDone(t) && taskHasNoOwner(t);
-      return true;
-    }
-    function resetTaskFilters(quick=""){
-      Object.assign(filters,{keyword:"",group:"",unit:"",status:"",deadline:"",doc:"",quick});
-    }
-
-    function calcStats(arr=tasks){
-      const source=Array.isArray(arr)?arr:[];
-      return {
-        total:source.length,
-        done:source.filter(taskIsDone).length,
-        doing:source.filter(taskIsDoingUnified).length,
-        late:source.filter(taskIsLateUnified).length,
-        soon:source.filter(t=>{const d=diffDays(taskDeadline(t)); return !taskIsDone(t) && d!==null && d>=0 && d<=7}).length,
-        noResult:source.filter(taskHasNoResult).length,
-        open:source.filter(t=>!taskIsDone(t)).length,
-        tenure:source.filter(taskIsTenure).length
-      }
-    }
-
+      return !taskIsDone(t) && d!==null && d>=0 && d<=7;
+    }).length,
+    noResult:source.filter(taskHasNoResult).length,
+    open:source.filter(taskIsProcessing).length,
+    tenure:source.filter(taskIsTenure).length
+  }
+}
     function fullText(t){
       const raw=(t && t.data && typeof t.data==="object") ? {...t.data, ...t} : (t || {});
       return norm(Object.values(raw).join(" "));
@@ -2908,141 +3001,267 @@
     }
 
     function generateReport(){
-      const allTasks = Array.isArray(window.localState?.tasks)
-        ? window.localState.tasks
-        : (Array.isArray(tasks) ? tasks : []);
+  const allTasks = Array.isArray(window.localState?.tasks)
+    ? window.localState.tasks
+    : (Array.isArray(tasks) ? tasks : []);
 
-      const cleanText = value => String(value || "").replace(/\s+/g, " ").trim();
-      const read = (item, key) => item?.[key] ?? item?.data?.[key] ?? "";
+  const activeTasks = allTasks.filter(t=>{
+    const deleted = taskValue(t,"is_deleted",false);
+    return !(deleted===true || String(deleted).toLowerCase()==="true");
+  });
 
-      const normalizeReportUnit = unitName => {
-        const raw = cleanText(unitName);
-        if(!raw) return "Chưa xác định đơn vị";
-        const lower = raw.toLowerCase();
-        const noAccent = lower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        if(noAccent.includes("ban xd") || noAccent.includes("ban x d") || noAccent.includes("ban xay dung dang")) return "Ban Xây dựng Đảng";
-        if(noAccent.includes("cong an") || noAccent.includes("bch cong an")) return "Đảng uỷ - BCH Công an phường";
-        return raw;
+  const completedTasks = activeTasks.filter(taskIsDone);
+
+  // Tồn / đang xử lý = tất cả nhiệm vụ chưa hoàn thành
+  const debtTasks = activeTasks.filter(taskIsProcessing);
+
+  const lateTasks = activeTasks.filter(taskIsLateUnified);
+
+  const grouped = debtTasks.reduce((acc, task)=>{
+    const unit = taskUnit(task);
+
+    if(!acc[unit]){
+      acc[unit]={
+        unit,
+        total:0,
+        overdue:0,
+        doing:0,
+        tenure:0,
+        debtDocs:[]
       };
+    }
 
-      const isCompleted = task => {
-        if(typeof taskIsDone === "function") return taskIsDone(task);
-        const status = cleanText(read(task,"status")).toLowerCase();
-        const result = cleanText(read(task,"result")).toLowerCase();
-        return status.includes("hoàn thành") || status.includes("hoan thanh") || status === "done" || status === "completed" || result.includes("hoàn thành") || result.includes("hoan thanh");
-      };
+    acc[unit].total += 1;
 
-      const isOverdue = task => {
-        if(typeof taskIsLateUnified === "function") return taskIsLateUnified(task);
-        if(isCompleted(task)) return false;
-        const status = cleanText(read(task,"status")).toLowerCase();
-        const deadlineRaw = read(task,"deadline") || read(task,"deadlineDate");
-        if(status.includes("quá hạn") || status.includes("qua han") || status.includes("nợ") || status.includes("no")) return true;
-        if(deadlineRaw){
-          const deadline = new Date(deadlineRaw);
-          const today = new Date();
-          deadline.setHours(0,0,0,0);
-          today.setHours(0,0,0,0);
-          return !Number.isNaN(deadline.getTime()) && deadline < today;
+    if(taskIsLateUnified(task)){
+      acc[unit].overdue += 1;
+    }
+
+    if(taskIsProcessing(task)){
+      acc[unit].doing += 1;
+    }
+
+    if(taskIsTenure(task)){
+      acc[unit].tenure += 1;
+    }
+
+    const docName = String(
+      taskValue(task,"docFull","") ||
+      taskValue(task,"doc","") ||
+      taskValue(task,"task","")
+    ).replace(/\s+/g," ").trim();
+
+    if(docName){
+      acc[unit].debtDocs.push(docName);
+    }
+
+    return acc;
+  },{});
+
+  const unitRows = Object.values(grouped)
+    .sort((a,b)=>b.total-a.total || a.unit.localeCompare(b.unit,"vi"));
+
+  const totalDebtOverview = debtTasks.length;
+  const totalDebtDetail = unitRows.reduce((sum,row)=>sum+row.total,0);
+  const overdueTotal = unitRows.reduce((sum,row)=>sum+row.overdue,0);
+  const doingTotal = unitRows.reduce((sum,row)=>sum+row.doing,0);
+  const tenureCount = debtTasks.filter(taskIsTenure).length;
+
+  let unitCards = "";
+
+  unitRows.forEach(row=>{
+    unitCards += `
+      <div class="unit-report-card ${row.total>0?'debt':'good'}">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h5 class="font-extrabold">${escapeHtml(row.unit)}</h5>
+            <p class="text-xs text-slate-500">
+              Tự gom nhóm từ dữ liệu nhiệm vụ còn nợ trong hệ thống
+            </p>
+          </div>
+
+          <div class="flex flex-wrap justify-end gap-1">
+            <span class="badge b-coral">Tổng nợ ${row.total}</span>
+            <span class="badge b-coral">Quá hạn ${row.overdue}</span>
+            <span class="badge b-yellow">Đang xử lý ${row.doing}</span>
+            <span class="badge b-gray">Dài hạn ${row.tenure}</span>
+          </div>
+        </div>
+
+        ${
+          row.debtDocs.length
+            ? `<div class="report-line">
+                <span class="report-dot dot-red"></span>
+                <span><b>Cần đôn đốc:</b> ${escapeHtml(row.debtDocs.slice(0,3).join("; "))}</span>
+              </div>`
+            : ""
         }
-        return false;
+      </div>
+    `;
+  });
+
+  if(!unitCards){
+    unitCards = `
+      <div class="unit-report-card good">
+        <b>Không có nhiệm vụ còn nợ</b>
+        <p class="text-sm text-slate-500 mt-1">
+          Tất cả nhiệm vụ đã hoàn thành hoặc chưa phát sinh dữ liệu nợ.
+        </p>
+      </div>
+    `;
+  }
+
+  const {from,to,name} = typeof periodDateRange==="function"
+    ? periodDateRange()
+    : {from:"",to:"",name:""};
+
+  const last = Array.isArray(periods) ? periods.at(-1) : null;
+
+  const m = typeof derivePeriodMetrics==="function"
+    ? derivePeriodMetrics(from,to)
+    : {
+        completed: completedTasks.length,
+        added: 0,
+        debt: debtTasks.length,
+        open: debtTasks.length
       };
 
-      const isOpenDebt = task => !isCompleted(task);
-      const isDoingDebt = task => isOpenDebt(task) && !isOverdue(task);
-      const isTenureTask = task => {
-        if(typeof taskIsTenure === "function") return taskIsTenure(task);
-        const horizon = cleanText(read(task,"horizon")).toLowerCase();
-        const group = cleanText(read(task,"group"));
-        return horizon.includes("dài hạn") || horizon.includes("nhiệm kỳ") || ["Nghị quyết","Chương trình làm việc"].includes(group);
-      };
+  const risk = unitRows[0];
 
-      const debtTasks = allTasks.filter(isOpenDebt);
-      const grouped = debtTasks.reduce((acc, task) => {
-        const unit = normalizeReportUnit(read(task,"unit") || read(task,"coUnit"));
-        if(!acc[unit]){
-          acc[unit] = {unit, total:0, overdue:0, doing:0, completed:0, open:0, added:0, debt:0, debtDocs:[], completedDocs:[]};
-        }
-        acc[unit].total += 1;
-        acc[unit].open += 1;
-        acc[unit].debt += 1;
-        if(isOverdue(task)) acc[unit].overdue += 1;
-        else if(isDoingDebt(task)) acc[unit].doing += 1;
-        const docName = cleanText(read(task,"docFull") || read(task,"doc") || read(task,"task"));
-        if(docName) acc[unit].debtDocs.push(docName);
-        return acc;
-      }, {});
+  reportBox.innerHTML=`
+    <h4>BÁO CÁO MỘT TRANG — UBKT DASHBOARD</h4>
 
-      const unitRows = Object.values(grouped).sort((a,b)=>b.total-a.total || a.unit.localeCompare(b.unit,"vi"));
-      const s = typeof calcStats === "function" ? calcStats() : {
-        total: allTasks.length,
-        done: allTasks.filter(isCompleted).length,
-        open: debtTasks.length,
-        late: allTasks.filter(isOverdue).length,
-        soon: 0
-      };
-      const {from,to,name} = typeof periodDateRange === "function" ? periodDateRange() : {from:"",to:"",name:""};
-      const last = Array.isArray(periods) ? periods.at(-1) : null;
-      const m = typeof derivePeriodMetrics === "function" ? derivePeriodMetrics(from,to) : {completed:s.done,added:0,debt:debtTasks.length,open:debtTasks.length};
-      const best = unitRows.slice().sort((a,b)=>b.completed-a.completed || a.debt-b.debt)[0];
-      const risk = unitRows[0];
-      const tenureCount = allTasks.filter(isTenureTask).length;
-      const totalDebtOverview = debtTasks.length;
-      const totalDebtDetail = unitRows.reduce((sum,row)=>sum+row.total,0);
-      const overdueTotal = unitRows.reduce((sum,row)=>sum+row.overdue,0);
-      const doingTotal = unitRows.reduce((sum,row)=>sum+row.doing,0);
+    <div class="report-line">
+      <span class="report-dot dot-blue"></span>
+      <span>
+        Kỳ báo cáo:
+        <b>${escapeHtml(name||last?.name||"chưa chốt")}</b>,
+        từ <b>${fmt(from)}</b> đến <b>${fmt(to)}</b>.
+      </span>
+    </div>
 
-      const unitCards = unitRows.length
-        ? unitRows.map(row => `
-          <div class="unit-report-card ${row.total>0?'debt':'good'}">
-            <div class="flex items-start justify-between gap-3">
-              <div>
-                <h5 class="font-extrabold">${escapeHtml(row.unit)}</h5>
-                <p class="text-xs text-slate-500">Tự gom nhóm từ dữ liệu nhiệm vụ còn nợ trong hệ thống</p>
-              </div>
-              <div class="flex flex-wrap justify-end gap-1">
-                <span class="badge b-coral">Tổng nợ ${row.total}</span>
-                <span class="badge b-coral">Quá hạn ${row.overdue}</span>
-                <span class="badge b-yellow">Đang làm ${row.doing}</span>
-              </div>
-            </div>
-            ${row.debtDocs.length ? `<div class="report-line"><span class="report-dot dot-red"></span><span><b>Cần đôn đốc:</b> ${escapeHtml(row.debtDocs.slice(0,3).join("; "))}</span></div>` : ""}
-          </div>`).join("")
-        : `<div class="unit-report-card good"><b>Không có nhiệm vụ còn nợ</b><p class="text-sm text-slate-500 mt-1">Tất cả nhiệm vụ đã hoàn thành hoặc chưa phát sinh dữ liệu nợ.</p></div>`;
+    <h4>1. Tổng quan</h4>
 
-      reportBox.innerHTML=`<h4>BÁO CÁO MỘT TRANG — UBKT DASHBOARD</h4>
-      <div class="report-line"><span class="report-dot dot-blue"></span><span>Kỳ báo cáo: <b>${escapeHtml(name||last?.name||"chưa chốt")}</b>, từ <b>${fmt(from)}</b> đến <b>${fmt(to)}</b>.</span></div>
-
-      <h4>1. Tổng quan</h4>
-      <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-2 my-2">
-        <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Tổng</p><b>${s.total}</b></div>
-        <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Hoàn thành</p><b class="text-[#6BCB77]">${s.done}</b></div>
-        <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Tổng nợ</p><b class="text-[#B89400]">${totalDebtOverview}</b></div>
-        <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Quá hạn</p><b class="text-[#FF6B6B]">${overdueTotal}</b></div>
-        <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Đang thực hiện</p><b class="text-[#4D96FF]">${doingTotal}</b></div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-2 my-2">
+      <div class="period-kpi">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">Tổng</p>
+        <b>${activeTasks.length}</b>
       </div>
 
-      <h4>2. Biến động kỳ gần nhất</h4>
-      <div class="report-line"><span class="report-dot dot-green"></span><span>Trong kỳ đã hoàn thành ${reportNum(m.completed,"num-green")} nhiệm vụ.</span></div>
-      <div class="report-line"><span class="report-dot dot-blue"></span><span>Phát sinh mới ${reportNum(m.added,"num-blue")} nhiệm vụ cần theo dõi.</span></div>
-      <div class="report-line"><span class="report-dot dot-red"></span><span>Nợ/quá hạn cuối kỳ còn ${reportNum(totalDebtOverview,"num-red")} nhiệm vụ; số liệu này được dùng chung cho Mục 3.</span></div>
+      <div class="period-kpi">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">Hoàn thành</p>
+        <b class="text-[#6BCB77]">${completedTasks.length}</b>
+      </div>
 
-      <h4>3. Chi tiết nhiệm vụ còn nợ theo từng đơn vị</h4>
-      <div class="report-line"><span class="report-dot dot-red"></span><span>Đơn vị cần đôn đốc nhiều nhất: <b>${escapeHtml(risk?.unit||"—")}</b> với ${reportNum(risk?.total||0,"num-red")} nhiệm vụ còn nợ.</span></div>
-      <div class="report-line"><span class="report-dot ${totalDebtOverview===totalDebtDetail?'dot-green':'dot-red'}"></span><span><b>Đối soát số liệu:</b> Tổng nợ Mục 1 = ${reportNum(totalDebtOverview,totalDebtOverview===totalDebtDetail?'num-green':'num-red')}; Tổng nợ Mục 3 = ${reportNum(totalDebtDetail,totalDebtOverview===totalDebtDetail?'num-green':'num-red')}.</span></div>
-      <div class="unit-report-list">${unitCards}</div>
+      <div class="period-kpi">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">Tổng nợ</p>
+        <b class="text-[#B89400]">${totalDebtOverview}</b>
+      </div>
 
-      <h4>4. Nhiệm vụ dài hạn/nhiệm kỳ</h4>
-      <div class="report-line"><span class="report-dot dot-yellow"></span><span>Đang theo dõi ${reportNum(tenureCount,"num-yellow")} nhiệm vụ dài hạn/nhiệm kỳ; nhóm này cần mốc kiểm tra định kỳ theo quý hoặc 6 tháng, không chỉ theo hạn tuần/tháng.</span></div>
+      <div class="period-kpi">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">Quá hạn</p>
+        <b class="text-[#FF6B6B]">${overdueTotal}</b>
+      </div>
 
-      <h4>5. Nắm bắt dư luận và kết luận UBKT</h4>
-      <div class="report-line"><span class="report-dot dot-blue"></span><span>Đã ghi nhận <span class="num-blue">${opinions.length}</span> nguồn dư luận/ý kiến phản ánh; trong đó có <span class="num-red">${opinions.filter(o=>o.sentiment==='tiêu cực'||o.risk==='cao').length}</span> nội dung cần quan tâm, xác minh.</span></div>
-      <div class="report-line"><span class="report-dot dot-red"></span><span>Đang theo dõi <span class="num-blue">${conclusions.length}</span> kết luận thanh tra/kiểm tra/giám sát; có <span class="num-red">${conclusions.filter(c=>c.status==='quá hạn' || (diffDays(c.deadline)<0 && c.status!=='hoàn thành')).length}</span> kết luận quá hạn/cần đôn đốc.</span></div>
+      <div class="period-kpi">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">Đang xử lý</p>
+        <b class="text-[#4D96FF]">${doingTotal}</b>
+      </div>
+    </div>
 
-      <h4>6. Kiến nghị</h4>
-      <div class="report-line"><span class="report-dot dot-red"></span><span>Giao đơn vị có nợ/quá hạn cập nhật kết quả trước kỳ giao ban gần nhất.</span></div>
-      <div class="report-line"><span class="report-dot dot-blue"></span><span>Duy trì chốt kỳ hằng tuần để so sánh tăng/giảm tồn và đánh giá trách nhiệm theo đơn vị.</span></div>`;
-    }
+    <h4>2. Biến động kỳ gần nhất</h4>
+
+    <div class="report-line">
+      <span class="report-dot dot-green"></span>
+      <span>Trong kỳ đã hoàn thành ${reportNum(m.completed,"num-green")} nhiệm vụ.</span>
+    </div>
+
+    <div class="report-line">
+      <span class="report-dot dot-blue"></span>
+      <span>Phát sinh mới ${reportNum(m.added,"num-blue")} nhiệm vụ cần theo dõi.</span>
+    </div>
+
+    <div class="report-line">
+      <span class="report-dot dot-red"></span>
+      <span>
+        Nợ/quá hạn cuối kỳ còn ${reportNum(totalDebtOverview,"num-red")} nhiệm vụ;
+        số liệu này được dùng chung cho Mục 3.
+      </span>
+    </div>
+
+    <h4>3. Chi tiết nhiệm vụ còn nợ theo từng đơn vị</h4>
+
+    <div class="report-line">
+      <span class="report-dot dot-red"></span>
+      <span>
+        Đơn vị cần đôn đốc nhiều nhất:
+        <b>${escapeHtml(risk?.unit||"—")}</b>
+        với ${reportNum(risk?.total||0,"num-red")} nhiệm vụ còn nợ.
+      </span>
+    </div>
+
+    <div class="report-line">
+      <span class="report-dot ${totalDebtOverview===totalDebtDetail?'dot-green':'dot-red'}"></span>
+      <span>
+        <b>Đối soát số liệu:</b>
+        Tổng nợ Mục 1 =
+        ${reportNum(totalDebtOverview,totalDebtOverview===totalDebtDetail?'num-green':'num-red')};
+        Tổng nợ Mục 3 =
+        ${reportNum(totalDebtDetail,totalDebtOverview===totalDebtDetail?'num-green':'num-red')}.
+      </span>
+    </div>
+
+    <div class="unit-report-list">
+      ${unitCards}
+    </div>
+
+    <h4>4. Nhiệm vụ dài hạn/nhiệm kỳ</h4>
+
+    <div class="report-line">
+      <span class="report-dot dot-yellow"></span>
+      <span>
+        Đang theo dõi ${reportNum(tenureCount,"num-yellow")}
+        nhiệm vụ dài hạn/nhiệm kỳ; nhóm này cần mốc kiểm tra định kỳ theo quý hoặc 6 tháng.
+      </span>
+    </div>
+
+    <h4>5. Nắm bắt dư luận và kết luận UBKT</h4>
+
+    <div class="report-line">
+      <span class="report-dot dot-blue"></span>
+      <span>
+        Đã ghi nhận <span class="num-blue">${opinions.length}</span>
+        nguồn dư luận/ý kiến phản ánh; trong đó có
+        <span class="num-red">${opinions.filter(o=>o.sentiment==='tiêu cực'||o.risk==='cao').length}</span>
+        nội dung cần quan tâm, xác minh.
+      </span>
+    </div>
+
+    <div class="report-line">
+      <span class="report-dot dot-red"></span>
+      <span>
+        Đang theo dõi <span class="num-blue">${conclusions.length}</span>
+        kết luận thanh tra/kiểm tra/giám sát; có
+        <span class="num-red">
+          ${conclusions.filter(c=>c.status==='quá hạn' || (diffDays(c.deadline)<0 && c.status!=='hoàn thành')).length}
+        </span>
+        kết luận quá hạn/cần đôn đốc.
+      </span>
+    </div>
+
+    <h4>6. Kiến nghị</h4>
+
+    <div class="report-line">
+      <span class="report-dot dot-red"></span>
+      <span>Giao đơn vị có nợ/quá hạn cập nhật kết quả trước kỳ giao ban gần nhất.</span>
+    </div>
+
+    <div class="report-line">
+      <span class="report-dot dot-blue"></span>
+      <span>Duy trì chốt kỳ hằng tuần để so sánh tăng/giảm tồn và đánh giá trách nhiệm theo đơn vị.</span>
+    </div>
+  `;
+}
 
         function revealInit(){requestAnimationFrame(()=>document.querySelectorAll(".reveal").forEach((el,i)=>setTimeout(()=>el.classList.add("in"),i*28)))}
 
