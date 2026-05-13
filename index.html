@@ -680,34 +680,61 @@
         </p>
       </div>
 
-      <div class="flex flex-col sm:flex-row gap-2">
-        <input
-          id="opSearch"
-          oninput="opinionFilters.keyword=this.value;renderOpinion()"
-          class="field sm:w-80"
-          placeholder="Tìm tiêu đề, nội dung, cán bộ, đơn vị..."
-        >
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2">
+  <input
+    id="opSearch"
+    oninput="opinionFilters.keyword=this.value;renderOpinion()"
+    class="field"
+    placeholder="Tìm tiêu đề, nội dung, cán bộ, đơn vị..."
+  >
 
-        <select
-          id="opFilterSource"
-          onchange="opinionFilters.source=this.value;renderOpinion()"
-          class="field sm:w-60"
-        >
-          <option value="">Tất cả nguồn 1374</option>
-        </select>
+  <select
+    id="opFilterSource"
+    onchange="opinionFilters.source=this.value;renderOpinion()"
+    class="field"
+  >
+    <option value="">Tất cả nguồn 1374</option>
+  </select>
 
-        <select
-          id="opFilterSentiment"
-          onchange="opinionFilters.sentiment=this.value;renderOpinion()"
-          class="field sm:w-60"
-        >
-          <option value="">Tất cả mức độ</option>
-          <option>Thông tin tham khảo</option>
-          <option>Có dấu hiệu cần rà soát</option>
-          <option>Có dấu hiệu vi phạm</option>
-          <option>Phức tạp, dư luận quan tâm</option>
-        </select>
-      </div>
+  <select
+    id="opFilterSentiment"
+    onchange="opinionFilters.sentiment=this.value;renderOpinion()"
+    class="field"
+  >
+    <option value="">Tất cả mức độ</option>
+    <option>Thông tin tham khảo</option>
+    <option>Có dấu hiệu cần rà soát</option>
+    <option>Có dấu hiệu vi phạm</option>
+    <option>Phức tạp, dư luận quan tâm</option>
+  </select>
+
+  <select
+    id="opFilterAuthority"
+    onchange="opinionFilters.authority=this.value;renderOpinion()"
+    class="field"
+  >
+    <option value="">Tất cả thẩm quyền</option>
+    <option>Phường xử lý</option>
+    <option>Kiến nghị cấp Thành phố</option>
+    <option>Kiến nghị cấp Trung ương</option>
+    <option>Chuyển cơ quan có thẩm quyền</option>
+    <option>Chưa xác định</option>
+  </select>
+
+  <select
+    id="opFilterStatus"
+    onchange="opinionFilters.status=this.value;renderOpinion()"
+    class="field"
+  >
+    <option value="">Tất cả trạng thái</option>
+    <option>Mới tiếp nhận</option>
+    <option>Đang rà soát</option>
+    <option>Đã chuyển xử lý</option>
+    <option>Đang theo dõi kết quả</option>
+    <option>Đã có kết quả</option>
+    <option>Lưu theo dõi</option>
+  </select>
+</div>
     </div>
 
     <div id="opinionList" class="opinion-grid"></div>
@@ -1744,7 +1771,13 @@
     const filters = {keyword:"",group:"",unit:"",status:"",deadline:"",doc:"",quick:""};
     let charts = {};
 
-    let opinionFilters={keyword:"",source:"",sentiment:""};
+    let opinionFilters = {
+  source: "",
+  sentiment: "",
+  authority: "",
+  status: "",
+  keyword: ""
+};
     let conclusionFilters={keyword:"",issuer:"",status:""};
     let baseOrgFilters={year:"2026"};
     opinions=[
@@ -2510,6 +2543,44 @@ function status1374Badge(status){
 function filteredOpinions(){
   const source = opinionFilters.source || "";
   const level = opinionFilters.sentiment || "";
+  const authority = opinionFilters.authority || "";
+  const status = opinionFilters.status || "";
+  const keyword = opinionNorm(opinionFilters.keyword || "");
+
+  return opinions
+    .map(normalize1374Opinion)
+    .filter(o=>{
+      if(opinionIsDeleted(o)) return false;
+
+      if(source && o.sourceGroup !== source) return false;
+      if(level && o.level !== level) return false;
+      if(authority && o.authorityLevel !== authority) return false;
+      if(status && o.status !== status) return false;
+
+      if(keyword){
+        const haystack = opinionNorm([
+          o.title,
+          o.sourceGroup,
+          o.sourceChannel,
+          o.contentSummary,
+          o.contentDetail,
+          o.relatedPerson,
+          o.relatedUnit,
+          o.field,
+          o.authorityLevel,
+          o.handlingDirection,
+          o.status,
+          o.result
+        ].join(" "));
+
+        if(!haystack.includes(keyword)) return false;
+      }
+
+      return true;
+    });
+}
+  const source = opinionFilters.source || "";
+  const level = opinionFilters.sentiment || "";
   const keyword = opinionNorm(opinionFilters.keyword || "");
 
   return opinions
@@ -2566,6 +2637,8 @@ function renderOpinion(){
 
   if(typeof opSearch !== "undefined") opSearch.value = opinionFilters.keyword || "";
   if(typeof opFilterSentiment !== "undefined") opFilterSentiment.value = opinionFilters.sentiment || "";
+  if(typeof opFilterAuthority !== "undefined") opFilterAuthority.value = opinionFilters.authority || "";
+if(typeof opFilterStatus !== "undefined") opFilterStatus.value = opinionFilters.status || "";
 
   opTotal.textContent = activeOpinions.length;
   opPositive.textContent = activeOpinions.filter(o=>o.status==="Mới tiếp nhận").length;
