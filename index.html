@@ -1614,6 +1614,35 @@
     }
 
 
+    let __scrollLockY = 0;
+    let __scrollLockCount = 0;
+
+    function lockScroll(){
+      __scrollLockCount++;
+      if(__scrollLockCount > 1) return;
+      __scrollLockY = window.scrollY || document.documentElement.scrollTop || 0;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${__scrollLockY}px`;
+      document.body.style.left = "0";
+      document.body.style.right = "0";
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
+    }
+
+    function unlockScroll(){
+      if(__scrollLockCount > 0) __scrollLockCount--;
+      if(__scrollLockCount > 0) return;
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.width = "";
+      document.body.style.overflow = "";
+      window.scrollTo(0, __scrollLockY || 0);
+      __scrollLockY = 0;
+    }
+
+
     function showModuleToast(title, message){
       const box=document.getElementById("moduleToast");
       if(!box) return;
@@ -1636,12 +1665,14 @@
       internalErr.classList.add("hidden");
       internalPass.value="";
       internalAccessModal.classList.add("open");
+      lockScroll();
       setTimeout(()=>internalPass.focus(),80);
     }
 
     function cancelInternalAccess(){
       pendingInternalPage=null;
       internalAccessModal.classList.remove("open");
+      unlockScroll();
     }
 
     function toggleInternalPassword(){
@@ -1671,6 +1702,7 @@
       const page=pendingInternalPage;
       pendingInternalPage=null;
       internalAccessModal.classList.remove("open");
+      unlockScroll();
       if(page) switchPage(page);
     }
 
@@ -1702,21 +1734,63 @@
     }
 
     function parseDate(s){return s?new Date(s+"T00:00:00"):null}
-    function diffDays(s){const d=parseDate(s);return d?Math.ceil((d-TODAY)/86400000):99999}
+    function diffDays(s){
+      const d=parseDate(s);
+      if(!d || Number.isNaN(d.getTime())) return null;
+      return Math.ceil((d-TODAY)/86400000);
+    }
     function fmt(s){if(!s)return"—";const [y,m,d]=s.split("-");return `${d}/${m}/${y}`}
     function norm(s){return (s||"").toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()}
     function groupBy(arr,fn){return arr.reduce((a,x)=>{const k=fn(x);(a[k]??=[]).push(x);return a},{})}
     function countBy(arr,fn){return arr.reduce((a,x)=>{const k=fn(x);a[k]=(a[k]||0)+1;return a},{})}
 
+    // Một nguồn logic duy nhất cho trạng thái hiển thị.
+    // KPI, biểu đồ, Dashboard và tab Nhiệm vụ đều dùng các hàm này để tránh lệch số liệu.
+    function taskIsDone(t){
+      const s=norm(t.status);
+      return s==="hoan thanh" || s==="da khac phuc" || s==="da giai quyet";
+    }
+    function taskIsLateUnified(t){
+      const d=diffDays(t.deadline);
+      return !taskIsDone(t) && (norm(t.status)==="qua han" || (d!==null && d<0));
+    }
+    function taskIsDoingUnified(t){
+      return !taskIsDone(t) && !taskIsLateUnified(t) && norm(t.status)==="dang thuc hien";
+    }
+    function taskIsNewUnified(t){
+      return !taskIsDone(t) && !taskIsLateUnified(t) && norm(t.status)==="chua thuc hien";
+    }
+    function taskIsTenure(t){
+      return t.horizon==="dài hạn/nhiệm kỳ" || ["Nghị quyết","Chương trình làm việc"].includes(t.group);
+    }
+    function taskMatchesQuick(t, quick){
+      if(!quick || quick==="all") return true;
+      if(quick==="hoàn thành") return taskIsDone(t);
+      if(quick==="đang thực hiện") return taskIsDoingUnified(t);
+      if(quick==="chưa thực hiện") return taskIsNewUnified(t);
+      if(quick==="quá hạn") return taskIsLateUnified(t);
+      if(quick==="soon7"){
+        const d=diffDays(t.deadline);
+        return !taskIsDone(t) && d!==null && d>=0 && d<=7;
+      }
+      if(quick==="tenure") return taskIsTenure(t);
+      if(quick==="noOwner") return !taskIsDone(t) && taskHasNoOwner(t);
+      return true;
+    }
+    function resetTaskFilters(quick=""){
+      Object.assign(filters,{keyword:"",group:"",unit:"",status:"",deadline:"",doc:"",quick});
+    }
+
     function calcStats(arr=tasks){
       return {
         total:arr.length,
-        done:arr.filter(t=>t.status==="hoàn thành").length,
-        doing:arr.filter(t=>t.status==="đang thực hiện").length,
-        late:arr.filter(t=>t.status==="quá hạn" || (diffDays(t.deadline)<0 && t.status!=="hoàn thành")).length,
-        soon:arr.filter(t=>{const d=diffDays(t.deadline); return d!==null && d>=0 && d<=7 && t.status!=="hoàn thành"}).length,
-        noResult:arr.filter(t=>!t.result?.trim()).length,
-        open:arr.filter(t=>t.status!=="hoàn thành").length
+        done:arr.filter(taskIsDone).length,
+        doing:arr.filter(taskIsDoingUnified).length,
+        late:arr.filter(taskIsLateUnified).length,
+        soon:arr.filter(t=>{const d=diffDays(t.deadline); return !taskIsDone(t) && d!==null && d>=0 && d<=7}).length,
+        noResult:arr.filter(t=>!taskIsDone(t) && !(t.result||"").trim()).length,
+        open:arr.filter(t=>!taskIsDone(t)).length,
+        tenure:arr.filter(taskIsTenure).length
       }
     }
 
@@ -1724,17 +1798,17 @@
 
     function filtered(){
       return tasks.filter(t=>{
-        if(filters.quick==="soon7"){const d=diffDays(t.deadline); if(!(d!==null&&d>=0&&d<=7&&t.status!=="hoàn thành"))return false;}
-        if(filters.quick==="tenure" && !(t.horizon==="dài hạn/nhiệm kỳ" || ["Nghị quyết","Chương trình làm việc"].includes(t.group)))return false;
-        if(filters.quick==="noOwner" && !(t.status!=="hoàn thành" && taskHasNoOwner(t)))return false;
-        if(["hoàn thành","đang thực hiện","chưa thực hiện","quá hạn"].includes(filters.quick) && t.status!==filters.quick)return false;
+        if(!taskMatchesQuick(t, filters.quick)) return false;
         if(filters.group && t.group!==filters.group)return false;
         if(filters.unit && t.unit!==filters.unit)return false;
-        if(filters.status && t.status!==filters.status)return false;
+        if(filters.status && !taskMatchesQuick(t, filters.status))return false;
         if(filters.doc && !norm(t.doc).includes(norm(filters.doc)))return false;
-        if(filters.deadline==="overdue" && !(diffDays(t.deadline)<0&&t.status!=="hoàn thành"))return false;
-        if(filters.deadline==="soon7"){const d=diffDays(t.deadline); if(!(d!==null&&d>=0&&d<=7&&t.status!=="hoàn thành"))return false;}
-        if(filters.deadline==="noResult" && t.result?.trim())return false;
+        if(filters.deadline==="overdue" && !taskIsLateUnified(t))return false;
+        if(filters.deadline==="soon7"){
+          const d=diffDays(t.deadline);
+          if(!(d!==null&&d>=0&&d<=7&&!taskIsDone(t)))return false;
+        }
+        if(filters.deadline==="noResult" && !taskHasNoResult(t))return false;
         if(filters.keyword && !fullText(t).includes(norm(filters.keyword)))return false;
         return true;
       })
@@ -1790,8 +1864,9 @@
         <div class="mt-3"><button onclick="closeAlertsModal();openEditTask(this.dataset.id)" data-id="${escapeHtml(a.task.id)}" class="btn btn-primary py-2">Chỉnh sửa xử lý</button></div>
       </div>`).join(""):`<div class="text-center text-slate-500 py-10">Chưa có cảnh báo.</div>`;
       alertsModal.classList.add("open");
+      lockScroll();
     }
-    function closeAlertsModal(){alertsModal.classList.remove("open")}
+    function closeAlertsModal(){alertsModal.classList.remove("open");unlockScroll()}
 
     function openAuditModal(){
       auditList.innerHTML=auditLogs.length?auditLogs.map(a=>`<div class="rounded-2xl border border-slate-200 bg-white p-4">
@@ -1801,8 +1876,9 @@
         <p class="text-xs text-slate-500 mt-1">${escapeHtml(a.unit||"")} ${a.details?`— ${escapeHtml(a.details)}`:""}</p>
       </div>`).join(""):`<div class="text-center text-slate-500 py-10">Chưa có thao tác nào được ghi nhận.</div>`;
       auditModal.classList.add("open");
+      lockScroll();
     }
-    function closeAuditModal(){auditModal.classList.remove("open")}
+    function closeAuditModal(){auditModal.classList.remove("open");unlockScroll()}
 
     function downloadText(filename, content, type="text/plain"){
       const blob=new Blob([content],{type});
@@ -1867,8 +1943,8 @@
       if(charts.opinionSentiment)charts.opinionSentiment.destroy();
       charts.opinionSentiment=new Chart(opinionSentimentChart,{type:"doughnut",data:{labels,datasets:[{data:labels.map(s=>opinions.filter(o=>o.sentiment===s).length),backgroundColor:["#6BCB77","#cbd5e1","#FF6B6B"],borderColor:"#fff",borderWidth:3}]},options:chartOpts()});
     }
-    function openOpinionModal(){opInDate.value=todayISO();opinionModal.classList.add("open")}
-    function closeOpinionModal(){opinionModal.classList.remove("open")}
+    function openOpinionModal(){opInDate.value=todayISO();opinionModal.classList.add("open");lockScroll()}
+    function closeOpinionModal(){opinionModal.classList.remove("open");unlockScroll()}
     function saveOpinion(){const content=opInContent.value.trim();if(!content){alert("Chưa nhập nội dung phản ánh/dư luận.");return}const o={id:"DL-"+Date.now(),source:opInSource.value,date:opInDate.value||todayISO(),sentiment:opInSentiment.value,risk:opInRisk.value,entity:normalizeUnitName(opInEntity.value.trim()||"Chưa xác định"),unit:"",content,action:opInAction.value.trim(),status:opInStatus.value};opinions.unshift(o);addAudit("Ghi nhận dư luận",{doc:o.id,unit:o.entity,task:o.content},`Nguồn: ${o.source}`);persistLocal();renderOpinion();closeOpinionModal()}
     function convertOpinionToTask(id){const o=opinions.find(x=>String(x.id)===String(id));if(!o)return;openTaskModal();inGroup.value="Khác";inType.value="phản ánh/dư luận";inDoc.value=o.id;inDate.value=o.date;inSummary.value=`Nắm bắt dư luận từ ${o.source}`;inTask.value=`Theo dõi, xác minh phản ánh: ${o.content}`;inUnit.value=o.unit||"Chưa phân công";inConclusion.value=o.action||"Cần xác minh, phân loại và tham mưu hướng xử lý.";if(typeof inHorizon!=="undefined")inHorizon.value="ngắn hạn"}
     async function deleteOpinion(id){const o=opinions.find(x=>String(x.id)===String(id));if(!o)return;if(!confirm(`Xóa phản ánh/dư luận ${o.id}?`))return;opinions=opinions.filter(x=>String(x.id)!==String(id));addAudit("Xóa dư luận",{doc:o.id,unit:o.entity,task:o.content},`Nguồn: ${o.source}`);persistLocal();await deleteFromDatabase(DB_TABLES.opinions,id);renderOpinion();}
@@ -1893,8 +1969,8 @@
       if(charts.conclusionStatus)charts.conclusionStatus.destroy();
       charts.conclusionStatus=new Chart(conclusionStatusChart,{type:"doughnut",data:{labels,datasets:[{data:labels.map(s=>conclusions.filter(c=>c.status===s).length),backgroundColor:["#4D96FF","#6BCB77","#FF6B6B"],borderColor:"#fff",borderWidth:3}]},options:chartOpts()});
     }
-    function openConclusionModal(){clInDate.value=todayISO();conclusionModal.classList.add("open")}
-    function closeConclusionModal(){conclusionModal.classList.remove("open")}
+    function openConclusionModal(){clInDate.value=todayISO();conclusionModal.classList.add("open");lockScroll()}
+    function closeConclusionModal(){conclusionModal.classList.remove("open");unlockScroll()}
     function saveConclusion(){if(!clInDoc.value.trim()||!clInContent.value.trim()){alert("Chưa nhập số văn bản hoặc nội dung kết luận.");return}const c={id:"KL-"+Date.now(),issuer:clInIssuer.value,type:clInType.value,doc:clInDoc.value.trim(),date:clInDate.value||todayISO(),unit:normalizeUnitName(clInUnit.value.trim()||"Chưa phân công"),deadline:clInDeadline.value,status:clInStatus.value,items:Number(clInItems.value||1),content:clInContent.value.trim(),result:clInResult.value.trim()};conclusions.unshift(c);addAudit("Thêm kết luận theo dõi",{doc:c.doc,unit:c.unit,task:c.content},c.issuer);persistLocal();renderConclusions();closeConclusionModal()}
     function convertConclusionToTask(id){const c=conclusions.find(x=>String(x.id)===String(id));if(!c)return;openTaskModal();inGroup.value="Thông báo kết luận";inType.value=c.type.toLowerCase();inDoc.value=c.doc;inDate.value=c.date;inSummary.value=`Theo dõi thực hiện ${c.type} do ${c.issuer} ban hành`;inTask.value=`Theo dõi, đôn đốc thực hiện kết luận: ${c.content}`;inUnit.value=c.unit;inDeadline.value=c.deadline;inResult.value=c.result||"";inConclusion.value=c.content}
     async function deleteConclusion(id){const c=conclusions.find(x=>String(x.id)===String(id));if(!c)return;if(!confirm(`Xóa kết luận ${c.doc}?`))return;conclusions=conclusions.filter(x=>String(x.id)!==String(id));addAudit("Xóa kết luận",{doc:c.doc,unit:c.unit,task:c.content},c.issuer);persistLocal();await deleteFromDatabase(DB_TABLES.conclusions,id);renderConclusions();}
@@ -2029,9 +2105,10 @@
       dsInNote.value="";
       fillDossierTemplate();
       dossierModal.classList.add("open");
+      lockScroll();
       setTimeout(()=>dsInTitle.focus(),80);
     }
-    function closeDossierModal(){dossierModal.classList.remove("open");}
+    function closeDossierModal(){dossierModal.classList.remove("open");unlockScroll();}
     function fillDossierTemplate(){
       const kind=dsInKind.value||"gs";
       dsInItems.value=(DOSSIER_TEMPLATES[kind]||DOSSIER_TEMPLATES.gs).join("\n");
@@ -2087,7 +2164,7 @@
     function renderMetrics(){
       const s=calcStats();
       mTotal.textContent=s.total;mDone.textContent=s.done;mDoing.textContent=s.doing;mLate.textContent=s.late;mSoon.textContent=s.soon;
-      mTenure.textContent=tasks.filter(t=>t.horizon==="dài hạn/nhiệm kỳ" || ["Nghị quyết","Chương trình làm việc"].includes(t.group)).length;
+      mTenure.textContent=s.tenure;
     }
 
     function renderFilters(){
@@ -2118,11 +2195,11 @@
 
 
     function taskIsLate(t){
-      const d=diffDays(t.deadline); return t.status==="quá hạn" || (t.status!=="hoàn thành" && d!==null && d<0);
+      return taskIsLateUnified(t);
     }
 
     function taskHasNoResult(t){
-      return t.status!=="hoàn thành" && !(t.result||"").trim();
+      return !taskIsDone(t) && !(t.result||"").trim();
     }
 
     function taskHasNoOwner(t){
@@ -2132,9 +2209,9 @@
     function statusCountsDynamic(){
       const total=tasks.length || 1;
       const late=tasks.filter(taskIsLate).length;
-      const done=tasks.filter(t=>t.status==="hoàn thành").length;
-      const doing=tasks.filter(t=>t.status==="đang thực hiện" && !taskIsLate(t)).length;
-      const fresh=tasks.filter(t=>t.status==="chưa thực hiện" && !taskIsLate(t)).length;
+      const done=tasks.filter(taskIsDone).length;
+      const doing=tasks.filter(taskIsDoingUnified).length;
+      const fresh=tasks.filter(taskIsNewUnified).length;
       return {total,done,doing,fresh,late};
     }
 
@@ -2173,15 +2250,14 @@
     }
 
     function setActionFilter(filter){
-      filters.quick="";
-      filters.status="";
-      filters.deadline="";
+      resetTaskFilters("");
       if(filter==="quá hạn") filters.quick="quá hạn";
       if(filter==="soon7") filters.quick="soon7";
       if(filter==="noResult") filters.deadline="noResult";
       if(filter==="noOwner") filters.quick="noOwner";
       render();
-      document.getElementById("taskList")?.scrollIntoView({behavior:"smooth",block:"start"});
+      const target=document.getElementById(currentPage==="tasks"?"taskListFull":"taskList") || document.getElementById("taskList");
+      target?.scrollIntoView({behavior:"smooth",block:"start"});
     }
 
 
@@ -2189,9 +2265,9 @@
       const units=[...new Set(tasks.map(t=>t.unit))];
       if(charts.unit)charts.unit.destroy();
       charts.unit=new Chart(unitChart,{type:"bar",data:{labels:units,datasets:[
-        {label:"Hoàn thành",data:units.map(u=>tasks.filter(t=>t.unit===u&&t.status==="hoàn thành").length),backgroundColor:"#6BCB77",borderRadius:8},
-        {label:"Đang thực hiện",data:units.map(u=>tasks.filter(t=>t.unit===u&&t.status==="đang thực hiện").length),backgroundColor:"#4D96FF",borderRadius:8},
-        {label:"Quá hạn",data:units.map(u=>tasks.filter(t=>t.unit===u&&(t.status==="quá hạn"||(diffDays(t.deadline)<0&&t.status!=="hoàn thành"))).length),backgroundColor:"#FF6B6B",borderRadius:8}
+        {label:"Hoàn thành",data:units.map(u=>tasks.filter(t=>t.unit===u&&taskIsDone(t)).length),backgroundColor:"#6BCB77",borderRadius:8},
+        {label:"Đang thực hiện",data:units.map(u=>tasks.filter(t=>t.unit===u&&taskIsDoingUnified(t)).length),backgroundColor:"#4D96FF",borderRadius:8},
+        {label:"Quá hạn",data:units.map(u=>tasks.filter(t=>t.unit===u&&taskIsLateUnified(t)).length),backgroundColor:"#FF6B6B",borderRadius:8}
       ]},options:{...chartOpts(),indexAxis:"y",scales:{x:{stacked:true,ticks:{precision:0}},y:{stacked:true}},onClick:(_,els)=>{if(els.length){filters.unit=units[els[0].index];filters.quick="";render();document.getElementById("taskList").scrollIntoView({behavior:"smooth"})}}}});
 
       const groups=[...new Set(tasks.map(t=>t.group))];
@@ -2201,10 +2277,10 @@
 
     function renderDeadlines(){
       const items=tasks.filter(t=>t.status!=="hoàn thành").map(t=>({...t,d:diffDays(t.deadline)})).filter(t=>t.d!==null && t.d<=30).sort((a,b)=>a.d-b.d);
-      deadlineList.innerHTML=items.map(t=>`<button onclick="filters.keyword='${t.deadline}';render()" class="w-full text-left rounded-2xl border border-slate-200 bg-white p-3 soft hover:bg-blue-50">
+      deadlineList.innerHTML=items.map(t=>`<button onclick="resetTaskFilters('');filters.keyword=${jsArg(t.deadline)};render();document.getElementById('taskList')?.scrollIntoView({behavior:'smooth',block:'start'});" class="w-full text-left rounded-2xl border border-slate-200 bg-white p-3 soft hover:bg-blue-50">
         <div class="flex items-center justify-between gap-3"><b>${fmt(t.deadline)}</b>${deadlineBadge(t.deadline)}</div>
-        <p class="text-sm text-slate-600 mt-1 line-clamp-2">${t.task}</p>
-        <p class="text-xs text-slate-400 mt-1">${t.unit}</p>
+        <p class="text-sm text-slate-600 mt-1 line-clamp-2">${escapeHtml(t.task||"")}</p>
+        <p class="text-xs text-slate-400 mt-1">${escapeHtml(t.unit||"")}</p>
       </button>`).join("")||`<p class="text-sm text-slate-500">Không có hạn xử lý trong 30 ngày tới.</p>`;
     }
 
@@ -2218,7 +2294,7 @@
       listHint.textContent=`Đang hiển thị ${data.length}/${tasks.length} nhiệm vụ. Nhóm theo văn bản căn cứ.`;
       const grouped=groupBy(data,t=>`${t.doc}__${t.summary}`);
       taskList.innerHTML=Object.values(grouped).map(items=>{
-        const f=items[0],done=items.filter(x=>x.status==="hoàn thành").length,late=items.filter(x=>x.status==="quá hạn"||(diffDays(x.deadline)<0&&x.status!=="hoàn thành")).length;
+        const f=items[0],done=items.filter(taskIsDone).length,late=items.filter(taskIsLateUnified).length;
         return `<article class="rounded-3xl border border-slate-200 bg-white overflow-hidden morph-hover">
           <div class="p-4 bg-slate-50 border-b border-slate-200">
             <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-3">
@@ -2266,8 +2342,9 @@
       if(typeof taskPageLate!=="undefined") taskPageLate.textContent=s.late;
       if(typeof taskPageTenure!=="undefined") taskPageTenure.textContent=tasks.filter(t=>t.horizon==="dài hạn/nhiệm kỳ" || ["Nghị quyết","Chương trình làm việc"].includes(t.group)).length;
 
+      const data=filtered();
       taskListFull.className="task-board";
-      taskListFull.innerHTML=tasks.map(t=>`<article class="task-card">
+      taskListFull.innerHTML=data.map(t=>`<article class="task-card">
         <div class="task-card-doc">
           <div>
             ${groupBadge(t.group)}
@@ -2295,11 +2372,16 @@
           <span class="text-xs text-slate-500">${t.updatedAt?`Cập nhật ${fmt(t.updatedAt)}`:"Chưa cập nhật tiến độ"}</span>
           <button onclick="openEditTask(this.dataset.id)" data-id="${escapeHtml(t.id)}" class="btn btn-ghost py-2 px-3">Sửa tiến độ</button>
         </div>
-      </article>`).join("");
+      </article>`).join("") || `<div class="text-center py-10 text-slate-500">Không có nhiệm vụ phù hợp với bộ lọc hiện tại.</div>`;
     }
 
-    function setQuick(q){filters.quick=q==="all"?"":q;render();document.getElementById("taskList").scrollIntoView({behavior:"smooth"})}
-    function resetFilters(){Object.assign(filters,{keyword:"",group:"",unit:"",status:"",deadline:"",doc:"",quick:""});render()}
+    function setQuick(q){
+      resetTaskFilters(q==="all"?"":q);
+      render();
+      const target=document.getElementById(currentPage==="tasks"?"taskListFull":"taskList") || document.getElementById("taskList");
+      target?.scrollIntoView({behavior:"smooth",block:"start"});
+    }
+    function resetFilters(){resetTaskFilters("");render()}
     function toggleAdvanced(){advanced.classList.toggle("open")}
 
 
@@ -2348,6 +2430,7 @@
       inNote.value=t.note || "";
       dupWarning.classList.add("hidden");
       taskModal.classList.add("open");
+      lockScroll();
     }
 
     function deleteTask(id){
@@ -2363,8 +2446,8 @@
       render();
     }
 
-    function openTaskModal(){editingTaskId=null;duplicateConfirmed=false;document.getElementById("taskModalTitle").textContent="Nhập nhiệm vụ trực tiếp";document.getElementById("taskModalDesc").textContent="Chia rõ Văn bản căn cứ và Nội dung nhiệm vụ theo dõi.";clearTaskForm();dupWarning.classList.add("hidden");taskModal.classList.add("open");}
-    function closeTaskModal(){taskModal.classList.remove("open")}
+    function openTaskModal(){editingTaskId=null;duplicateConfirmed=false;document.getElementById("taskModalTitle").textContent="Nhập nhiệm vụ trực tiếp";document.getElementById("taskModalDesc").textContent="Chia rõ Văn bản căn cứ và Nội dung nhiệm vụ theo dõi.";clearTaskForm();dupWarning.classList.add("hidden");taskModal.classList.add("open");lockScroll();}
+    function closeTaskModal(){taskModal.classList.remove("open");unlockScroll()}
     function clearTaskForm(){["inDoc","inDate","inMeet","inSummary","inOrder","inConclusion","inTask","inUnit","inCoUnit","inOwner","inDeadline","inResult","inNote","inSourceResolution"].forEach(id=>document.getElementById(id).value=id==="inOrder"?"1":"");duplicateConfirmed=false;dupWarning.classList.add("hidden")}
 
     function formData(){
@@ -2464,10 +2547,12 @@
       `;
 
       detailModal.classList.add("open");
+      lockScroll();
     }
 
     function closeDetailModal(){
       detailModal.classList.remove("open");
+      unlockScroll();
     }
 
     function saveDetailProgress(){
@@ -2515,8 +2600,8 @@
       render();
     }
 
-    function openClosePeriodModal(){periodModal.classList.add("open");renderPeriodPreview()}
-    function closePeriodModal(){periodModal.classList.remove("open")}
+    function openClosePeriodModal(){periodModal.classList.add("open");lockScroll();renderPeriodPreview()}
+    function closePeriodModal(){periodModal.classList.remove("open");unlockScroll()}
     function renderPeriodPreview(){const s=calcStats();periodPreview.innerHTML=`<b>Số liệu hiện tại:</b><br>Tổng nhiệm vụ: ${s.total}<br>Hoàn thành: ${s.done}<br>Chưa hoàn thành/tồn: ${s.open}<br>Quá hạn: ${s.late}`}
 
     function periodDateRange(){
@@ -2535,7 +2620,7 @@
     }
 
     function isDone(t){
-      return norm(t.status)==="hoan thanh" || norm(t.status)==="da khac phuc" || norm(t.status)==="da giai quyet";
+      return taskIsDone(t);
     }
 
     function isOpenAtEnd(t, to){
@@ -2762,13 +2847,107 @@
     }
 
     function generateReport(){
-      const s=calcStats(),last=periods.at(-1);
-      const {from,to,name}=periodDateRange();
-      const m=derivePeriodMetrics(from,to);
-      const units=unitPeriodStats();
-      const tenureCount=tasks.filter(t=>t.horizon==="dài hạn/nhiệm kỳ" || ["Nghị quyết","Chương trình làm việc"].includes(t.group)).length;
-      const best=units.slice().sort((a,b)=>b.completed-a.completed || a.debt-b.debt)[0];
-      const risk=units.slice().sort((a,b)=>b.debt-a.debt || b.open-a.open)[0];
+      const allTasks = Array.isArray(window.localState?.tasks)
+        ? window.localState.tasks
+        : (Array.isArray(tasks) ? tasks : []);
+
+      const cleanText = value => String(value || "").replace(/\s+/g, " ").trim();
+      const read = (item, key) => item?.[key] ?? item?.data?.[key] ?? "";
+
+      const normalizeReportUnit = unitName => {
+        const raw = cleanText(unitName);
+        if(!raw) return "Chưa xác định đơn vị";
+        const lower = raw.toLowerCase();
+        const noAccent = lower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if(noAccent.includes("ban xd") || noAccent.includes("ban x d") || noAccent.includes("ban xay dung dang")) return "Ban Xây dựng Đảng";
+        if(noAccent.includes("cong an") || noAccent.includes("bch cong an")) return "Đảng uỷ - BCH Công an phường";
+        return raw;
+      };
+
+      const isCompleted = task => {
+        if(typeof taskIsDone === "function") return taskIsDone(task);
+        const status = cleanText(read(task,"status")).toLowerCase();
+        const result = cleanText(read(task,"result")).toLowerCase();
+        return status.includes("hoàn thành") || status.includes("hoan thanh") || status === "done" || status === "completed" || result.includes("hoàn thành") || result.includes("hoan thanh");
+      };
+
+      const isOverdue = task => {
+        if(typeof taskIsLateUnified === "function") return taskIsLateUnified(task);
+        if(isCompleted(task)) return false;
+        const status = cleanText(read(task,"status")).toLowerCase();
+        const deadlineRaw = read(task,"deadline") || read(task,"deadlineDate");
+        if(status.includes("quá hạn") || status.includes("qua han") || status.includes("nợ") || status.includes("no")) return true;
+        if(deadlineRaw){
+          const deadline = new Date(deadlineRaw);
+          const today = new Date();
+          deadline.setHours(0,0,0,0);
+          today.setHours(0,0,0,0);
+          return !Number.isNaN(deadline.getTime()) && deadline < today;
+        }
+        return false;
+      };
+
+      const isOpenDebt = task => !isCompleted(task);
+      const isDoingDebt = task => isOpenDebt(task) && !isOverdue(task);
+      const isTenureTask = task => {
+        if(typeof taskIsTenure === "function") return taskIsTenure(task);
+        const horizon = cleanText(read(task,"horizon")).toLowerCase();
+        const group = cleanText(read(task,"group"));
+        return horizon.includes("dài hạn") || horizon.includes("nhiệm kỳ") || ["Nghị quyết","Chương trình làm việc"].includes(group);
+      };
+
+      const debtTasks = allTasks.filter(isOpenDebt);
+      const grouped = debtTasks.reduce((acc, task) => {
+        const unit = normalizeReportUnit(read(task,"unit") || read(task,"coUnit"));
+        if(!acc[unit]){
+          acc[unit] = {unit, total:0, overdue:0, doing:0, completed:0, open:0, added:0, debt:0, debtDocs:[], completedDocs:[]};
+        }
+        acc[unit].total += 1;
+        acc[unit].open += 1;
+        acc[unit].debt += 1;
+        if(isOverdue(task)) acc[unit].overdue += 1;
+        else if(isDoingDebt(task)) acc[unit].doing += 1;
+        const docName = cleanText(read(task,"docFull") || read(task,"doc") || read(task,"task"));
+        if(docName) acc[unit].debtDocs.push(docName);
+        return acc;
+      }, {});
+
+      const unitRows = Object.values(grouped).sort((a,b)=>b.total-a.total || a.unit.localeCompare(b.unit,"vi"));
+      const s = typeof calcStats === "function" ? calcStats() : {
+        total: allTasks.length,
+        done: allTasks.filter(isCompleted).length,
+        open: debtTasks.length,
+        late: allTasks.filter(isOverdue).length,
+        soon: 0
+      };
+      const {from,to,name} = typeof periodDateRange === "function" ? periodDateRange() : {from:"",to:"",name:""};
+      const last = Array.isArray(periods) ? periods.at(-1) : null;
+      const m = typeof derivePeriodMetrics === "function" ? derivePeriodMetrics(from,to) : {completed:s.done,added:0,debt:debtTasks.length,open:debtTasks.length};
+      const best = unitRows.slice().sort((a,b)=>b.completed-a.completed || a.debt-b.debt)[0];
+      const risk = unitRows[0];
+      const tenureCount = allTasks.filter(isTenureTask).length;
+      const totalDebtOverview = debtTasks.length;
+      const totalDebtDetail = unitRows.reduce((sum,row)=>sum+row.total,0);
+      const overdueTotal = unitRows.reduce((sum,row)=>sum+row.overdue,0);
+      const doingTotal = unitRows.reduce((sum,row)=>sum+row.doing,0);
+
+      const unitCards = unitRows.length
+        ? unitRows.map(row => `
+          <div class="unit-report-card ${row.total>0?'debt':'good'}">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h5 class="font-extrabold">${escapeHtml(row.unit)}</h5>
+                <p class="text-xs text-slate-500">Tự gom nhóm từ dữ liệu nhiệm vụ còn nợ trong hệ thống</p>
+              </div>
+              <div class="flex flex-wrap justify-end gap-1">
+                <span class="badge b-coral">Tổng nợ ${row.total}</span>
+                <span class="badge b-coral">Quá hạn ${row.overdue}</span>
+                <span class="badge b-yellow">Đang làm ${row.doing}</span>
+              </div>
+            </div>
+            ${row.debtDocs.length ? `<div class="report-line"><span class="report-dot dot-red"></span><span><b>Cần đôn đốc:</b> ${escapeHtml(row.debtDocs.slice(0,3).join("; "))}</span></div>` : ""}
+          </div>`).join("")
+        : `<div class="unit-report-card good"><b>Không có nhiệm vụ còn nợ</b><p class="text-sm text-slate-500 mt-1">Tất cả nhiệm vụ đã hoàn thành hoặc chưa phát sinh dữ liệu nợ.</p></div>`;
 
       reportBox.innerHTML=`<h4>BÁO CÁO MỘT TRANG — UBKT DASHBOARD</h4>
       <div class="report-line"><span class="report-dot dot-blue"></span><span>Kỳ báo cáo: <b>${escapeHtml(name||last?.name||"chưa chốt")}</b>, từ <b>${fmt(from)}</b> đến <b>${fmt(to)}</b>.</span></div>
@@ -2777,20 +2956,20 @@
       <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-2 my-2">
         <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Tổng</p><b>${s.total}</b></div>
         <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Hoàn thành</p><b class="text-[#6BCB77]">${s.done}</b></div>
-        <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Tồn</p><b class="text-[#B89400]">${s.open}</b></div>
-        <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Quá hạn</p><b class="text-[#FF6B6B]">${s.late}</b></div>
-        <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Sắp đến hạn</p><b class="text-[#4D96FF]">${s.soon}</b></div>
+        <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Tổng nợ</p><b class="text-[#B89400]">${totalDebtOverview}</b></div>
+        <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Quá hạn</p><b class="text-[#FF6B6B]">${overdueTotal}</b></div>
+        <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Đang thực hiện</p><b class="text-[#4D96FF]">${doingTotal}</b></div>
       </div>
 
       <h4>2. Biến động kỳ gần nhất</h4>
       <div class="report-line"><span class="report-dot dot-green"></span><span>Trong kỳ đã hoàn thành ${reportNum(m.completed,"num-green")} nhiệm vụ.</span></div>
       <div class="report-line"><span class="report-dot dot-blue"></span><span>Phát sinh mới ${reportNum(m.added,"num-blue")} nhiệm vụ cần theo dõi.</span></div>
-      <div class="report-line"><span class="report-dot dot-red"></span><span>Nợ/quá hạn cuối kỳ còn ${reportNum(m.debt,"num-red")} nhiệm vụ; tồn cuối kỳ là ${reportNum(m.open,"num-yellow")} nhiệm vụ.</span></div>
+      <div class="report-line"><span class="report-dot dot-red"></span><span>Nợ/quá hạn cuối kỳ còn ${reportNum(totalDebtOverview,"num-red")} nhiệm vụ; số liệu này được dùng chung cho Mục 3.</span></div>
 
-      <h4>3. Biến động theo từng đơn vị</h4>
-      <div class="report-line"><span class="report-dot dot-green"></span><span>Đơn vị xử lý nổi bật: <b>${escapeHtml(best?.unit||"—")}</b> với ${reportNum(best?.completed||0,"num-green")} nhiệm vụ hoàn thành trong kỳ.</span></div>
-      <div class="report-line"><span class="report-dot dot-red"></span><span>Đơn vị cần đôn đốc: <b>${escapeHtml(risk?.unit||"—")}</b> với ${reportNum(risk?.debt||0,"num-red")} nhiệm vụ nợ/quá hạn.</span></div>
-      <div class="unit-report-list">${units.map(reportUnitCard).join("")}</div>
+      <h4>3. Chi tiết nhiệm vụ còn nợ theo từng đơn vị</h4>
+      <div class="report-line"><span class="report-dot dot-red"></span><span>Đơn vị cần đôn đốc nhiều nhất: <b>${escapeHtml(risk?.unit||"—")}</b> với ${reportNum(risk?.total||0,"num-red")} nhiệm vụ còn nợ.</span></div>
+      <div class="report-line"><span class="report-dot ${totalDebtOverview===totalDebtDetail?'dot-green':'dot-red'}"></span><span><b>Đối soát số liệu:</b> Tổng nợ Mục 1 = ${reportNum(totalDebtOverview,totalDebtOverview===totalDebtDetail?'num-green':'num-red')}; Tổng nợ Mục 3 = ${reportNum(totalDebtDetail,totalDebtOverview===totalDebtDetail?'num-green':'num-red')}.</span></div>
+      <div class="unit-report-list">${unitCards}</div>
 
       <h4>4. Nhiệm vụ dài hạn/nhiệm kỳ</h4>
       <div class="report-line"><span class="report-dot dot-yellow"></span><span>Đang theo dõi ${reportNum(tenureCount,"num-yellow")} nhiệm vụ dài hạn/nhiệm kỳ; nhóm này cần mốc kiểm tra định kỳ theo quý hoặc 6 tháng, không chỉ theo hạn tuần/tháng.</span></div>
