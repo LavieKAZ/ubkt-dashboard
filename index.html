@@ -695,11 +695,32 @@
     <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
       <h4 class="font-extrabold mb-3">Cảnh báo trước khi chốt</h4>
       <div id="dashboardPeriodWarnings" class="space-y-2 text-sm text-slate-600">
-        Chưa có dữ liệu cảnh báo.
+  Chưa có dữ liệu cảnh báo.
+</div>
+    </div>
+  </div>
+
+  <div class="mt-5 rounded-3xl border border-slate-200 bg-white p-4">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
+      <div>
+        <h4 class="font-extrabold">Danh sách kỳ đã chốt</h4>
+        <p class="text-sm text-slate-500 mt-1">
+          Theo dõi lại số liệu đã khóa tại từng kỳ báo cáo.
+        </p>
       </div>
+
+      <button onclick="renderDashboardClosedPeriods()" class="btn btn-ghost">
+        Làm mới
+      </button>
+    </div>
+
+    <div id="dashboardClosedPeriods" class="space-y-3">
+      Chưa có kỳ báo cáo đã chốt.
     </div>
   </div>
 </div>
+
+          <!-- TASKS PAGE -->
 
           <!-- TASKS PAGE -->
 <section id="page-tasks" class="page hidden space-y-5">
