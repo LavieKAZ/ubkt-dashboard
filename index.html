@@ -4894,7 +4894,8 @@ function saveBulkTasks(){
       addAudit("Chốt kỳ báo cáo", {doc:snap.name, unit:"Toàn hệ thống", task:`${fmt(from)} - ${fmt(to)}`}, `HT kỳ: ${snap.completedInPeriod}, mới: ${snap.added}, nợ: ${snap.debtAdded}`);
       persistLocal();
       closePeriodModal();
-      switchPage("periods");
+      render();
+      switchPage("dashboard");
     }
 
     function renderDelta(){
