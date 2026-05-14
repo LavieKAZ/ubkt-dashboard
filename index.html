@@ -1380,6 +1380,74 @@
     </div>
   </div>
 </div>
+  <div id="bulkTaskModal" class="modal">
+  <div class="modal-card card rounded-[2rem] w-full max-w-7xl">
+    <div class="p-5 border-b border-slate-200 flex flex-col lg:flex-row lg:items-start justify-between gap-3">
+      <div>
+        <h3 class="text-xl font-extrabold">Nhập hàng loạt nhiệm vụ</h3>
+        <p class="text-sm text-slate-500 mt-1">
+          Nhập nhiều nhiệm vụ theo dạng bảng. Có thể dán dữ liệu từ Excel theo đúng thứ tự cột bên dưới.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <button onclick="addBulkTaskRow()" class="btn btn-ghost">+ Thêm dòng</button>
+        <button onclick="pasteBulkTaskFromClipboard()" class="btn btn-ghost">Dán từ Excel</button>
+        <button onclick="validateBulkTasks()" class="btn btn-ghost">Kiểm tra dữ liệu</button>
+        <button onclick="saveBulkTasks()" class="btn btn-primary">Lưu tất cả</button>
+        <button onclick="closeBulkTaskModal()" class="icon-btn" title="Đóng">✕</button>
+      </div>
+    </div>
+
+    <div class="p-5">
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 mb-4">
+        <p class="text-sm text-slate-600 leading-6">
+          <b>Thứ tự cột khi dán từ Excel:</b>
+          Nhóm văn bản | Số văn bản | Ngày văn bản | Trích yếu | Nội dung nhiệm vụ |
+          Đơn vị chủ trì | Đơn vị phối hợp | Thời hạn | Trạng thái | Kết quả | Ghi chú
+        </p>
+      </div>
+
+      <div id="bulkTaskAlert" class="hidden rounded-2xl border border-slate-200 p-3 mb-4 text-sm"></div>
+
+      <div class="overflow-auto rounded-2xl border border-slate-200 bg-white">
+        <table class="min-w-[1500px] w-full text-sm">
+          <thead class="bg-slate-50 text-slate-600">
+            <tr>
+              <th class="p-3 text-left w-[70px]">STT</th>
+              <th class="p-3 text-left w-[170px]">Nhóm văn bản</th>
+              <th class="p-3 text-left w-[170px]">Số văn bản</th>
+              <th class="p-3 text-left w-[150px]">Ngày văn bản</th>
+              <th class="p-3 text-left w-[240px]">Trích yếu</th>
+              <th class="p-3 text-left w-[300px]">Nội dung nhiệm vụ</th>
+              <th class="p-3 text-left w-[190px]">Đơn vị chủ trì</th>
+              <th class="p-3 text-left w-[190px]">Đơn vị phối hợp</th>
+              <th class="p-3 text-left w-[150px]">Thời hạn</th>
+              <th class="p-3 text-left w-[170px]">Trạng thái</th>
+              <th class="p-3 text-left w-[240px]">Kết quả</th>
+              <th class="p-3 text-left w-[240px]">Ghi chú</th>
+              <th class="p-3 text-center w-[90px]">Xóa</th>
+            </tr>
+          </thead>
+
+          <tbody id="bulkTaskTableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mt-4">
+        <p class="text-xs text-slate-500">
+          Dòng thiếu số văn bản, nội dung nhiệm vụ hoặc đơn vị chủ trì sẽ không được lưu.
+        </p>
+
+        <div class="flex flex-wrap gap-2 justify-end">
+          <button onclick="closeBulkTaskModal()" class="btn btn-ghost">Hủy</button>
+          <button onclick="validateBulkTasks()" class="btn btn-ghost">Kiểm tra dữ liệu</button>
+          <button onclick="saveBulkTasks()" class="btn btn-primary">Lưu tất cả</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
   <div id="taskModal" class="modal">
     <div class="modal-card card rounded-[2rem] w-full max-w-5xl">
       <div class="p-5 border-b border-slate-200 flex items-start justify-between gap-3">
@@ -3910,12 +3978,365 @@ function chooseSingleTaskInput(){
 
 function chooseBulkTaskInput(){
   closeTaskIntakeChooser();
-  alert("Chức năng Nhập hàng loạt sẽ thực hiện ở Gói 3. Dự kiến có bảng nhập nhanh kiểu Excel và nút dán dữ liệu từ Excel.");
+  setTimeout(()=>openBulkTaskModal(),80);
 }
 
 function chooseGoogleSheetInput(){
   closeTaskIntakeChooser();
-  alert("Import Google Sheet đang ở trạng thái chuẩn bị triển khai. Trước mắt hệ thống sẽ ưu tiên form nhập 01 nhiệm vụ và nhập hàng loạt nội bộ.");
+  alert("Import Google Sheet đang ở trạng thái chuẩn bị triển khai. Trước mắt hệ thống ưu tiên form nhập 01 nhiệm vụ và nhập hàng loạt nội bộ.");
+}
+
+let bulkTaskRows = [];
+
+function emptyBulkTaskRow(){
+  return {
+    group: "Thông báo kết luận",
+    doc: "",
+    date: "",
+    summary: "",
+    task: "",
+    unit: "",
+    coUnit: "",
+    deadline: "",
+    status: "đang thực hiện",
+    result: "",
+    note: ""
+  };
+}
+
+function openBulkTaskModal(){
+  const modal = document.getElementById("bulkTaskModal");
+  if(!modal){
+    alert("Chưa tìm thấy giao diện nhập hàng loạt. Kiểm tra lại Bước 1.");
+    return;
+  }
+
+  bulkTaskRows = [
+    emptyBulkTaskRow(),
+    emptyBulkTaskRow(),
+    emptyBulkTaskRow()
+  ];
+
+  renderBulkTaskRows();
+  showBulkTaskAlert("", "");
+  modal.classList.add("open");
+  lockScroll();
+}
+
+function closeBulkTaskModal(){
+  const modal = document.getElementById("bulkTaskModal");
+  if(modal) modal.classList.remove("open");
+  unlockScroll();
+}
+
+function bulkTaskOptions(value){
+  const options = [
+    "Thông báo kết luận",
+    "Công văn chỉ đạo",
+    "Nghị quyết",
+    "Chương trình làm việc",
+    "Kết luận kiểm tra",
+    "Kết luận thanh tra",
+    "Văn bản khác"
+  ];
+
+  return options.map(x=>`
+    <option value="${escapeHtml(x)}" ${x===value ? "selected" : ""}>${escapeHtml(x)}</option>
+  `).join("");
+}
+
+function bulkStatusOptions(value){
+  const options = [
+    "đang thực hiện",
+    "hoàn thành",
+    "quá hạn",
+    "chưa thực hiện"
+  ];
+
+  return options.map(x=>`
+    <option value="${escapeHtml(x)}" ${x===value ? "selected" : ""}>${escapeHtml(x)}</option>
+  `).join("");
+}
+
+function renderBulkTaskRows(){
+  const body = document.getElementById("bulkTaskTableBody");
+  if(!body) return;
+
+  body.innerHTML = bulkTaskRows.map((r,i)=>`
+    <tr class="border-t border-slate-100 hover:bg-blue-50/30">
+      <td class="p-2 text-center font-bold text-slate-500">${i+1}</td>
+
+      <td class="p-2">
+        <select class="field" onchange="updateBulkTaskCell(${i}, 'group', this.value)">
+          ${bulkTaskOptions(r.group)}
+        </select>
+      </td>
+
+      <td class="p-2">
+        <input class="field" value="${escapeHtml(r.doc)}" onchange="updateBulkTaskCell(${i}, 'doc', this.value)" placeholder="VD: 89-TB/VPĐU">
+      </td>
+
+      <td class="p-2">
+        <input class="field" type="date" value="${escapeHtml(r.date)}" onchange="updateBulkTaskCell(${i}, 'date', this.value)">
+      </td>
+
+      <td class="p-2">
+        <textarea class="field" rows="2" onchange="updateBulkTaskCell(${i}, 'summary', this.value)" placeholder="Trích yếu văn bản">${escapeHtml(r.summary)}</textarea>
+      </td>
+
+      <td class="p-2">
+        <textarea class="field" rows="2" onchange="updateBulkTaskCell(${i}, 'task', this.value)" placeholder="Nội dung nhiệm vụ">${escapeHtml(r.task)}</textarea>
+      </td>
+
+      <td class="p-2">
+        <input class="field" value="${escapeHtml(r.unit)}" onchange="updateBulkTaskCell(${i}, 'unit', this.value)" placeholder="Đơn vị chủ trì">
+      </td>
+
+      <td class="p-2">
+        <input class="field" value="${escapeHtml(r.coUnit)}" onchange="updateBulkTaskCell(${i}, 'coUnit', this.value)" placeholder="Đơn vị phối hợp">
+      </td>
+
+      <td class="p-2">
+        <input class="field" type="date" value="${escapeHtml(r.deadline)}" onchange="updateBulkTaskCell(${i}, 'deadline', this.value)">
+      </td>
+
+      <td class="p-2">
+        <select class="field" onchange="updateBulkTaskCell(${i}, 'status', this.value)">
+          ${bulkStatusOptions(r.status)}
+        </select>
+      </td>
+
+      <td class="p-2">
+        <textarea class="field" rows="2" onchange="updateBulkTaskCell(${i}, 'result', this.value)" placeholder="Kết quả thực hiện">${escapeHtml(r.result)}</textarea>
+      </td>
+
+      <td class="p-2">
+        <textarea class="field" rows="2" onchange="updateBulkTaskCell(${i}, 'note', this.value)" placeholder="Ghi chú">${escapeHtml(r.note)}</textarea>
+      </td>
+
+      <td class="p-2 text-center">
+        <button onclick="removeBulkTaskRow(${i})" class="icon-btn icon-delete" title="Xóa dòng">✕</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function updateBulkTaskCell(index, key, value){
+  if(!bulkTaskRows[index]) return;
+  bulkTaskRows[index][key] = value;
+}
+
+function addBulkTaskRow(){
+  bulkTaskRows.push(emptyBulkTaskRow());
+  renderBulkTaskRows();
+}
+
+function removeBulkTaskRow(index){
+  bulkTaskRows.splice(index,1);
+  if(!bulkTaskRows.length) bulkTaskRows.push(emptyBulkTaskRow());
+  renderBulkTaskRows();
+  validateBulkTasks(false);
+}
+
+function showBulkTaskAlert(type, html){
+  const el = document.getElementById("bulkTaskAlert");
+  if(!el) return;
+
+  if(!html){
+    el.className = "hidden rounded-2xl border border-slate-200 p-3 mb-4 text-sm";
+    el.innerHTML = "";
+    return;
+  }
+
+  const colorClass =
+    type === "error"
+      ? "bg-red-50 border-red-200 text-red-700"
+      : type === "success"
+        ? "bg-green-50 border-green-200 text-green-700"
+        : "bg-yellow-50 border-yellow-200 text-yellow-800";
+
+  el.className = `rounded-2xl border p-3 mb-4 text-sm ${colorClass}`;
+  el.innerHTML = html;
+}
+
+function normalizeBulkDate(value){
+  const v = String(value || "").trim();
+  if(!v) return "";
+
+  // Đã đúng dạng input date
+  if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+
+  // Dạng dd/mm/yyyy
+  const m = v.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  if(m){
+    const d = m[1].padStart(2,"0");
+    const mo = m[2].padStart(2,"0");
+    return `${m[3]}-${mo}-${d}`;
+  }
+
+  return v;
+}
+
+function getValidBulkRows(){
+  return bulkTaskRows
+    .map((r,idx)=>({
+      ...r,
+      _row: idx + 1,
+      doc: String(r.doc || "").trim(),
+      date: normalizeBulkDate(r.date),
+      summary: String(r.summary || "").trim(),
+      task: String(r.task || "").trim(),
+      unit: normalizeUnitName(String(r.unit || "").trim()),
+      coUnit: normalizeUnitName(String(r.coUnit || "").trim()),
+      deadline: normalizeBulkDate(r.deadline),
+      status: String(r.status || "đang thực hiện").trim(),
+      result: String(r.result || "").trim(),
+      note: String(r.note || "").trim()
+    }))
+    .filter(r=>{
+      return r.doc || r.summary || r.task || r.unit || r.deadline || r.result || r.note;
+    });
+}
+
+function validateBulkTasks(showSuccess=true){
+  const rows = getValidBulkRows();
+  const errors = [];
+  const warnings = [];
+
+  rows.forEach(r=>{
+    if(!r.doc) errors.push(`Dòng ${r._row}: thiếu số văn bản.`);
+    if(!r.task) errors.push(`Dòng ${r._row}: thiếu nội dung nhiệm vụ.`);
+    if(!r.unit) errors.push(`Dòng ${r._row}: thiếu đơn vị chủ trì.`);
+
+    if(r.date && r.deadline && parseDate(r.deadline) < parseDate(r.date)){
+      errors.push(`Dòng ${r._row}: thời hạn nhỏ hơn ngày văn bản.`);
+    }
+
+    if(!r.deadline){
+      warnings.push(`Dòng ${r._row}: chưa nhập thời hạn.`);
+    }
+
+    const existed = tasks.some(t=>
+      norm(taskDoc(t)) === norm(r.doc) &&
+      norm(taskValue(t,"task","")) === norm(r.task)
+    );
+
+    if(existed){
+      warnings.push(`Dòng ${r._row}: có khả năng trùng nhiệm vụ đã tồn tại.`);
+    }
+  });
+
+  if(!rows.length){
+    showBulkTaskAlert("error", "Chưa có dòng dữ liệu nào để kiểm tra.");
+    return false;
+  }
+
+  if(errors.length){
+    showBulkTaskAlert("error", `<b>Cần bổ sung trước khi lưu:</b><br>${errors.map(escapeHtml).join("<br>")}`);
+    return false;
+  }
+
+  if(warnings.length){
+    showBulkTaskAlert("warning", `<b>Cảnh báo:</b><br>${warnings.map(escapeHtml).join("<br>")}`);
+    return true;
+  }
+
+  if(showSuccess){
+    showBulkTaskAlert("success", `Dữ liệu hợp lệ. Có thể lưu ${rows.length} nhiệm vụ.`);
+  }
+
+  return true;
+}
+
+async function pasteBulkTaskFromClipboard(){
+  try{
+    const text = await navigator.clipboard.readText();
+
+    if(!text.trim()){
+      showBulkTaskAlert("error", "Clipboard đang trống. Hãy copy dữ liệu từ Excel trước.");
+      return;
+    }
+
+    parseBulkTaskPaste(text);
+  }catch(e){
+    showBulkTaskAlert(
+      "warning",
+      "Trình duyệt không cho đọc clipboard tự động. Hãy bấm vào bảng, dùng Ctrl+V chưa hỗ trợ ở gói này; hoặc nhập thủ công từng dòng."
+    );
+  }
+}
+
+function parseBulkTaskPaste(text){
+  const lines = String(text || "")
+    .split(/\r?\n/)
+    .map(x=>x.trim())
+    .filter(Boolean);
+
+  const parsed = lines.map(line=>{
+    const cols = line.split("\t");
+
+    return {
+      group: cols[0] || "Thông báo kết luận",
+      doc: cols[1] || "",
+      date: normalizeBulkDate(cols[2] || ""),
+      summary: cols[3] || "",
+      task: cols[4] || "",
+      unit: cols[5] || "",
+      coUnit: cols[6] || "",
+      deadline: normalizeBulkDate(cols[7] || ""),
+      status: cols[8] || "đang thực hiện",
+      result: cols[9] || "",
+      note: cols[10] || ""
+    };
+  });
+
+  bulkTaskRows = parsed.length ? parsed : [emptyBulkTaskRow()];
+  renderBulkTaskRows();
+  validateBulkTasks(false);
+}
+
+function saveBulkTasks(){
+  if(!validateBulkTasks(false)) return;
+
+  const rows = getValidBulkRows();
+  const now = new Date().toISOString().slice(0,10);
+
+  const newItems = rows.map((r,idx)=>({
+    id: Date.now() + idx + Math.random(),
+    group: r.group || "Thông báo kết luận",
+    type: norm(r.group || "thông báo kết luận"),
+    doc: r.doc,
+    date: r.date,
+    meet: "",
+    summary: r.summary,
+    order: tasks.length + idx + 1,
+    conclusion: r.summary,
+    task: r.task,
+    unit: r.unit,
+    coUnit: r.coUnit,
+    owner: "",
+    deadline: r.deadline,
+    status: r.status || "đang thực hiện",
+    result: r.result,
+    note: r.note,
+    horizon: "ngắn hạn",
+    sourceResolution: "Nhập hàng loạt",
+    sourceTable: "Nhập hàng loạt",
+    createdAt: now,
+    updatedAt: now,
+    is_deleted: false
+  }));
+
+  newItems.reverse().forEach(item=>{
+    tasks.unshift(item);
+    addAudit("Nhập hàng loạt nhiệm vụ", item, "Thêm từ bảng nhập hàng loạt");
+  });
+
+  persistLocal();
+  render();
+  closeBulkTaskModal();
+
+  alert(`Đã lưu ${newItems.length} nhiệm vụ từ bảng nhập hàng loạt.`);
 }
     function openTaskModal(){editingTaskId=null;duplicateConfirmed=false;document.getElementById("taskModalTitle").textContent="Nhập nhiệm vụ trực tiếp";document.getElementById("taskModalDesc").textContent="Chia rõ Văn bản căn cứ và Nội dung nhiệm vụ theo dõi.";clearTaskForm();dupWarning.classList.add("hidden");taskModal.classList.add("open");lockScroll();}
     function closeTaskModal(){taskModal.classList.remove("open");unlockScroll()}
