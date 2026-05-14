@@ -484,7 +484,7 @@
           <button onclick="toggleCollapseSidebar()" class="hidden lg:inline-flex w-9 h-9 rounded-xl border border-slate-200 items-center justify-center soft bg-white" title="Thu/gọn sidebar">⇤</button>
         </div>
         <nav class="space-y-2">
-          <button class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16V9"/><path d="M12 16V6"/><path d="M16 16v-4"/></svg></span><span class="nav-label">Dashboard</span></button>
+          <button class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16V9"/><path d="M12 16V6"/><path d="M16 16v-4"/></svg></span><span class="nav-label">Dashboard & Chốt kỳ</span></button>
           <button class="nav-item" data-page="tasks" onclick="switchPage('tasks')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h16"/><path d="M6 4h8l4 4v9a2 2 0 0 1-2 2H6z"/><path d="M14 4v5h5"/><path d="M8 13h8"/><path d="M8 16h5"/></svg></span><span class="nav-label">Trung tâm nhiệm vụ</span></button>
           <button class="nav-item" data-page="opinion" onclick="switchPage('opinion')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16v10H7l-3 3z"/><path d="M8 9h8"/><path d="M8 12h5"/></svg></span><span class="nav-label">Tổ Công tác 1374</span></button>
           <button class="nav-item" data-page="conclusions" onclick="switchPage('conclusions')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3h10l3 3v15H6z"/><path d="M15 3v4h4"/><path d="M9 12l2 2 4-5"/><path d="M9 17h7"/></svg></span><span class="nav-label">Giám sát KL Thanh tra, KT</span></button>
@@ -642,6 +642,64 @@
               <div id="taskList" class="space-y-3 max-h-[560px] overflow-auto pr-1"></div>
             </div>
           </section>
+          <div class="card rounded-3xl p-5">
+  <div class="flex flex-col xl:flex-row xl:items-start justify-between gap-4">
+    <div>
+      <h3 class="text-xl font-extrabold">Chốt kỳ báo cáo</h3>
+      <p class="text-sm text-slate-500 mt-1">
+        Chốt số liệu nhiệm vụ tại thời điểm báo cáo. Số liệu chốt kỳ dùng để theo dõi biến động, tồn chuyển kỳ sau và phục vụ báo cáo định kỳ.
+      </p>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-2">
+      <button onclick="previewDashboardPeriod()" class="btn btn-ghost">Xem trước số liệu</button>
+      <button onclick="openClosePeriodModal()" class="btn btn-primary">Chốt kỳ</button>
+    </div>
+  </div>
+
+  <div class="grid md:grid-cols-2 xl:grid-cols-5 gap-3 mt-4">
+    <div class="period-kpi">
+      <p class="text-xs font-extrabold text-slate-500 uppercase">Phát sinh trong kỳ</p>
+      <b id="dashAddedInPeriod" class="text-[#4D96FF]">0</b>
+    </div>
+
+    <div class="period-kpi">
+      <p class="text-xs font-extrabold text-slate-500 uppercase">Hoàn thành trong kỳ</p>
+      <b id="dashCompletedInPeriod" class="text-[#6BCB77]">0</b>
+    </div>
+
+    <div class="period-kpi">
+      <p class="text-xs font-extrabold text-slate-500 uppercase">Tồn chuyển kỳ sau</p>
+      <b id="dashCarryOver" class="text-[#B89400]">0</b>
+    </div>
+
+    <div class="period-kpi">
+      <p class="text-xs font-extrabold text-slate-500 uppercase">Quá hạn</p>
+      <b id="dashLatePeriod" class="text-[#FF6B6B]">0</b>
+    </div>
+
+    <div class="period-kpi">
+      <p class="text-xs font-extrabold text-slate-500 uppercase">Cần rà soát</p>
+      <b id="dashWarningCount" class="text-slate-700">0</b>
+    </div>
+  </div>
+
+  <div class="grid xl:grid-cols-2 gap-4 mt-4">
+    <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+      <h4 class="font-extrabold mb-3">Biến động trong kỳ</h4>
+      <div id="dashboardPeriodDelta" class="space-y-2 text-sm text-slate-600">
+        Chưa tính số liệu.
+      </div>
+    </div>
+
+    <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+      <h4 class="font-extrabold mb-3">Cảnh báo trước khi chốt</h4>
+      <div id="dashboardPeriodWarnings" class="space-y-2 text-sm text-slate-600">
+        Chưa có dữ liệu cảnh báo.
+      </div>
+    </div>
+  </div>
+</div>
 
           <!-- TASKS PAGE -->
 <section id="page-tasks" class="page hidden space-y-5">
@@ -2286,7 +2344,7 @@
       document.getElementById("page-"+page).classList.remove("hidden");
       document.querySelectorAll(".nav-item").forEach(n=>n.classList.toggle("active",n.dataset.page===page));
       const titles={
-  dashboard:"Dashboard giám sát",
+  dashboard:"Dashboard & Chốt kỳ",
   tasks:"Trung tâm nhiệm vụ",
   opinion:"Tổ Công tác 1374",
   conclusions:"Giám sát KL Thanh tra, Kiểm tra",
@@ -3561,6 +3619,155 @@ listEl.innerHTML=data.map(c=>`<article class="conclusion-card"><div class="flex 
     function approveDossier(id){if(!hasPermission("dossier_approve")){alert("Tài khoản hiện tại chưa có quyền duyệt hồ sơ.");return;}const d=dossiers.find(x=>x.id===id);if(!d)return;if(!dossierComplete(d)){alert("Danh mục hồ sơ chưa hoàn thành, chưa thể duyệt.");return;}d.status="đã duyệt";d.approvedAt=todayISO();persistLocal();renderDossiers();}
     function deleteDossier(id){if(!confirm("Xóa hồ sơ này?"))return;dossiers=dossiers.filter(d=>d.id!==id);persistLocal();deleteFromDatabase(DB_TABLES.dossiers,id);renderDossiers();}
 
+    function getDashboardPeriodRange(){
+  const now = new Date();
+  const first = new Date(now.getFullYear(), now.getMonth(), 1);
+  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+  return {
+    from: first.toISOString().slice(0,10),
+    to: last.toISOString().slice(0,10),
+    label: `Tháng ${now.getMonth()+1}/${now.getFullYear()}`
+  };
+}
+
+function taskDateInRange(value, from, to){
+  const d = parseDate(value);
+  if(!d) return false;
+
+  const f = parseDate(from);
+  const t = parseDate(to);
+  if(!f || !t) return false;
+
+  return d >= f && d <= t;
+}
+
+function buildDashboardWarnings(activeTasks){
+  const warnings = [];
+
+  const lateNoResult = activeTasks.filter(t=>taskIsLateUnified(t) && taskHasNoResult(t));
+  const processingNoDeadline = activeTasks.filter(t=>!taskIsDone(t) && taskHasNoDeadline(t));
+  const doneNoResult = activeTasks.filter(t=>taskIsDone(t) && taskHasNoResult(t));
+  const noUnit = activeTasks.filter(t=>!taskUnit(t));
+  const tenure = activeTasks.filter(taskIsTenure);
+
+  if(lateNoResult.length){
+    warnings.push({
+      type:"Quá hạn chưa có kết quả",
+      count:lateNoResult.length
+    });
+  }
+
+  if(processingNoDeadline.length){
+    warnings.push({
+      type:"Đang thực hiện nhưng chưa có thời hạn",
+      count:processingNoDeadline.length
+    });
+  }
+
+  if(doneNoResult.length){
+    warnings.push({
+      type:"Hoàn thành nhưng thiếu kết quả",
+      count:doneNoResult.length
+    });
+  }
+
+  if(noUnit.length){
+    warnings.push({
+      type:"Chưa có đơn vị chủ trì",
+      count:noUnit.length
+    });
+  }
+
+  if(tenure.length){
+    warnings.push({
+      type:"Nhiệm vụ nhiệm kỳ/dài hạn cần rà soát",
+      count:tenure.length
+    });
+  }
+
+  return warnings;
+}
+
+function renderDashboardPeriodSummary(){
+  if(!document.getElementById("dashboardPeriodDelta")) return;
+
+  const range = getDashboardPeriodRange();
+
+  const activeTasks = tasks.filter(t=>{
+    const deleted = taskValue(t,"is_deleted",false);
+    return !(deleted===true || String(deleted).toLowerCase()==="true");
+  });
+
+  const addedInPeriod = activeTasks.filter(t=>{
+    return taskDateInRange(
+      taskValue(t,"createdAt","") || taskValue(t,"date",""),
+      range.from,
+      range.to
+    );
+  }).length;
+
+  const completedInPeriod = activeTasks.filter(t=>{
+    if(!taskIsDone(t)) return false;
+    return taskDateInRange(
+      taskValue(t,"updatedAt","") || taskValue(t,"completedAt","") || taskValue(t,"deadline",""),
+      range.from,
+      range.to
+    );
+  }).length;
+
+  const carryOver = activeTasks.filter(t=>!taskIsDone(t)).length;
+  const late = activeTasks.filter(taskIsLateUnified).length;
+  const warnings = buildDashboardWarnings(activeTasks);
+
+  const warningCount = warnings.reduce((sum,w)=>sum + w.count, 0);
+
+  if(typeof dashAddedInPeriod !== "undefined") dashAddedInPeriod.textContent = addedInPeriod;
+  if(typeof dashCompletedInPeriod !== "undefined") dashCompletedInPeriod.textContent = completedInPeriod;
+  if(typeof dashCarryOver !== "undefined") dashCarryOver.textContent = carryOver;
+  if(typeof dashLatePeriod !== "undefined") dashLatePeriod.textContent = late;
+  if(typeof dashWarningCount !== "undefined") dashWarningCount.textContent = warningCount;
+
+  dashboardPeriodDelta.innerHTML = `
+    <div class="flex items-center justify-between gap-3">
+      <span>Kỳ đang xem</span>
+      <b>${escapeHtml(range.label)}</b>
+    </div>
+    <div class="flex items-center justify-between gap-3">
+      <span>Nhiệm vụ phát sinh trong kỳ</span>
+      <b>${addedInPeriod}</b>
+    </div>
+    <div class="flex items-center justify-between gap-3">
+      <span>Nhiệm vụ hoàn thành trong kỳ</span>
+      <b>${completedInPeriod}</b>
+    </div>
+    <div class="flex items-center justify-between gap-3">
+      <span>Tồn chuyển kỳ sau</span>
+      <b>${carryOver}</b>
+    </div>
+    <div class="flex items-center justify-between gap-3">
+      <span>Nhiệm vụ quá hạn</span>
+      <b>${late}</b>
+    </div>
+  `;
+
+  dashboardPeriodWarnings.innerHTML = warnings.length
+    ? warnings.map(w=>`
+        <div class="flex items-center justify-between gap-3 rounded-2xl bg-white border border-slate-200 px-3 py-2">
+          <span>${escapeHtml(w.type)}</span>
+          <b>${w.count}</b>
+        </div>
+      `).join("")
+    : `<div class="rounded-2xl bg-white border border-slate-200 px-3 py-2 text-slate-500">
+        Chưa phát hiện cảnh báo lớn trước khi chốt kỳ.
+      </div>`;
+}
+
+function previewDashboardPeriod(){
+  renderDashboardPeriodSummary();
+  const el=document.getElementById("dashboardPeriodDelta");
+  if(el) el.scrollIntoView({behavior:"smooth",block:"center"});
+}
     function render(){
       normalizeAllUnitNames();
       renderFilters();
@@ -3577,7 +3784,9 @@ listEl.innerHTML=data.map(c=>`<article class="conclusion-card"><div class="flex 
       renderConclusions();
       renderBaseOrgs();
       renderDossiers();
+      renderDashboardPeriodSummary();
     }
+    
 
     function renderMetrics(){
       const s=calcStats();
