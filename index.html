@@ -420,7 +420,7 @@
           <button class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16V9"/><path d="M12 16V6"/><path d="M16 16v-4"/></svg></span><span class="nav-label">Dashboard</span></button>
           <button class="nav-item" data-page="tasks" onclick="switchPage('tasks')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h16"/><path d="M6 4h8l4 4v9a2 2 0 0 1-2 2H6z"/><path d="M14 4v5h5"/><path d="M8 13h8"/><path d="M8 16h5"/></svg></span><span class="nav-label">Nhiệm vụ</span></button>
           <button class="nav-item" data-page="opinion" onclick="switchPage('opinion')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16v10H7l-3 3z"/><path d="M8 9h8"/><path d="M8 12h5"/></svg></span><span class="nav-label">Tổ Công tác 1374</span></button>
-          <button class="nav-item" data-page="conclusions" onclick="switchPage('conclusions')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3h10l3 3v15H6z"/><path d="M15 3v4h4"/><path d="M9 12l2 2 4-5"/><path d="M9 17h7"/></svg></span><span class="nav-label">Kết luận UBKT</span></button>
+          <button class="nav-item" data-page="conclusions" onclick="switchPage('conclusions')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3h10l3 3v15H6z"/><path d="M15 3v4h4"/><path d="M9 12l2 2 4-5"/><path d="M9 17h7"/></svg></span><span class="nav-label">Giám sát KL Thanh tra, KT</span></button>
           <button class="nav-item" data-page="baseorgs" onclick="switchPage('baseorgs')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h16"/><path d="M6 20V8l6-4 6 4v12"/><path d="M9 20v-7h6v7"/></svg></span><span class="nav-label">Theo dõi Cơ sở Đảng</span></button>
           <button class="nav-item" data-page="dossiers" onclick="switchPage('dossiers')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h6l2 2h8v10H4z"/><path d="M8 13h8"/><path d="M8 16h5"/></svg></span><span class="nav-label">Hồ sơ KTGS</span></button>
           <button class="nav-item" data-page="periods" onclick="switchPage('periods')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l5 5-3 3 4 4-3 3-4-4-5 5 5-5-4-4 3-3z"/></svg></span><span class="nav-label">Chốt kỳ báo cáo</span></button>
@@ -746,32 +746,30 @@
             <div class="card rounded-3xl p-5">
               <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div>
-                  <h3 class="text-xl font-extrabold">Theo dõi kết luận thanh tra, kiểm tra, giám sát</h3>
-                  <p class="text-sm text-slate-500 mt-1">Tab riêng của UBKT để theo dõi kết luận do UBKT hoặc Đảng ủy ban hành; trọng tâm là đôn đốc thực hiện sau kết luận.</p>
+                  <h3 class="text-xl font-extrabold">Giám sát thực hiện KL Thanh tra, Kiểm tra</h3>
+                  <p class="text-sm text-slate-500 mt-1">Theo dõi tiến độ thực hiện kết luận thanh tra, kết luận kiểm tra và văn bản chỉ đạo; quản lý từng nội dung phải thực hiện, thời hạn, tiến độ, kết quả và minh chứng.</p>
                 </div>
-                <button onclick="openConclusionModal()" class="btn btn-primary">+ Thêm kết luận</button>
-              </div>
-              <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-4">
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Tổng kết luận</p><b id="clTotal">0</b></div>
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Đang đôn đốc</p><b id="clDoing" class="text-[#4D96FF]">0</b></div>
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Hoàn thành</p><b id="clDone" class="text-[#6BCB77]">0</b></div>
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Quá hạn</p><b id="clLate" class="text-[#FF6B6B]">0</b></div>
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Tỷ lệ thực hiện</p><b id="clRate" class="text-[#B89400]">0%</b></div>
+                <div class="flex flex-wrap gap-2">
+                  <button onclick="seedConclusionDemoDataFromExcel(true)" class="btn btn-ghost">Nạp dữ liệu mẫu từ báo cáo</button>
+                  <button onclick="openConclusionModal()" class="btn btn-primary">+ Thêm nội dung theo dõi</button>
+                </div>
               </div>
             </div>
-            <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
-              <div class="card rounded-3xl p-4 xl:col-span-5"><h3 class="font-extrabold mb-3">Kết luận theo nguồn ban hành</h3><div class="chart-box-sm"><canvas id="conclusionIssuerChart"></canvas></div></div>
-              <div class="card rounded-3xl p-4 xl:col-span-4"><h3 class="font-extrabold mb-3">Tiến độ thực hiện sau kết luận</h3><div class="chart-box-sm"><canvas id="conclusionStatusChart"></canvas></div></div>
-              <div class="card rounded-3xl p-4 xl:col-span-3"><h3 class="font-extrabold mb-3">Mốc cần đôn đốc</h3><div id="conclusionTimeline" class="watch-timeline"></div></div>
+            <div class="grid grid-cols-2 xl:grid-cols-6 gap-3">
+              <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Tổng nội dung</p><b id="clTotal">0</b></div>
+              <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Kết luận thanh tra</p><b id="clInspect">0</b></div>
+              <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Văn bản chỉ đạo</p><b id="clDirective">0</b></div>
+              <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Đã hoàn thành</p><b id="clDone" class="text-[#6BCB77]">0</b></div>
+              <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Đang thực hiện</p><b id="clDoing" class="text-[#4D96FF]">0</b></div>
+              <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Phức tạp/Cần đôn đốc</p><b id="clRisk" class="text-[#FF6B6B]">0</b></div>
             </div>
             <div class="card rounded-3xl p-4">
-              <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
-                <div><h3 class="font-extrabold">Danh sách kết luận cần theo dõi</h3><p class="text-sm text-slate-500">Lọc theo nguồn ban hành, loại kết luận, trạng thái và đơn vị phải khắc phục.</p></div>
-                <div class="flex flex-col sm:flex-row gap-2">
-                  <input id="clSearch" oninput="conclusionFilters.keyword=this.value;renderConclusions()" class="field sm:w-80" placeholder="Tìm số văn bản, nội dung, đơn vị...">
-                  <select id="clFilterIssuer" onchange="conclusionFilters.issuer=this.value;renderConclusions()" class="field sm:w-56"><option value="">Tất cả nguồn</option></select>
-                  <select id="clFilterStatus" onchange="conclusionFilters.status=this.value;renderConclusions()" class="field sm:w-56"><option value="">Tất cả trạng thái</option><option>đang đôn đốc</option><option>hoàn thành</option><option>quá hạn</option></select>
-                </div>
+              <div class="grid md:grid-cols-2 xl:grid-cols-5 gap-3 mb-4">
+                <input id="clSearch" oninput="conclusionFilters.keyword=this.value;renderConclusions()" class="field" placeholder="Từ khóa...">
+                <select id="clFilterGroup" onchange="conclusionFilters.group=this.value;renderConclusions()" class="field"><option value="">Tất cả nhóm hồ sơ</option><option>Kết luận thanh tra</option><option>Kết luận kiểm tra</option><option>Văn bản chỉ đạo</option></select>
+                <select id="clFilterStatus" onchange="conclusionFilters.status=this.value;renderConclusions()" class="field"><option value="">Tất cả trạng thái</option></select>
+                <select id="clFilterUnit" onchange="conclusionFilters.unit=this.value;renderConclusions()" class="field"><option value="">Tất cả đơn vị chủ trì</option></select>
+                <select id="clFilterRisk" onchange="conclusionFilters.risk=this.value;renderConclusions()" class="field"><option value="">Tất cả mức độ rủi ro</option></select>
               </div>
               <div id="conclusionList" class="conclusion-grid"></div>
             </div>
@@ -1205,24 +1203,21 @@
 </div>
 
   <!-- CONCLUSION MODAL -->
-  <div id="conclusionModal" class="modal">
-    <div class="modal-card card rounded-[2rem] w-full max-w-4xl">
-      <div class="p-5 border-b border-slate-200 flex items-start justify-between gap-3"><div><h3 class="text-xl font-extrabold">Thêm kết luận cần theo dõi</h3><p class="text-sm text-slate-500">Theo dõi việc thực hiện kết luận thanh tra, kiểm tra, giám sát sau khi có thông báo kết luận.</p></div><button onclick="closeConclusionModal()" class="btn btn-ghost px-3">✕</button></div>
-      <div class="p-5 grid md:grid-cols-2 gap-4">
-        <label class="text-sm font-bold">Nguồn ban hành<select id="clInIssuer" class="field mt-1"><option>Ủy ban Kiểm tra Đảng ủy</option><option>Đảng ủy phường</option><option>Thanh tra</option><option>Cơ quan cấp trên</option></select></label>
-        <label class="text-sm font-bold">Loại kết luận<select id="clInType" class="field mt-1"><option>Kết luận kiểm tra</option><option>Kết luận giám sát</option><option>Kết luận thanh tra</option><option>Thông báo kết luận</option></select></label>
-        <label class="text-sm font-bold">Số văn bản<input id="clInDoc" class="field mt-1"></label>
-        <label class="text-sm font-bold">Ngày ban hành<input id="clInDate" class="field mt-1" type="date"></label>
-        <label class="text-sm font-bold">Đơn vị phải thực hiện<input id="clInUnit" class="field mt-1"></label>
-        <label class="text-sm font-bold">Thời hạn khắc phục<input id="clInDeadline" class="field mt-1" type="date"></label>
-        <label class="text-sm font-bold">Trạng thái<select id="clInStatus" class="field mt-1"><option>đang đôn đốc</option><option>hoàn thành</option><option>quá hạn</option></select></label>
-        <label class="text-sm font-bold">Số kiến nghị/nội dung<input id="clInItems" class="field mt-1" type="number" min="1" value="1"></label>
-        <label class="text-sm font-bold md:col-span-2">Nội dung kết luận/kiến nghị<textarea id="clInContent" class="field mt-1" rows="4"></textarea></label>
-        <label class="text-sm font-bold md:col-span-2">Kết quả/tiến độ khắc phục<textarea id="clInResult" class="field mt-1" rows="3"></textarea></label>
-      </div>
-      <div class="p-5 border-t border-slate-200 flex justify-end gap-2"><button onclick="closeConclusionModal()" class="btn btn-ghost">Hủy</button><button onclick="saveConclusion()" class="btn btn-primary">Lưu kết luận</button></div>
-    </div>
-  </div>
+  <div id="conclusionModal" class="modal"><div class="modal-card card rounded-[2rem] w-full max-w-5xl"><div class="p-5 border-b border-slate-200 flex items-start justify-between gap-3"><div><h3 id="conclusionModalTitle" class="text-xl font-extrabold">Thêm nội dung giám sát</h3></div><button onclick="closeConclusionModal()" class="btn btn-ghost px-3">✕</button></div><input id="clEditId" type="hidden"><div class="p-5 grid md:grid-cols-2 gap-4">
+  <label class="text-sm font-bold">Mã theo dõi<input id="clInId" class="field mt-1"></label><label class="text-sm font-bold">Nhóm hồ sơ<select id="clInGroup" class="field mt-1"><option>Kết luận thanh tra</option><option>Kết luận kiểm tra</option><option>Văn bản chỉ đạo</option></select></label>
+  <label class="text-sm font-bold">Tên hồ sơ<input id="clInProfile" class="field mt-1"></label><label class="text-sm font-bold">Số/ký hiệu kết luận/văn bản<input id="clInDoc" class="field mt-1"></label>
+  <label class="text-sm font-bold">Ngày văn bản<input id="clInDate" type="date" class="field mt-1"></label><label class="text-sm font-bold">Cơ quan ban hành<input id="clInAgency" class="field mt-1"></label>
+  <label class="text-sm font-bold md:col-span-2">Nội dung còn thực hiện<textarea id="clInContent" class="field mt-1" rows="3"></textarea></label>
+  <label class="text-sm font-bold md:col-span-2">Tiến độ thực hiện hiện nay<textarea id="clInProgress" class="field mt-1" rows="3"></textarea></label>
+  <label class="text-sm font-bold md:col-span-2">Kế hoạch/văn bản đã ban hành<textarea id="clInPlan" class="field mt-1" rows="2"></textarea></label>
+  <label class="text-sm font-bold">Đơn vị chủ trì<input id="clInLead" class="field mt-1"></label><label class="text-sm font-bold">Đơn vị phối hợp<input id="clInCo" class="field mt-1"></label>
+  <label class="text-sm font-bold">Dự kiến hoàn thành<input id="clInExpected" type="date" class="field mt-1"></label><label class="text-sm font-bold">Hiển thị dự kiến (text)<input id="clInExpectedText" class="field mt-1"></label>
+  <label class="text-sm font-bold">Trạng thái<select id="clInStatus" class="field mt-1"></select></label><label class="text-sm font-bold">Mức độ rủi ro<select id="clInRisk" class="field mt-1"><option>Bình thường</option><option>Cần đôn đốc</option><option>Nguy cơ quá hạn</option><option>Phức tạp, kéo dài</option></select></label>
+  <label class="text-sm font-bold md:col-span-2">Kết quả hoàn thành<textarea id="clInResult" class="field mt-1" rows="2"></textarea></label>
+  <label class="text-sm font-bold">Link tài liệu/scan<input id="clInAttach" class="field mt-1"></label><label class="text-sm font-bold">Ghi chú<input id="clInNote" class="field mt-1"></label>
+</div><div class="p-5 border-t border-slate-200 flex justify-end gap-2"><button onclick="closeConclusionModal()" class="btn btn-ghost">Hủy</button><button onclick="saveConclusion()" class="btn btn-primary">Lưu</button></div></div></div>
+  <div id="conclusionViewModal" class="modal"></div>
+  <div id="conclusionProgressModal" class="modal"></div>
 
   <!-- TASK MODAL -->
   <div id="taskModal" class="modal">
@@ -1778,7 +1773,7 @@
   status: "",
   keyword: ""
 };
-    let conclusionFilters={keyword:"",issuer:"",status:""};
+    let conclusionFilters={keyword:"",group:"",status:"",unit:"",risk:""};
     let baseOrgFilters={year:"2026"};
     opinions=[
       {id:"DL-001",source:"Họp chi bộ",date:"2026-05-06",sentiment:"trung tính",risk:"trung bình",entity:"Cán bộ phụ trách địa bàn",unit:"Chi bộ khu phố",content:"Đảng viên phản ánh việc tiếp nhận thông tin từ cơ sở còn chậm, đề nghị tăng cường lịch nắm tình hình địa bàn.",action:"Giao Văn phòng tổng hợp, UBKT theo dõi và báo cáo tại giao ban.",status:"đang xác minh"},
@@ -1786,13 +1781,12 @@
       {id:"DL-003",source:"Mạng xã hội",date:"2026-05-09",sentiment:"tiêu cực",risk:"trung bình",entity:"Cán bộ khu phố",unit:"Hệ thống chính trị cơ sở",content:"Xuất hiện bình luận về việc chậm phản hồi kiến nghị dân sinh trên địa bàn.",action:"Theo dõi nguồn tin, đối chiếu với phản ánh chính thức trước khi tham mưu xử lý.",status:"mới ghi nhận"},
       {id:"DL-004",source:"Họp cử tri",date:"2026-05-10",sentiment:"tích cực",risk:"thấp",entity:"Tổ công tác khu phố",unit:"MTTQ",content:"Cử tri đánh giá tích cực việc vận động người dân tham gia vệ sinh môi trường và giữ gìn an ninh trật tự.",action:"Ghi nhận, đưa vào báo cáo dư luận tích cực.",status:"đã kết thúc"}
     ];
-    conclusions=[
-      {id:"KL-001",issuer:"Ủy ban Kiểm tra Đảng ủy",type:"Kết luận kiểm tra",doc:"12-KL/UBKT",date:"2026-03-29",unit:"Chi bộ khu phố 1",deadline:"2026-05-09",status:"quá hạn",items:3,content:"Khắc phục hạn chế trong thực hiện quy chế làm việc, cập nhật hồ sơ và chế độ báo cáo.",result:"Chưa gửi báo cáo khắc phục đầy đủ."},
-      {id:"KL-002",issuer:"Ủy ban Kiểm tra Đảng ủy",type:"Kết luận giám sát",doc:"05-KLGS/ĐU",date:"2026-04-02",unit:"Chi bộ khu phố 2",deadline:"2026-05-30",status:"đang đôn đốc",items:2,content:"Tăng cường công tác nắm tình hình địa bàn, phối hợp đoàn thể.",result:"Đang tổng hợp kết quả phối hợp."},
-      {id:"KL-003",issuer:"Đảng ủy phường",type:"Thông báo kết luận",doc:"94-TB/VPĐU",date:"2026-04-20",unit:"Văn phòng Đảng ủy",deadline:"2026-05-14",status:"đang đôn đốc",items:4,content:"Rà soát tiến độ nhiệm vụ theo thông báo kết luận giao ban.",result:"Đang cập nhật số liệu trên hệ thống."},
-      {id:"KL-004",issuer:"Thanh tra",type:"Kết luận thanh tra",doc:"03-KL/TTr",date:"2026-04-15",unit:"UBND",deadline:"2026-06-01",status:"đang đôn đốc",items:5,content:"Theo dõi việc thực hiện kiến nghị sau thanh tra về quản lý hồ sơ, quy trình tiếp nhận xử lý.",result:"Đã phân công đầu mối thực hiện."}
-    ];
+    conclusions=[];
 
+
+
+    const CONCLUSION_DEMO_SEED=[{id:"KLTT-001",group:"Kết luận thanh tra",profileName:"Kết luận Thanh tra số 41/KL-TTr",documentCode:"Kết luận Thanh tra số 41/KL-TTr ngày 14/02/2025 của Thanh tra Bộ Xây dựng",contentToDo:"01 nội dung công trình sai so với giấy phép tại số 132 đường số 01, phường Tân Phú cũ.",currentProgress:"Ngày 30/01/2026 Phòng KT, HT và ĐT đã làm việc với Phạm Hồng Diệp - chủ công trình; đang tiếp tục theo dõi, tham mưu xử lý.",issuedPlan:"Phòng đã tham mưu kế hoạch dự thảo theo Tờ trình số 1165/TTr-KTHTĐT ngày 19/11/2025.",expectedText:"Đang thực hiện, dự kiến hoàn thành trong Quý III/2026",status:"Đang thực hiện",riskLevel:"Cần đôn đốc"},{id:"KLTT-002",group:"Kết luận thanh tra",profileName:"Kết luận thanh tra số 165/KL-TTTP-P5",documentCode:"Kết luận thanh tra số 165/KL-TTTP-P5 ngày 25/4/2024 của Thanh tra Thành phố",contentToDo:"01 nội dung chấn chỉnh, khắc phục về kiểm tra, xử lý dứt điểm hành vi vi phạm.",currentProgress:"Ngày 11/9/2025 UBND phường Tân Mỹ có công văn đề nghị cung cấp thông tin; tiếp tục theo dõi, xử lý.",issuedPlan:"Phòng đã tham mưu kế hoạch dự thảo theo Tờ trình số 1664/TTr-KTHTĐT ngày 19/11/2025.",expectedText:"Đang thực hiện, dự kiến hoàn thành trong Quý IV/2026",status:"Đang thực hiện",riskLevel:"Cần đôn đốc"},{id:"KLTT-003",group:"Kết luận thanh tra",profileName:"Kết luận thanh tra số 424/KL-TTTP-P4",documentCode:"Kết luận thanh tra số 424/KL-TTTP-P4 ngày 09/12/2024 của Thanh tra Thành phố",contentToDo:"Còn lại 01 nền chưa bàn giao về trung tâm, nền L69 phường Phú Mỹ cũ.",currentProgress:"...",issuedPlan:"Văn bản 2045/UBND-KTHTĐT ngày 24/4/2026",expectedText:"Xong",status:"Đã hoàn thành",riskLevel:"Bình thường"},{id:"VBCD-001",group:"Văn bản chỉ đạo",profileName:"Văn bản số 6851/UBND-TTQ",documentCode:"Văn bản số 6851/UBND-TTQ ngày 17/11/2023 của UBND quận",contentToDo:"Chủ trì phối hợp ...",currentProgress:"Ngày 10/11/2025 ...",expectedText:"Xong",status:"Đã hoàn thành",riskLevel:"Bình thường"},{id:"VBCD-002",group:"Văn bản chỉ đạo",profileName:"Văn bản số 4132/UBND-TTQ",documentCode:"Văn bản số 4132/UBND-TTQ ngày 24/8/2021",contentToDo:"Kiểm tra, xác minh...",currentProgress:"Hiện nay đang liên hệ...",issuedPlan:"Văn bản số 2189/UBND-KTHTĐT ngày 05/5/2026",expectedText:"Xong",status:"Đã hoàn thành",riskLevel:"Bình thường"},{id:"VBCD-003",group:"Văn bản chỉ đạo",profileName:"Văn bản số 107/UBND-TTQ",documentCode:"Văn bản số 107/UBND-TTQ ngày 05/01/2024",contentToDo:"Yêu cầu các đơn vị thu gom...",currentProgress:"Đã rà soát...",expectedText:"Xong",status:"Đã hoàn thành",riskLevel:"Bình thường"}];
+    function seedConclusionDemoDataFromExcel(force=false){const list=getConclusionState();if(list.length&&!force)return;const seeded=CONCLUSION_DEMO_SEED.map(x=>normalizeConclusion({...x,source:"Báo cáo tiến độ thực hiện KTLL và VBCĐ ngày 11.05.2026",progressLogs:[{date:"2026-05-11",content:"Tiếp nhận dữ liệu từ báo cáo tiến độ.",user:"Hệ thống",attachment:""}],is_deleted:false}));if(force) list.length=0;seeded.forEach(x=>list.push(x));persistLocal();renderConclusions();}
 
     let duplicateConfirmed = false;
     let editingTaskId = null;
@@ -1941,7 +1935,7 @@
 
     function requestInternalAccess(page){
       pendingInternalPage=page;
-      const label=page==="opinion" ? "Tổ Công tác 1374" : (page==="dossiers" ? "Hồ sơ sau kiểm tra, giám sát" : "Kết luận UBKT/Đảng ủy");
+      const label=page==="opinion" ? "Tổ Công tác 1374" : (page==="dossiers" ? "Hồ sơ sau kiểm tra, giám sát" : "Giám sát KL Thanh tra, KT");
       internalAccessHint.textContent=`Bạn đang mở tab “${label}”. Vui lòng nhập mật khẩu nội bộ UBKT để tiếp tục.`;
       internalErr.classList.add("hidden");
       internalPass.value="";
@@ -1996,7 +1990,7 @@
       document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
       document.getElementById("page-"+page).classList.remove("hidden");
       document.querySelectorAll(".nav-item").forEach(n=>n.classList.toggle("active",n.dataset.page===page));
-      const titles={dashboard:"Dashboard giám sát",tasks:"Nhập và quản lý nhiệm vụ",opinion:"Tổ Công tác 1374",conclusions:"Kết luận UBKT/Đảng ủy",baseorgs:"Theo dõi Cơ sở Đảng",dossiers:"Hồ sơ sau kiểm tra, giám sát",periods:"Chốt kỳ báo cáo",reports:"Báo cáo một trang"};
+      const titles={dashboard:"Dashboard giám sát",tasks:"Nhập và quản lý nhiệm vụ",opinion:"Tổ Công tác 1374",conclusions:"Giám sát thực hiện KL Thanh tra, Kiểm tra",baseorgs:"Theo dõi Cơ sở Đảng",dossiers:"Hồ sơ sau kiểm tra, giám sát",periods:"Chốt kỳ báo cáo",reports:"Báo cáo một trang"};
       document.getElementById("pageTitle").textContent=titles[page];
       const showHeaderActions = page==="dashboard" || page==="tasks";
       const taskBtn=document.getElementById("headerTaskBtn");
@@ -2007,7 +2001,7 @@
         showModuleToast("Tab Tổ Công tác 1374", "Đây là khu vực ghi nhận thông tin ban đầu từ họp chi bộ, cử tri, báo chí, mạng xã hội. Nội dung chỉ phục vụ theo dõi, chưa phải kết luận khi chưa xác minh.");
       }
       if(page==="conclusions"){
-        showModuleToast("Tab Kết luận UBKT/Đảng ủy", "Đây là khu vực theo dõi riêng các kết luận kiểm tra, giám sát, thanh tra và thông báo kết luận; có thể tạo nhiệm vụ đôn đốc từ từng kết luận.");
+        showModuleToast("Tab Giám sát KL Thanh tra, KT", "Đây là khu vực theo dõi riêng các kết luận kiểm tra, giám sát, thanh tra và thông báo kết luận; có thể tạo nhiệm vụ đôn đốc từ từng kết luận.");
       }
       toggleSidebar(false);
       render();
@@ -3048,31 +3042,24 @@ function deleteOpinion(id){
   renderOpinion();
 }
 
-    function filteredConclusions(){return conclusions.filter(c=>{if(conclusionFilters.issuer&&c.issuer!==conclusionFilters.issuer)return false;if(conclusionFilters.status&&c.status!==conclusionFilters.status)return false;if(conclusionFilters.keyword&&!norm(Object.values(c).join(" ")).includes(norm(conclusionFilters.keyword)))return false;return true})}
-    function renderConclusions(){
-      if(!document.getElementById("conclusionList"))return;
-      const data=filteredConclusions();
-      const issuers=[...new Set(conclusions.map(c=>c.issuer))];
-      clFilterIssuer.innerHTML=`<option value="">Tất cả nguồn</option>`+issuers.map(s=>`<option ${conclusionFilters.issuer===s?"selected":""}>${s}</option>`).join("");
-      clSearch.value=conclusionFilters.keyword;clFilterStatus.value=conclusionFilters.status;
-      clTotal.textContent=conclusions.length;clDoing.textContent=conclusions.filter(c=>c.status==="đang đôn đốc").length;clDone.textContent=conclusions.filter(c=>c.status==="hoàn thành").length;clLate.textContent=conclusions.filter(c=>c.status==="quá hạn"||(diffDays(c.deadline)<0&&c.status!=="hoàn thành")).length;clRate.textContent=conclusions.length?Math.round(conclusions.filter(c=>c.status==="hoàn thành").length/conclusions.length*100)+"%":"0%";
-      conclusionTimeline.innerHTML=conclusions.slice().sort((a,b)=>(parseDate(a.deadline)||0)-(parseDate(b.deadline)||0)).slice(0,5).map(c=>`<div class="watch-item"><b>${escapeHtml(c.doc)}</b><p class="text-xs text-slate-500">${fmt(c.deadline)} • ${escapeHtml(c.unit)}</p><p class="text-sm mt-1">${escapeHtml(c.content).slice(0,90)}...</p></div>`).join("");
-      conclusionList.innerHTML=data.map(c=>`<article class="conclusion-card"><div class="flex flex-wrap items-center gap-2 mb-3"><span class="badge b-blue">${escapeHtml(c.issuer)}</span><span class="badge b-gray">${escapeHtml(c.type)}</span>${statusBadge(c.status==="đang đôn đốc"?"đang thực hiện":c.status)}</div><div class="flex items-start justify-between gap-3"><div><h4 class="font-extrabold">${escapeHtml(c.doc)}</h4><p class="text-sm text-slate-500">${fmt(c.date)} • ${escapeHtml(c.unit)}</p></div>${deadlineBadge(c.deadline)}</div><p class="mt-3 text-sm leading-6">${escapeHtml(c.content)}</p><div class="mt-3 rounded-2xl bg-slate-50 border border-slate-200 p-3 text-sm"><b>Tiến độ:</b> ${escapeHtml(c.result||"Chưa cập nhật")}</div><div class="mt-3 flex items-center justify-between gap-2"><span class="badge b-gray">${c.items||1} nội dung/kiến nghị</span><div class="flex gap-2"><button onclick="convertConclusionToTask(this.dataset.id)" data-id="${escapeHtml(c.id)}" class="btn btn-ghost py-2 px-3">Tạo nhiệm vụ</button><button onclick="deleteConclusion(this.dataset.id)" data-id="${escapeHtml(c.id)}" class="btn btn-danger py-2 px-3">Xóa</button></div></div></article>`).join("")||`<div class="text-center text-slate-500 py-10">Không có kết luận phù hợp.</div>`;
-      renderConclusionCharts();
-    }
-    function renderConclusionCharts(){
-      const issuers=[...new Set(conclusions.map(c=>c.issuer))];
-      if(charts.conclusionIssuer)charts.conclusionIssuer.destroy();
-      charts.conclusionIssuer=new Chart(conclusionIssuerChart,{type:"bar",data:{labels:issuers,datasets:[{label:"Số kết luận",data:issuers.map(i=>conclusions.filter(c=>c.issuer===i).length),backgroundColor:"#4D96FF",borderRadius:10}]},options:{...chartOpts(),plugins:{legend:{display:false}},scales:{y:{ticks:{precision:0}}}}});
-      const labels=["đang đôn đốc","hoàn thành","quá hạn"];
-      if(charts.conclusionStatus)charts.conclusionStatus.destroy();
-      charts.conclusionStatus=new Chart(conclusionStatusChart,{type:"doughnut",data:{labels,datasets:[{data:labels.map(s=>conclusions.filter(c=>c.status===s).length),backgroundColor:["#4D96FF","#6BCB77","#FF6B6B"],borderColor:"#fff",borderWidth:3}]},options:chartOpts()});
-    }
-    function openConclusionModal(){clInDate.value=todayISO();conclusionModal.classList.add("open");lockScroll()}
-    function closeConclusionModal(){conclusionModal.classList.remove("open");unlockScroll()}
-    function saveConclusion(){if(!clInDoc.value.trim()||!clInContent.value.trim()){alert("Chưa nhập số văn bản hoặc nội dung kết luận.");return}const c={id:"KL-"+Date.now(),issuer:clInIssuer.value,type:clInType.value,doc:clInDoc.value.trim(),date:clInDate.value||todayISO(),unit:normalizeUnitName(clInUnit.value.trim()||"Chưa phân công"),deadline:clInDeadline.value,status:clInStatus.value,items:Number(clInItems.value||1),content:clInContent.value.trim(),result:clInResult.value.trim()};conclusions.unshift(c);addAudit("Thêm kết luận theo dõi",{doc:c.doc,unit:c.unit,task:c.content},c.issuer);persistLocal();renderConclusions();closeConclusionModal()}
-    function convertConclusionToTask(id){const c=conclusions.find(x=>String(x.id)===String(id));if(!c)return;openTaskModal();inGroup.value="Thông báo kết luận";inType.value=c.type.toLowerCase();inDoc.value=c.doc;inDate.value=c.date;inSummary.value=`Theo dõi thực hiện ${c.type} do ${c.issuer} ban hành`;inTask.value=`Theo dõi, đôn đốc thực hiện kết luận: ${c.content}`;inUnit.value=c.unit;inDeadline.value=c.deadline;inResult.value=c.result||"";inConclusion.value=c.content}
-    async function deleteConclusion(id){const c=conclusions.find(x=>String(x.id)===String(id));if(!c)return;if(!confirm(`Xóa kết luận ${c.doc}?`))return;conclusions=conclusions.filter(x=>String(x.id)!==String(id));addAudit("Xóa kết luận",{doc:c.doc,unit:c.unit,task:c.content},c.issuer);persistLocal();await deleteFromDatabase(DB_TABLES.conclusions,id);renderConclusions();}
+    function conclusionGet(item,key,fallback=""){if(item==null)return fallback;const v=item?.[key];return v===undefined||v===null||v===""?fallback:v}
+    function conclusionIsDeleted(item){return conclusionGet(item,"is_deleted",false)===true}
+    function conclusionStatus(item){return conclusionGet(item,"status","Mới tiếp nhận")}
+    function conclusionIsDone(item){return conclusionStatus(item)==="Đã hoàn thành"}
+    function normalizeConclusion(raw={}){return {id:conclusionGet(raw,"id",`KLGS-${Date.now()}`),order:Number(conclusionGet(raw,"order",Number.MAX_SAFE_INTEGER)),group:conclusionGet(raw,"group","Kết luận thanh tra"),profileName:conclusionGet(raw,"profileName",""),documentCode:conclusionGet(raw,"documentCode",conclusionGet(raw,"doc","")),documentDate:conclusionGet(raw,"documentDate",conclusionGet(raw,"date","")),issuingAgency:conclusionGet(raw,"issuingAgency",conclusionGet(raw,"issuer","")),contentToDo:conclusionGet(raw,"contentToDo",conclusionGet(raw,"content","")),currentProgress:conclusionGet(raw,"currentProgress",conclusionGet(raw,"result","")),issuedPlan:conclusionGet(raw,"issuedPlan",""),leadUnit:normalizeUnitName(conclusionGet(raw,"leadUnit",conclusionGet(raw,"unit",""))),cooperateUnit:conclusionGet(raw,"cooperateUnit",conclusionGet(raw,"coUnit","")),expectedCompletion:conclusionGet(raw,"expectedCompletion",conclusionGet(raw,"deadline","")),expectedText:conclusionGet(raw,"expectedText",conclusionGet(raw,"deadlineText","")),status:conclusionStatus(raw),riskLevel:conclusionGet(raw,"riskLevel","Bình thường"),result:conclusionGet(raw,"result",""),attachments:conclusionGet(raw,"attachments",""),progressLogs:Array.isArray(raw.progressLogs)?raw.progressLogs:[],source:conclusionGet(raw,"source",""),updated_at:conclusionGet(raw,"updated_at",""),is_deleted:conclusionIsDeleted(raw),deletedAt:conclusionGet(raw,"deletedAt",""),deletedBy:conclusionGet(raw,"deletedBy","")}}
+    function getConclusionState(){const conclusionSource=(window.localState?.conclusions||conclusions||[]);if(window.localState) window.localState.conclusions=conclusionSource;conclusions=conclusionSource;return conclusionSource}
+    function filteredConclusions(){const source=getConclusionState().map(normalizeConclusion).filter(c=>conclusionIsDeleted(c)!==true);return source.filter(c=>{if(conclusionFilters.keyword&&!norm([c.id,c.profileName,c.documentCode,c.contentToDo,c.leadUnit,c.currentProgress].join(' ')).includes(norm(conclusionFilters.keyword)))return false;if(conclusionFilters.group&&c.group!==conclusionFilters.group)return false;if(conclusionFilters.status&&c.status!==conclusionFilters.status)return false;if(conclusionFilters.unit&&c.leadUnit!==conclusionFilters.unit)return false;if(conclusionFilters.risk&&c.riskLevel!==conclusionFilters.risk)return false;return true}).sort((a,b)=>{const ao=Number(a.order),bo=Number(b.order);if(Number.isFinite(ao)&&Number.isFinite(bo)&&ao!==bo)return ao-bo;const au=String(a.updated_at||""),bu=String(b.updated_at||"");if(au&&bu&&au!==bu)return bu.localeCompare(au);return String(a.id).localeCompare(String(b.id));})}
+    function renderConclusions(){const listEl=document.getElementById("conclusionList");if(!listEl)return;const active=getConclusionState().map(normalizeConclusion).filter(c=>!conclusionIsDeleted(c)).sort((a,b)=>Number(a.order)-Number(b.order));const data=filteredConclusions();const statuses=[...new Set(active.map(x=>x.status).filter(Boolean))];const units=[...new Set(active.map(x=>x.leadUnit).filter(Boolean))];const risks=[...new Set(active.map(x=>x.riskLevel).filter(Boolean))];clFilterStatus.innerHTML='<option value="">Tất cả trạng thái</option>'+statuses.map(s=>`<option ${conclusionFilters.status===s?'selected':''}>${s}</option>`).join('');clFilterUnit.innerHTML='<option value="">Tất cả đơn vị chủ trì</option>'+units.map(s=>`<option ${conclusionFilters.unit===s?'selected':''}>${s}</option>`).join('');clFilterRisk.innerHTML='<option value="">Tất cả mức độ rủi ro</option>'+risks.map(s=>`<option ${conclusionFilters.risk===s?'selected':''}>${s}</option>`).join('');clTotal.textContent=active.length;clInspect.textContent=active.filter(c=>c.group==='Kết luận thanh tra').length;clDirective.textContent=active.filter(c=>c.group==='Văn bản chỉ đạo').length;clDone.textContent=active.filter(c=>c.status==='Đã hoàn thành').length;clDoing.textContent=active.filter(c=>c.status==='Đang thực hiện').length;clRisk.textContent=active.filter(c=>c.riskLevel==='Cần đôn đốc'||c.riskLevel==='Phức tạp, kéo dài').length;
+listEl.innerHTML=data.map(c=>`<article class="conclusion-card"><div class="flex items-start justify-between gap-2"><div><h4 class="font-extrabold">${escapeHtml(c.documentCode||c.id)}</h4><p class="text-sm text-slate-500">${escapeHtml(c.profileName)}</p></div>${statusBadge(c.status)}</div><p class="text-sm mt-2 line-clamp-2">${escapeHtml(c.contentToDo||'')}</p><div class="mt-2 text-xs text-slate-500">Đơn vị chủ trì: <b>${escapeHtml(c.leadUnit||'—')}</b></div><div class="text-xs text-slate-500">Rủi ro: <b>${escapeHtml(c.riskLevel||'—')}</b></div><div class="mt-3 flex flex-wrap gap-2"><button onclick="viewConclusion('${c.id}')" class="btn btn-ghost py-2 px-3">Xem</button><button onclick="openProgressModal('${c.id}')" class="btn btn-ghost py-2 px-3">Cập nhật</button><button onclick="openConclusionModal('${c.id}')" class="btn btn-ghost py-2 px-3">Sửa</button><button onclick="softDeleteConclusion('${c.id}')" class="btn btn-danger py-2 px-3">Xóa mềm</button></div></article>`).join('')||`<div class="text-center text-slate-500 py-10">Không có dữ liệu phù hợp.</div>`}
+    function openConclusionModal(id){const c=id?getConclusionState().map(normalizeConclusion).find(x=>String(x.id)===String(id)):null;clEditId.value=c?.id||'';conclusionModalTitle.textContent=c?'Cập nhật nội dung giám sát':'Thêm nội dung giám sát';clInId.value=c?.id||`KLGS-${Date.now()}`;clInGroup.value=c?.group||'Kết luận thanh tra';clInProfile.value=c?.profileName||'';clInDoc.value=c?.documentCode||'';clInDate.value=c?.documentDate||todayISO();clInAgency.value=c?.issuingAgency||'';clInContent.value=c?.contentToDo||'';clInProgress.value=c?.currentProgress||'';clInPlan.value=c?.issuedPlan||'';clInLead.value=c?.leadUnit||'';clInCo.value=c?.cooperateUnit||'';clInExpected.value=c?.expectedCompletion||'';clInExpectedText.value=c?.expectedText||'';clInStatus.innerHTML=["Mới tiếp nhận","Đang thực hiện","Sắp đến hạn","Quá hạn","Đã hoàn thành","Tạm dừng/chờ ý kiến"].map(x=>`<option ${c?.status===x?'selected':''}>${x}</option>`).join('');clInRisk.value=c?.riskLevel||'Bình thường';clInResult.value=c?.result||'';clInAttach.value=c?.attachments||'';clInNote.value=c?.note||'';conclusionModal.classList.add('open');lockScroll()}
+    function closeConclusionModal(){conclusionModal.classList.remove('open');unlockScroll()}
+    function saveConclusion(){const list=getConclusionState();const idx=list.findIndex(x=>String(x.id)===String(clEditId.value||clInId.value.trim()));const payload=normalizeConclusion({id:clInId.value.trim(),group:clInGroup.value,profileName:clInProfile.value.trim(),documentCode:clInDoc.value.trim(),documentDate:clInDate.value,issuingAgency:clInAgency.value.trim(),contentToDo:clInContent.value.trim(),currentProgress:clInProgress.value.trim(),issuedPlan:clInPlan.value.trim(),leadUnit:clInLead.value.trim(),cooperateUnit:clInCo.value.trim(),expectedCompletion:clInExpected.value,expectedText:clInExpectedText.value.trim(),status:clInStatus.value,riskLevel:clInRisk.value,result:clInResult.value.trim(),attachments:clInAttach.value.trim(),note:clInNote.value.trim(),order:idx>=0?list[idx].order:list.length+1,progressLogs:idx>=0?list[idx].progressLogs:[{date:todayISO(),content:'Tiếp nhận dữ liệu.',user:(currentUser?.username||currentUser?.email||'Hệ thống'),attachment:''}],is_deleted:false});if(idx>=0)list[idx]=Object.assign({},list[idx],payload);else list.push(payload);persistLocal();renderConclusions();closeConclusionModal()}
+    function closeConclusionViewModal(){conclusionViewModal.classList.remove('open');unlockScroll()}
+    function viewConclusion(id){const c=getConclusionState().map(normalizeConclusion).find(x=>String(x.id)===String(id));if(!c)return;conclusionViewModal.innerHTML=`<div class="modal-card card rounded-[2rem] w-full max-w-4xl"><div class="p-5 border-b border-slate-200 flex justify-between"><h3 class="text-xl font-extrabold">Chi tiết giám sát</h3><button onclick="closeConclusionViewModal()" class="btn btn-ghost px-3">✕</button></div><div class="p-5 space-y-2 text-sm"><p><b>Tên hồ sơ:</b> ${escapeHtml(c.profileName||'')}</p><p><b>Kết luận/văn bản chỉ đạo:</b> ${escapeHtml(c.documentCode||'')}</p><p><b>Nội dung còn thực hiện:</b> ${escapeHtml(c.contentToDo||'')}</p><p><b>Tiến độ hiện nay:</b> ${escapeHtml(c.currentProgress||'')}</p><p><b>Kế hoạch/văn bản đã ban hành:</b> ${escapeHtml(c.issuedPlan||'')}</p><p><b>Dự kiến hoàn thành:</b> ${escapeHtml(c.expectedCompletion?fmt(c.expectedCompletion):(c.expectedText||'—'))}</p><p><b>Trạng thái:</b> ${escapeHtml(c.status||'')}</p><p><b>Đơn vị chủ trì:</b> ${escapeHtml(c.leadUnit||'')}</p><p><b>Đơn vị phối hợp:</b> ${escapeHtml(c.cooperateUnit||'')}</p><p><b>Tài liệu/link:</b> ${escapeHtml(c.attachments||'')}</p><div><b>Nhật ký cập nhật:</b>${(c.progressLogs||[]).map(l=>`<div class='text-xs mt-1'>${escapeHtml(l.date)} - ${escapeHtml(l.content)} (${escapeHtml(l.user||'')})</div>`).join('')||'<div class="text-xs">Chưa có</div>'}</div></div></div>`;conclusionViewModal.classList.add('open');lockScroll()}
+    function openProgressModal(id){const c=getConclusionState().map(normalizeConclusion).find(x=>String(x.id)===String(id));if(!c)return;conclusionProgressModal.innerHTML=`<div class="modal-card card rounded-[2rem] w-full max-w-2xl"><div class="p-5 border-b border-slate-200 flex justify-between"><h3 class="text-xl font-extrabold">Cập nhật tiến độ</h3><button onclick="closeProgressModal()" class="btn btn-ghost px-3">✕</button></div><div class="p-5 space-y-3"><input type='hidden' id='clProgressId' value='${c.id}'><input id='clProgressDate' type='date' class='field' value='${todayISO()}'><textarea id='clProgressContent' class='field' rows='3' placeholder='Nội dung cập nhật'></textarea><input id='clProgressAttachment' class='field' placeholder='Link minh chứng'></div><div class='p-5 border-t border-slate-200 flex justify-end gap-2'><button onclick='closeProgressModal()' class='btn btn-ghost'>Hủy</button><button onclick='saveProgressUpdate()' class='btn btn-primary'>Lưu cập nhật</button></div></div>`;conclusionProgressModal.classList.add('open');lockScroll()}
+    function closeProgressModal(){conclusionProgressModal.classList.remove('open');unlockScroll()}
+    function saveProgressUpdate(){const id=document.getElementById('clProgressId')?.value;const list=getConclusionState();const idx=list.findIndex(x=>String(x.id)===String(id));if(idx<0)return;const logs=Array.isArray(list[idx].progressLogs)?list[idx].progressLogs:[];const content=document.getElementById('clProgressContent').value.trim();logs.push({date:todayISO(),content,user:(currentUser?.username||currentUser?.email||'người dùng'),attachment:document.getElementById('clProgressAttachment').value.trim()});list[idx].progressLogs=logs;if(content)list[idx].currentProgress=content;persistLocal();renderConclusions();closeProgressModal()}
+    async function softDeleteConclusion(id){const list=getConclusionState();const idx=list.findIndex(x=>String(x.id)===String(id));if(idx<0||!confirm('Xóa mềm bản ghi này?'))return;list[idx]=Object.assign({},list[idx],{is_deleted:true,deletedAt:new Date().toISOString(),deletedBy:(currentUser?.username||currentUser?.email||'người dùng')});if(typeof addAudit==='function')addAudit('Xóa mềm KL Thanh tra, KT',{id});persistLocal();renderConclusions()}
 
 
 
@@ -3945,6 +3932,111 @@ function deleteOpinion(id){
       </div>`;
     }
 
+
+function conclusionGet(item, key, fallback=""){
+  const d = item?.data && typeof item.data === "object" ? item.data : item || {};
+  const v = d?.[key];
+  return v === undefined || v === null ? fallback : v;
+}
+
+function conclusionIsDeleted(item){
+  const v = conclusionGet(item, "is_deleted", false);
+  return v === true || String(v).toLowerCase().trim() === "true";
+}
+
+function conclusionStatus(item){
+  return String(conclusionGet(item, "status", "") || "").toLowerCase().trim();
+}
+
+function conclusionIsDone(item){
+  const s = conclusionStatus(item);
+  const expectedText = String(conclusionGet(item, "expectedText", "") || "").toLowerCase().trim();
+  return s.includes("hoàn thành") || s.includes("hoan thanh") || expectedText === "xong";
+}
+
+function conclusionIsLate(item){
+  if(conclusionIsDone(item)) return false;
+  const s = conclusionStatus(item);
+  if(s.includes("quá hạn") || s.includes("qua han")) return true;
+
+  const date = String(conclusionGet(item, "expectedCompletion", "") || "").trim();
+  if(!date) return false;
+
+  const due = new Date(date + "T23:59:59");
+  if(Number.isNaN(due.getTime())) return false;
+
+  const now = new Date();
+  return due < now;
+}
+
+function conclusionIsSoon(item){
+  if(conclusionIsDone(item) || conclusionIsLate(item)) return false;
+
+  const date = String(conclusionGet(item, "expectedCompletion", "") || "").trim();
+  if(!date) return false;
+
+  const due = new Date(date + "T23:59:59");
+  if(Number.isNaN(due.getTime())) return false;
+
+  const now = new Date();
+  const diff = Math.ceil((due - now) / 86400000);
+  return diff >= 0 && diff <= 15;
+}
+
+function conclusionIsDoing(item){
+  return !conclusionIsDeleted(item) && !conclusionIsDone(item);
+}
+
+function conclusionIsState(item, state){
+  const wanted = String(state || "").toLowerCase().trim();
+
+  if(wanted === "done" || wanted === "hoàn thành" || wanted === "hoan thanh"){
+    return conclusionIsDone(item);
+  }
+
+  if(wanted === "late" || wanted === "quá hạn" || wanted === "qua han"){
+    return conclusionIsLate(item);
+  }
+
+  if(wanted === "soon" || wanted === "sắp đến hạn" || wanted === "sap den han"){
+    return conclusionIsSoon(item);
+  }
+
+  if(wanted === "doing" || wanted === "đang thực hiện" || wanted === "dang thuc hien"){
+    return conclusionIsDoing(item);
+  }
+
+  return conclusionStatus(item) === wanted;
+}
+
+function normalizeConclusion(raw){
+  const d = raw?.data && typeof raw.data === "object" ? raw.data : raw || {};
+  return {
+    ...d,
+    _rowId: raw?.id || d.id,
+    id: d.id || raw?.id || ("KL-" + Date.now()),
+    order: Number(d.order || 9999),
+    group: d.group || d.type || "Chưa phân nhóm",
+    profileName: d.profileName || d.title || d.name || "Chưa có tên hồ sơ",
+    documentCode: d.documentCode || d.doc || "",
+    documentDate: d.documentDate || d.date || "",
+    issuingAgency: d.issuingAgency || d.issuer || "",
+    contentToDo: d.contentToDo || d.content || "",
+    currentProgress: d.currentProgress || d.result || "",
+    issuedPlan: d.issuedPlan || "",
+    leadUnit: d.leadUnit || d.unit || "",
+    cooperateUnit: d.cooperateUnit || "",
+    expectedCompletion: d.expectedCompletion || d.deadline || "",
+    expectedText: d.expectedText || "",
+    status: d.status || "",
+    riskLevel: d.riskLevel || d.risk || "",
+    result: d.result || "",
+    attachments: d.attachments || "",
+    progressLogs: Array.isArray(d.progressLogs) ? d.progressLogs : [],
+    is_deleted: d.is_deleted === true || String(d.is_deleted).toLowerCase() === "true"
+  };
+}
+
     function generateReport(){
   const allTasks = Array.isArray(window.localState?.tasks)
     ? window.localState.tasks
@@ -4216,18 +4308,8 @@ function deleteOpinion(id){
       </span>
     </div>
 
-    <div class="report-line">
-      <span class="report-dot dot-blue"></span>
-      <span>
-        Đang theo dõi
-        <span class="num-blue">${conclusions.length}</span>
-        kết luận thanh tra, kiểm tra, giám sát; trong đó có
-        <span class="num-red">
-          ${conclusions.filter(c=>c.status==="quá hạn" || (diffDays(c.deadline)<0 && c.status!=="hoàn thành")).length}
-        </span>
-        kết luận quá hạn hoặc cần đôn đốc.
-      </span>
-    </div>
+    <div class="report-line"><span class="report-dot dot-blue"></span><span>Giám sát thực hiện KL Thanh tra, Kiểm tra và văn bản chỉ đạo: Tổng <span class="num-blue">${filteredConclusions().length}</span>; Đã hoàn thành <span class="num-green">${filteredConclusions().filter(conclusionIsDone).length}</span>; Đang thực hiện <span class="num-blue">${filteredConclusions().filter(c=>conclusionStatus(c)==="Đang thực hiện").length}</span>; Quá hạn <span class="num-red">${filteredConclusions().filter(conclusionIsLate).length}</span>; Sắp đến hạn <span class="num-red">${filteredConclusions().filter(conclusionIsSoon).length}</span>.</span></div>
+    <div class="report-line"><span class="report-dot dot-blue"></span><span>Nhóm văn bản chỉ đạo: <span class="num-blue">${filteredConclusions().filter(c=>c.group==="Văn bản chỉ đạo").length}</span>; Kết luận thanh tra: <span class="num-blue">${filteredConclusions().filter(c=>c.group==="Kết luận thanh tra").length}</span>; Kết luận kiểm tra: <span class="num-blue">${filteredConclusions().filter(c=>c.group==="Kết luận kiểm tra").length}</span>.</span></div>
     <h4>6. Kiến nghị</h4>
 
     <div class="report-line">
@@ -4246,6 +4328,7 @@ function deleteOpinion(id){
 
     document.addEventListener("DOMContentLoaded",()=>{
       render();
+      if(!getConclusionState().length) seedConclusionDemoDataFromExcel();
       generateReport();
       if(isSupabaseConfigured()) updateDbStatus("CSDL: chờ đăng nhập","db-offline");
       else updateDbStatus("CSDL: chưa cấu hình","db-offline");
