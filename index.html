@@ -1319,6 +1319,67 @@
   <div id="conclusionProgressModal" class="modal"></div>
 
   <!-- TASK MODAL -->
+  <div id="taskIntakeChooserModal" class="modal">
+  <div class="modal-card card rounded-[2rem] w-full max-w-5xl">
+    <div class="p-5 border-b border-slate-200 flex items-start justify-between gap-3">
+      <div>
+        <h3 class="text-xl font-extrabold">Chọn phương thức nhập nhiệm vụ</h3>
+        <p class="text-sm text-slate-500 mt-1">
+          Chọn cách nhập phù hợp với tình huống: nhập từng nhiệm vụ, nhập hàng loạt như Excel, hoặc chuẩn bị import từ Google Sheet.
+        </p>
+      </div>
+
+      <button onclick="closeTaskIntakeChooser()" class="icon-btn" title="Đóng">✕</button>
+    </div>
+
+    <div class="p-5 grid md:grid-cols-3 gap-4">
+      <button
+        type="button"
+        onclick="chooseSingleTaskInput()"
+        class="tool-card text-left soft hover:border-blue-300"
+      >
+        <div class="w-12 h-12 rounded-2xl bg-blue-50 text-[#4D96FF] flex items-center justify-center font-black text-xl mb-4">
+          1
+        </div>
+        <h4 class="font-extrabold text-lg">Nhập 01 nhiệm vụ</h4>
+        <p class="text-sm text-slate-500 mt-2 leading-6">
+          Phù hợp khi bổ sung nhanh một nhiệm vụ từ thông báo kết luận, công văn chỉ đạo hoặc nghị quyết.
+        </p>
+        <span class="badge b-blue mt-4">Mở form hiện có</span>
+      </button>
+
+      <button
+        type="button"
+        onclick="chooseBulkTaskInput()"
+        class="tool-card text-left soft hover:border-green-300"
+      >
+        <div class="w-12 h-12 rounded-2xl bg-green-50 text-[#23883a] flex items-center justify-center font-black text-xl mb-4">
+          2
+        </div>
+        <h4 class="font-extrabold text-lg">Nhập hàng loạt</h4>
+        <p class="text-sm text-slate-500 mt-2 leading-6">
+          Dành cho trường hợp dán dữ liệu từ Excel hoặc nhập nhiều dòng nhiệm vụ cùng lúc.
+        </p>
+        <span class="badge b-green mt-4">Gói 3 triển khai</span>
+      </button>
+
+      <button
+        type="button"
+        onclick="chooseGoogleSheetInput()"
+        class="tool-card text-left soft hover:border-yellow-300"
+      >
+        <div class="w-12 h-12 rounded-2xl bg-yellow-50 text-[#a17700] flex items-center justify-center font-black text-xl mb-4">
+          3
+        </div>
+        <h4 class="font-extrabold text-lg">Import Google Sheet</h4>
+        <p class="text-sm text-slate-500 mt-2 leading-6">
+          Dự kiến dùng cho cộng tác viên nhập dữ liệu đầu vào qua Google Sheet, sau đó kiểm tra trước khi lưu.
+        </p>
+        <span class="badge b-yellow mt-4">Chuẩn bị triển khai</span>
+      </button>
+    </div>
+  </div>
+</div>
   <div id="taskModal" class="modal">
     <div class="modal-card card rounded-[2rem] w-full max-w-5xl">
       <div class="p-5 border-b border-slate-200 flex items-start justify-between gap-3">
@@ -3521,12 +3582,6 @@ function taskHasNoDeadline(t){
   return !deadline && !deadlineText;
 }
 
-function openTaskIntakeChooser(){
-  // Gói 1: tạm thời vẫn mở form nhập hiện tại.
-  // Gói 2 sẽ thay bằng màn hình chọn 3 phương thức:
-  // Nhập 01 nhiệm vụ / Nhập hàng loạt / Import Google Sheet.
-  openTaskModal();
-}
 
 function setActionFilter(filter){
   resetTaskFilters("");
@@ -3832,7 +3887,36 @@ function setActionFilter(filter){
       deleteFromDatabase(DB_TABLES.tasks, t.id);
       render();
     }
+function openTaskIntakeChooser(){
+  const modal=document.getElementById("taskIntakeChooserModal");
+  if(!modal){
+    openTaskModal();
+    return;
+  }
+  modal.classList.add("open");
+  lockScroll();
+}
 
+function closeTaskIntakeChooser(){
+  const modal=document.getElementById("taskIntakeChooserModal");
+  if(modal) modal.classList.remove("open");
+  unlockScroll();
+}
+
+function chooseSingleTaskInput(){
+  closeTaskIntakeChooser();
+  setTimeout(()=>openTaskModal(),80);
+}
+
+function chooseBulkTaskInput(){
+  closeTaskIntakeChooser();
+  alert("Chức năng Nhập hàng loạt sẽ thực hiện ở Gói 3. Dự kiến có bảng nhập nhanh kiểu Excel và nút dán dữ liệu từ Excel.");
+}
+
+function chooseGoogleSheetInput(){
+  closeTaskIntakeChooser();
+  alert("Import Google Sheet đang ở trạng thái chuẩn bị triển khai. Trước mắt hệ thống sẽ ưu tiên form nhập 01 nhiệm vụ và nhập hàng loạt nội bộ.");
+}
     function openTaskModal(){editingTaskId=null;duplicateConfirmed=false;document.getElementById("taskModalTitle").textContent="Nhập nhiệm vụ trực tiếp";document.getElementById("taskModalDesc").textContent="Chia rõ Văn bản căn cứ và Nội dung nhiệm vụ theo dõi.";clearTaskForm();dupWarning.classList.add("hidden");taskModal.classList.add("open");lockScroll();}
     function closeTaskModal(){taskModal.classList.remove("open");unlockScroll()}
     function clearTaskForm(){["inDoc","inDate","inMeet","inSummary","inOrder","inConclusion","inTask","inUnit","inCoUnit","inOwner","inDeadline","inResult","inNote","inSourceResolution"].forEach(id=>document.getElementById(id).value=id==="inOrder"?"1":"");duplicateConfirmed=false;dupWarning.classList.add("hidden")}
