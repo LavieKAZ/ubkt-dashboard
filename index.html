@@ -375,6 +375,73 @@
     .db-error{background:rgba(255,107,107,.15)!important;color:#dc2626!important;border-color:rgba(255,107,107,.28)!important}
 
     @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+  /* GÓI 3.1 - Làm gọn Trung tâm nhiệm vụ */
+#page-tasks .task-board{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(330px,1fr));
+  gap:14px;
+  align-items:start;
+}
+
+#page-tasks .task-card{
+  align-self:start;
+  height:auto !important;
+  min-height:0 !important;
+  padding:14px !important;
+  border-radius:22px !important;
+}
+
+#page-tasks .task-card-doc{
+  gap:8px;
+}
+
+#page-tasks .task-card-title{
+  font-size:15px;
+  line-height:1.45;
+  margin-top:10px !important;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+#page-tasks .task-card-meta{
+  gap:6px;
+  margin-top:10px !important;
+}
+
+#page-tasks .task-card .rounded-2xl.bg-slate-50{
+  padding:10px !important;
+  margin-top:10px !important;
+  max-height:92px;
+  overflow:hidden;
+  font-size:13px;
+  line-height:1.45;
+}
+
+#page-tasks .task-card-progress{
+  margin-top:10px !important;
+}
+
+#page-tasks .task-card-footer{
+  margin-top:10px !important;
+  padding-top:8px !important;
+}
+
+#page-tasks .badge{
+  padding:4px 8px;
+  font-size:11px;
+}
+
+@media(max-width:768px){
+  #page-tasks .task-board{
+    grid-template-columns:1fr;
+  }
+
+  #page-tasks .task-card{
+    padding:13px !important;
+  }
+}
   </style>
 </head>
 <body>
@@ -440,7 +507,7 @@
             </div>
             <div class="flex gap-2 items-center flex-wrap justify-end">
               <span id="dbStatusBadge" class="badge b-gray hidden sm:inline-flex">CSDL: đang kiểm tra</span>
-              <button id="headerTaskBtn" onclick="openTaskModal()" class="btn btn-primary">+ Nhập nhiệm vụ</button>
+              <button id="headerTaskBtn" onclick="openTaskIntakeChooser()" class="btn btn-primary">+ Nhập nhiệm vụ</button>
               <button id="headerPeriodBtn" onclick="openClosePeriodModal()" class="btn btn-ghost hidden sm:inline-flex">Chốt kỳ</button>
             </div>
           </div>
@@ -2222,18 +2289,23 @@
   dashboard:"Dashboard giám sát",
   tasks:"Trung tâm nhiệm vụ",
   opinion:"Tổ Công tác 1374",
-  conclusions:"Giám sát thực hiện KL Thanh tra, Kiểm tra",
+  conclusions:"Giám sát KL Thanh tra, Kiểm tra",
   baseorgs:"Theo dõi Cơ sở Đảng",
   dossiers:"Hồ sơ sau kiểm tra, giám sát",
   periods:"Chốt kỳ báo cáo",
   reports:"Báo cáo một trang"
 };
       document.getElementById("pageTitle").textContent=titles[page];
-      const showHeaderActions = page==="dashboard" || page==="tasks";
       const taskBtn=document.getElementById("headerTaskBtn");
-      const periodBtn=document.getElementById("headerPeriodBtn");
-      if(taskBtn) taskBtn.style.display = showHeaderActions ? "" : "none";
-      if(periodBtn) periodBtn.style.display = showHeaderActions ? "" : "none";
+const periodBtn=document.getElementById("headerPeriodBtn");
+
+if(taskBtn){
+  taskBtn.style.display = page==="tasks" ? "" : "none";
+}
+
+if(periodBtn){
+  periodBtn.style.display = (page==="dashboard" || page==="periods") ? "" : "none";
+}
       if(page==="opinion"){
         showModuleToast("Tab Tổ Công tác 1374", "Đây là khu vực ghi nhận thông tin ban đầu từ họp chi bộ, cử tri, báo chí, mạng xã hội. Nội dung chỉ phục vụ theo dõi, chưa phải kết luận khi chưa xác minh.");
       }
@@ -3835,9 +3907,9 @@ function setActionFilter(filter){
       </div>
 
       <div class="rounded-2xl bg-slate-50 border border-slate-200 p-3 text-sm text-slate-600 mt-2">
-        <b>Kết quả:</b>
-        <span>${escapeHtml(taskResult(t) || "Chưa cập nhật kết quả")}</span>
-      </div>
+  <b>Kết quả:</b>
+  <span class="line-clamp-3">${escapeHtml(taskResult(t) || "Chưa cập nhật")}</span>
+</div>
 
       <div class="task-card-progress">
         <span style="width:${taskProgressPercent(t)}%"></span>
