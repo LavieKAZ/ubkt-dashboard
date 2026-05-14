@@ -3932,6 +3932,111 @@ listEl.innerHTML=data.map(c=>`<article class="conclusion-card"><div class="flex 
       </div>`;
     }
 
+
+function conclusionGet(item, key, fallback=""){
+  const d = item?.data && typeof item.data === "object" ? item.data : item || {};
+  const v = d?.[key];
+  return v === undefined || v === null ? fallback : v;
+}
+
+function conclusionIsDeleted(item){
+  const v = conclusionGet(item, "is_deleted", false);
+  return v === true || String(v).toLowerCase().trim() === "true";
+}
+
+function conclusionStatus(item){
+  return String(conclusionGet(item, "status", "") || "").toLowerCase().trim();
+}
+
+function conclusionIsDone(item){
+  const s = conclusionStatus(item);
+  const expectedText = String(conclusionGet(item, "expectedText", "") || "").toLowerCase().trim();
+  return s.includes("hoàn thành") || s.includes("hoan thanh") || expectedText === "xong";
+}
+
+function conclusionIsLate(item){
+  if(conclusionIsDone(item)) return false;
+  const s = conclusionStatus(item);
+  if(s.includes("quá hạn") || s.includes("qua han")) return true;
+
+  const date = String(conclusionGet(item, "expectedCompletion", "") || "").trim();
+  if(!date) return false;
+
+  const due = new Date(date + "T23:59:59");
+  if(Number.isNaN(due.getTime())) return false;
+
+  const now = new Date();
+  return due < now;
+}
+
+function conclusionIsSoon(item){
+  if(conclusionIsDone(item) || conclusionIsLate(item)) return false;
+
+  const date = String(conclusionGet(item, "expectedCompletion", "") || "").trim();
+  if(!date) return false;
+
+  const due = new Date(date + "T23:59:59");
+  if(Number.isNaN(due.getTime())) return false;
+
+  const now = new Date();
+  const diff = Math.ceil((due - now) / 86400000);
+  return diff >= 0 && diff <= 15;
+}
+
+function conclusionIsDoing(item){
+  return !conclusionIsDeleted(item) && !conclusionIsDone(item);
+}
+
+function conclusionIsState(item, state){
+  const wanted = String(state || "").toLowerCase().trim();
+
+  if(wanted === "done" || wanted === "hoàn thành" || wanted === "hoan thanh"){
+    return conclusionIsDone(item);
+  }
+
+  if(wanted === "late" || wanted === "quá hạn" || wanted === "qua han"){
+    return conclusionIsLate(item);
+  }
+
+  if(wanted === "soon" || wanted === "sắp đến hạn" || wanted === "sap den han"){
+    return conclusionIsSoon(item);
+  }
+
+  if(wanted === "doing" || wanted === "đang thực hiện" || wanted === "dang thuc hien"){
+    return conclusionIsDoing(item);
+  }
+
+  return conclusionStatus(item) === wanted;
+}
+
+function normalizeConclusion(raw){
+  const d = raw?.data && typeof raw.data === "object" ? raw.data : raw || {};
+  return {
+    ...d,
+    _rowId: raw?.id || d.id,
+    id: d.id || raw?.id || ("KL-" + Date.now()),
+    order: Number(d.order || 9999),
+    group: d.group || d.type || "Chưa phân nhóm",
+    profileName: d.profileName || d.title || d.name || "Chưa có tên hồ sơ",
+    documentCode: d.documentCode || d.doc || "",
+    documentDate: d.documentDate || d.date || "",
+    issuingAgency: d.issuingAgency || d.issuer || "",
+    contentToDo: d.contentToDo || d.content || "",
+    currentProgress: d.currentProgress || d.result || "",
+    issuedPlan: d.issuedPlan || "",
+    leadUnit: d.leadUnit || d.unit || "",
+    cooperateUnit: d.cooperateUnit || "",
+    expectedCompletion: d.expectedCompletion || d.deadline || "",
+    expectedText: d.expectedText || "",
+    status: d.status || "",
+    riskLevel: d.riskLevel || d.risk || "",
+    result: d.result || "",
+    attachments: d.attachments || "",
+    progressLogs: Array.isArray(d.progressLogs) ? d.progressLogs : [],
+    is_deleted: d.is_deleted === true || String(d.is_deleted).toLowerCase() === "true"
+  };
+}
+
     function generateReport(){
   const allTasks = Array.isArray(window.localState?.tasks)
     ? window.localState.tasks
