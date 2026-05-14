@@ -3486,8 +3486,7 @@ listEl.innerHTML=data.map(c=>`<article class="conclusion-card"><div class="flex 
       </div>`).join("") || `<p class="text-sm text-slate-500">Không có việc cần xử lý ngay.</p>`;
     }
 
-    function setActionFilter(filter){
-      function resetTaskFilters(quick=""){
+    function resetTaskFilters(quick=""){
   filters.keyword="";
   filters.group="";
   filters.unit="";
@@ -3517,7 +3516,9 @@ listEl.innerHTML=data.map(c=>`<article class="conclusion-card"><div class="flex 
 }
 
 function taskHasNoDeadline(t){
-  return !taskDeadline(t) && !String(taskValue(t,"deadlineText","") || "").trim();
+  const deadline = String(taskDeadline(t) || "").trim();
+  const deadlineText = String(taskValue(t,"deadlineText","") || "").trim();
+  return !deadline && !deadlineText;
 }
 
 function openTaskIntakeChooser(){
@@ -3526,15 +3527,38 @@ function openTaskIntakeChooser(){
   // Nhập 01 nhiệm vụ / Nhập hàng loạt / Import Google Sheet.
   openTaskModal();
 }
-      resetTaskFilters("");
-      if(filter==="quá hạn") filters.quick="quá hạn";
-      if(filter==="soon7") filters.quick="soon7";
-      if(filter==="noResult") filters.deadline="noResult";
-      if(filter==="noOwner") filters.quick="noOwner";
-      render();
-      const target=document.getElementById(currentPage==="tasks"?"taskListFull":"taskList") || document.getElementById("taskList");
-      target?.scrollIntoView({behavior:"smooth",block:"start"});
-    }
+
+function setActionFilter(filter){
+  resetTaskFilters("");
+
+  if(filter==="quá hạn" || filter==="late"){
+    filters.quick="late";
+    filters.status="late";
+  }
+
+  if(filter==="soon7"){
+    filters.quick="soon7";
+    filters.status="soon7";
+    filters.deadline="soon7";
+  }
+
+  if(filter==="noResult"){
+    filters.deadline="noResult";
+  }
+
+  if(filter==="noOwner"){
+    filters.quick="noOwner";
+  }
+
+  render();
+
+  const target =
+    document.getElementById(currentPage==="tasks" ? "taskListFull" : "taskList") ||
+    document.getElementById("taskListFull") ||
+    document.getElementById("taskList");
+
+  target?.scrollIntoView({behavior:"smooth",block:"start"});
+}
 
 
     function renderCharts(){
