@@ -418,7 +418,7 @@
         </div>
         <nav class="space-y-2">
           <button class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16V9"/><path d="M12 16V6"/><path d="M16 16v-4"/></svg></span><span class="nav-label">Dashboard</span></button>
-          <button class="nav-item" data-page="tasks" onclick="switchPage('tasks')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h16"/><path d="M6 4h8l4 4v9a2 2 0 0 1-2 2H6z"/><path d="M14 4v5h5"/><path d="M8 13h8"/><path d="M8 16h5"/></svg></span><span class="nav-label">Nhiệm vụ</span></button>
+          <button class="nav-item" data-page="tasks" onclick="switchPage('tasks')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h16"/><path d="M6 4h8l4 4v9a2 2 0 0 1-2 2H6z"/><path d="M14 4v5h5"/><path d="M8 13h8"/><path d="M8 16h5"/></svg></span><span class="nav-label">Trung tâm nhiệm vụ</span></button>
           <button class="nav-item" data-page="opinion" onclick="switchPage('opinion')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16v10H7l-3 3z"/><path d="M8 9h8"/><path d="M8 12h5"/></svg></span><span class="nav-label">Tổ Công tác 1374</span></button>
           <button class="nav-item" data-page="conclusions" onclick="switchPage('conclusions')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3h10l3 3v15H6z"/><path d="M15 3v4h4"/><path d="M9 12l2 2 4-5"/><path d="M9 17h7"/></svg></span><span class="nav-label">Giám sát KL Thanh tra, KT</span></button>
           <button class="nav-item" data-page="baseorgs" onclick="switchPage('baseorgs')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h16"/><path d="M6 20V8l6-4 6 4v12"/><path d="M9 20v-7h6v7"/></svg></span><span class="nav-label">Theo dõi Cơ sở Đảng</span></button>
@@ -577,28 +577,127 @@
           </section>
 
           <!-- TASKS PAGE -->
-          <section id="page-tasks" class="page hidden space-y-5">
-            <div class="card rounded-3xl p-5">
-              <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                <div>
-                  <h3 class="text-xl font-extrabold">Nhập và quản lý nhiệm vụ</h3>
-                  <p class="text-sm text-slate-500 mt-1">Có kiểm tra trùng số văn bản trước khi thêm nhiệm vụ mới. Danh sách bên dưới chuyển sang dạng thẻ để dễ đọc, dễ sửa.</p>
-                </div>
-                <button onclick="openTaskModal()" class="btn btn-primary">+ Nhập nhiệm vụ mới</button>
-              </div>
+<section id="page-tasks" class="page hidden space-y-5">
+  <div class="card rounded-3xl p-5">
+    <div class="flex flex-col xl:flex-row xl:items-start justify-between gap-4">
+      <div>
+        <h3 class="text-xl font-extrabold">Trung tâm nhiệm vụ</h3>
+        <p class="text-sm text-slate-500 mt-1">
+          Tìm kiếm, lọc, xem chi tiết, cập nhật tiến độ và nhập nhiệm vụ. Dữ liệu được tính trực tiếp từ danh sách nhiệm vụ hiện có.
+        </p>
+      </div>
 
-              <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Tổng nhiệm vụ</p><b id="taskPageTotal">0</b></div>
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Hoàn thành</p><b id="taskPageDone" class="text-[#6BCB77]">0</b></div>
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Quá hạn</p><b id="taskPageLate" class="text-[#FF6B6B]">0</b></div>
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Nhiệm kỳ</p><b id="taskPageTenure" class="text-[#B89400]">0</b></div>
-              </div>
+      <div class="flex flex-col sm:flex-row gap-2">
+        <button onclick="openTaskIntakeChooser()" class="btn btn-primary">+ Nhập nhiệm vụ</button>
+        <button onclick="resetTaskFilters('');render()" class="btn btn-ghost">Xóa lọc</button>
+      </div>
+    </div>
 
-            </div>
-            <div class="card rounded-3xl p-4">
-              <div id="taskListFull" class="space-y-3"></div>
-            </div>
-          </section>
+    <div class="grid grid-cols-2 lg:grid-cols-7 gap-3 mt-4">
+      <button onclick="setQuick('all')" class="period-kpi text-left soft">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">Tất cả</p>
+        <b id="taskPageTotal">0</b>
+      </button>
+
+      <button onclick="setQuick('processing')" class="period-kpi text-left soft">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">Đang xử lý</p>
+        <b id="taskPageProcessing" class="text-[#4D96FF]">0</b>
+      </button>
+
+      <button onclick="setQuick('done')" class="period-kpi text-left soft">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">Hoàn thành</p>
+        <b id="taskPageDone" class="text-[#6BCB77]">0</b>
+      </button>
+
+      <button onclick="setQuick('late')" class="period-kpi text-left soft">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">Quá hạn</p>
+        <b id="taskPageLate" class="text-[#FF6B6B]">0</b>
+      </button>
+
+      <button onclick="setQuick('soon7')" class="period-kpi text-left soft">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">Sắp đến hạn</p>
+        <b id="taskPageSoon" class="text-[#B89400]">0</b>
+      </button>
+
+      <button onclick="setQuick('tenure')" class="period-kpi text-left soft">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">Nhiệm kỳ</p>
+        <b id="taskPageTenure" class="text-[#B89400]">0</b>
+      </button>
+
+      <button onclick="setQuick('noDeadline')" class="period-kpi text-left soft">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">Chưa có hạn</p>
+        <b id="taskPageNoDeadline" class="text-slate-700">0</b>
+      </button>
+    </div>
+  </div>
+
+  <div class="card rounded-3xl p-4">
+    <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-3 mb-4">
+      <div>
+        <h3 class="font-extrabold">Danh sách nhiệm vụ</h3>
+        <p id="taskCenterHint" class="text-sm text-slate-500 mt-1">
+          Tìm kiếm theo số văn bản, nội dung nhiệm vụ, đơn vị, kết quả, ghi chú.
+        </p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-2">
+        <input
+          id="taskCenterSearch"
+          oninput="filters.keyword=this.value;render()"
+          class="field sm:w-96"
+          placeholder="Tìm số văn bản, nhiệm vụ, đơn vị, kết quả..."
+        >
+
+        <button onclick="document.getElementById('taskCenterAdvanced').classList.toggle('open')" class="btn btn-ghost">
+          Tìm nâng cao
+        </button>
+      </div>
+    </div>
+
+    <div id="taskCenterAdvanced" class="drawer open">
+      <div class="grid sm:grid-cols-2 xl:grid-cols-6 gap-3 pb-4">
+        <select id="taskCenterGroup" onchange="filters.group=this.value;render()" class="field">
+          <option value="">Tất cả nhóm văn bản</option>
+        </select>
+
+        <select id="taskCenterUnit" onchange="filters.unit=this.value;render()" class="field">
+          <option value="">Tất cả đơn vị</option>
+        </select>
+
+        <select id="taskCenterStatus" onchange="filters.status=this.value;render()" class="field">
+          <option value="">Tất cả trạng thái</option>
+          <option value="processing">Đang xử lý</option>
+          <option value="done">Hoàn thành</option>
+          <option value="late">Quá hạn</option>
+          <option value="soon7">Sắp đến hạn</option>
+          <option value="tenure">Nhiệm kỳ dài hạn</option>
+        </select>
+
+        <select id="taskCenterDeadline" onchange="filters.deadline=this.value;render()" class="field">
+          <option value="">Tất cả thời hạn</option>
+          <option value="overdue">Quá hạn</option>
+          <option value="soon7">Sắp đến hạn trong 7 ngày</option>
+          <option value="noDeadline">Chưa có thời hạn</option>
+          <option value="noResult">Chưa có kết quả</option>
+        </select>
+
+        <input
+          id="taskCenterDoc"
+          oninput="filters.doc=this.value;render()"
+          class="field"
+          placeholder="Số văn bản"
+        >
+
+        <select id="taskCenterHorizon" onchange="filters.quick=this.value;render()" class="field">
+          <option value="">Tất cả loại nhiệm vụ</option>
+          <option value="tenure">Nhiệm kỳ / dài hạn</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="taskListFull" class="space-y-3"></div>
+  </div>
+</section>
 
 
           <!-- MODULE 1374 PAGE -->
@@ -1990,7 +2089,16 @@
       document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
       document.getElementById("page-"+page).classList.remove("hidden");
       document.querySelectorAll(".nav-item").forEach(n=>n.classList.toggle("active",n.dataset.page===page));
-      const titles={dashboard:"Dashboard giám sát",tasks:"Nhập và quản lý nhiệm vụ",opinion:"Tổ Công tác 1374",conclusions:"Giám sát thực hiện KL Thanh tra, Kiểm tra",baseorgs:"Theo dõi Cơ sở Đảng",dossiers:"Hồ sơ sau kiểm tra, giám sát",periods:"Chốt kỳ báo cáo",reports:"Báo cáo một trang"};
+      const titles={
+  dashboard:"Dashboard giám sát",
+  tasks:"Trung tâm nhiệm vụ",
+  opinion:"Tổ Công tác 1374",
+  conclusions:"Giám sát thực hiện KL Thanh tra, Kiểm tra",
+  baseorgs:"Theo dõi Cơ sở Đảng",
+  dossiers:"Hồ sơ sau kiểm tra, giám sát",
+  periods:"Chốt kỳ báo cáo",
+  reports:"Báo cáo một trang"
+};
       document.getElementById("pageTitle").textContent=titles[page];
       const showHeaderActions = page==="dashboard" || page==="tasks";
       const taskBtn=document.getElementById("headerTaskBtn");
@@ -2267,14 +2375,16 @@ function calcStats(arr=tasks){
 }
 
 function filtered(){
-  // Đọc trực tiếp lại giá trị trên thanh lọc trước khi lọc,
-  // tránh trường hợp dropdown đã đổi nhưng biến filters chưa cập nhật.
-  const fGroupEl = document.getElementById("fGroup");
-  const fUnitEl = document.getElementById("fUnit");
-  const fStatusEl = document.getElementById("fStatus");
-  const fDeadlineEl = document.getElementById("fDeadline");
-  const fDocEl = document.getElementById("fDoc");
-  const quickSearchEl = document.getElementById("quickSearch");
+  const isTaskCenterVisible = !!document.getElementById("page-tasks") &&
+    !document.getElementById("page-tasks").classList.contains("hidden");
+
+  const fGroupEl = document.getElementById(isTaskCenterVisible ? "taskCenterGroup" : "fGroup");
+  const fUnitEl = document.getElementById(isTaskCenterVisible ? "taskCenterUnit" : "fUnit");
+  const fStatusEl = document.getElementById(isTaskCenterVisible ? "taskCenterStatus" : "fStatus");
+  const fDeadlineEl = document.getElementById(isTaskCenterVisible ? "taskCenterDeadline" : "fDeadline");
+  const fDocEl = document.getElementById(isTaskCenterVisible ? "taskCenterDoc" : "fDoc");
+  const quickSearchEl = document.getElementById(isTaskCenterVisible ? "taskCenterSearch" : "quickSearch");
+  const horizonEl = document.getElementById("taskCenterHorizon");
 
   if(fGroupEl) filters.group = fGroupEl.value || "";
   if(fUnitEl) filters.unit = fUnitEl.value || "";
@@ -2283,14 +2393,33 @@ function filtered(){
   if(fDocEl) filters.doc = fDocEl.value || "";
   if(quickSearchEl) filters.keyword = quickSearchEl.value || "";
 
+  if(isTaskCenterVisible && horizonEl && horizonEl.value){
+    filters.quick = horizonEl.value;
+  }
+
   return tasks.filter(t=>{
+    if(taskValue(t,"is_deleted",false)===true || String(taskValue(t,"is_deleted","")).toLowerCase()==="true"){
+      return false;
+    }
+
     if(!taskMatchesQuick(t, filters.quick)) return false;
 
     if(filters.group && taskGroup(t)!==filters.group) return false;
 
     if(filters.unit && taskUnit(t)!==filters.unit) return false;
 
-    if(filters.status && !statusFilterMatch(t, filters.status)) return false;
+    if(filters.status){
+      const st=norm(filters.status);
+
+      if(st==="soon7"){
+        const d=diffDays(taskDeadline(t));
+        if(!(d!==null && d>=0 && d<=7 && !taskIsDone(t))) return false;
+      }else if(st==="tenure"){
+        if(!taskIsTenure(t)) return false;
+      }else if(!statusFilterMatch(t, filters.status)){
+        return false;
+      }
+    }
 
     if(filters.doc && !norm(taskDoc(t)).includes(norm(filters.doc))) return false;
 
@@ -2300,6 +2429,8 @@ function filtered(){
       const d=diffDays(taskDeadline(t));
       if(!(d!==null && d>=0 && d<=7 && !taskIsDone(t))) return false;
     }
+
+    if(filters.deadline==="noDeadline" && !taskHasNoDeadline(t)) return false;
 
     if(filters.deadline==="noResult" && !taskHasNoResult(t)) return false;
 
@@ -3254,15 +3385,35 @@ listEl.innerHTML=data.map(c=>`<article class="conclusion-card"><div class="flex 
     }
 
     function renderFilters(){
-      const groups=[...new Set(tasks.map(taskGroup).filter(Boolean))];
-      const units=[...new Set(tasks.map(taskUnit).filter(Boolean))];
-      fGroup.innerHTML=`<option value="">Tất cả nhóm văn bản</option>`+groups.map(g=>`<option ${filters.group===g?"selected":""}>${escapeHtml(g)}</option>`).join("");
-      fUnit.innerHTML=`<option value="">Tất cả đơn vị</option>`+units.map(u=>`<option ${filters.unit===u?"selected":""}>${escapeHtml(u)}</option>`).join("");
-      fStatus.value=filters.status;
-      fDeadline.value=filters.deadline;
-      fDoc.value=filters.doc;
-      quickSearch.value=filters.keyword;
-    }
+  const activeTasks = tasks.filter(t=>{
+    const deleted=taskValue(t,"is_deleted",false);
+    return !(deleted===true || String(deleted).toLowerCase()==="true");
+  });
+
+  const groups=[...new Set(activeTasks.map(taskGroup).filter(Boolean))];
+  const units=[...new Set(activeTasks.map(taskUnit).filter(Boolean))];
+
+  const groupHtml=`<option value="">Tất cả nhóm văn bản</option>`+
+    groups.map(g=>`<option value="${escapeHtml(g)}" ${filters.group===g?"selected":""}>${escapeHtml(g)}</option>`).join("");
+
+  const unitHtml=`<option value="">Tất cả đơn vị</option>`+
+    units.map(u=>`<option value="${escapeHtml(u)}" ${filters.unit===u?"selected":""}>${escapeHtml(u)}</option>`).join("");
+
+  if(document.getElementById("fGroup")) fGroup.innerHTML=groupHtml;
+  if(document.getElementById("fUnit")) fUnit.innerHTML=unitHtml;
+  if(document.getElementById("fStatus")) fStatus.value=filters.status || "";
+  if(document.getElementById("fDeadline")) fDeadline.value=filters.deadline || "";
+  if(document.getElementById("fDoc")) fDoc.value=filters.doc || "";
+  if(document.getElementById("quickSearch")) quickSearch.value=filters.keyword || "";
+
+  if(document.getElementById("taskCenterGroup")) taskCenterGroup.innerHTML=groupHtml;
+  if(document.getElementById("taskCenterUnit")) taskCenterUnit.innerHTML=unitHtml;
+  if(document.getElementById("taskCenterStatus")) taskCenterStatus.value=filters.status || "";
+  if(document.getElementById("taskCenterDeadline")) taskCenterDeadline.value=filters.deadline || "";
+  if(document.getElementById("taskCenterDoc")) taskCenterDoc.value=filters.doc || "";
+  if(document.getElementById("taskCenterSearch")) taskCenterSearch.value=filters.keyword || "";
+  if(document.getElementById("taskCenterHorizon")) taskCenterHorizon.value=filters.quick==="tenure" ? "tenure" : "";
+}
 
     function chartOpts(){
       return {
@@ -3336,6 +3487,45 @@ listEl.innerHTML=data.map(c=>`<article class="conclusion-card"><div class="flex 
     }
 
     function setActionFilter(filter){
+      function resetTaskFilters(quick=""){
+  filters.keyword="";
+  filters.group="";
+  filters.unit="";
+  filters.status="";
+  filters.deadline="";
+  filters.doc="";
+  filters.quick=quick || "";
+
+  [
+    "quickSearch",
+    "fGroup",
+    "fUnit",
+    "fStatus",
+    "fDeadline",
+    "fDoc",
+    "taskCenterSearch",
+    "taskCenterGroup",
+    "taskCenterUnit",
+    "taskCenterStatus",
+    "taskCenterDeadline",
+    "taskCenterDoc",
+    "taskCenterHorizon"
+  ].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value="";
+  });
+}
+
+function taskHasNoDeadline(t){
+  return !taskDeadline(t) && !String(taskValue(t,"deadlineText","") || "").trim();
+}
+
+function openTaskIntakeChooser(){
+  // Gói 1: tạm thời vẫn mở form nhập hiện tại.
+  // Gói 2 sẽ thay bằng màn hình chọn 3 phương thức:
+  // Nhập 01 nhiệm vụ / Nhập hàng loạt / Import Google Sheet.
+  openTaskModal();
+}
       resetTaskFilters("");
       if(filter==="quá hạn") filters.quick="quá hạn";
       if(filter==="soon7") filters.quick="soon7";
@@ -3421,52 +3611,139 @@ listEl.innerHTML=data.map(c=>`<article class="conclusion-card"><div class="flex 
     }
 
     function renderTaskListFull(){
-      if(!document.getElementById("taskListFull"))return;
-      const s=calcStats();
-      if(typeof taskPageTotal!=="undefined") taskPageTotal.textContent=s.total;
-      if(typeof taskPageDone!=="undefined") taskPageDone.textContent=s.done;
-      if(typeof taskPageLate!=="undefined") taskPageLate.textContent=s.late;
-      if(typeof taskPageTenure!=="undefined") taskPageTenure.textContent=tasks.filter(t=>t.horizon==="dài hạn/nhiệm kỳ" || ["Nghị quyết","Chương trình làm việc"].includes(t.group)).length;
+  if(!document.getElementById("taskListFull")) return;
 
-      const data=filtered();
-      taskListFull.className="task-board";
-      taskListFull.innerHTML=data.map(t=>`<article class="task-card">
-        <div class="task-card-doc">
-          <div>
-            ${groupBadge(t.group)}
-            <span class="badge b-gray">${escapeHtml(t.sourceTable||"")}</span>
-            <span class="badge b-blue">${escapeHtml(t.doc||t.docFull||"")}</span>
-          </div>
-          <div class="task-card-actions">
-            <button onclick="openEditTask(this.dataset.id)" data-id="${escapeHtml(t.id)}" class="icon-btn icon-edit" title="Chỉnh sửa">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-            </button>
-            <button onclick="deleteTask(this.dataset.id)" data-id="${escapeHtml(t.id)}" class="icon-btn icon-delete" title="Xóa">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-            </button>
-          </div>
+  const activeTasks = tasks.filter(t=>{
+    const deleted=taskValue(t,"is_deleted",false);
+    return !(deleted===true || String(deleted).toLowerCase()==="true");
+  });
+
+  const s=calcStats(activeTasks);
+  const noDeadline=activeTasks.filter(taskHasNoDeadline).length;
+
+  if(typeof taskPageTotal!=="undefined") taskPageTotal.textContent=s.total;
+  if(typeof taskPageProcessing!=="undefined") taskPageProcessing.textContent=s.doing;
+  if(typeof taskPageDone!=="undefined") taskPageDone.textContent=s.done;
+  if(typeof taskPageLate!=="undefined") taskPageLate.textContent=s.late;
+  if(typeof taskPageSoon!=="undefined") taskPageSoon.textContent=s.soon;
+  if(typeof taskPageTenure!=="undefined") taskPageTenure.textContent=s.tenure;
+  if(typeof taskPageNoDeadline!=="undefined") taskPageNoDeadline.textContent=noDeadline;
+
+  const data=filtered();
+
+  if(typeof taskCenterHint!=="undefined"){
+    taskCenterHint.textContent=`Đang hiển thị ${data.length}/${activeTasks.length} nhiệm vụ. Có thể tìm theo số văn bản, nội dung, đơn vị, kết quả hoặc ghi chú.`;
+  }
+
+  taskListFull.className="task-board";
+
+  taskListFull.innerHTML=data.map(t=>`
+    <article class="task-card">
+      <div class="task-card-doc">
+        <div>
+          ${groupBadge(taskGroup(t))}
+          <span class="badge b-gray">${escapeHtml(taskValue(t,"sourceTable","") || "")}</span>
+          <span class="badge b-blue">${escapeHtml(taskDoc(t) || taskValue(t,"docFull","") || "")}</span>
         </div>
-        <p class="task-card-title mt-3">${escapeHtml(taskValue(t,"task","")||"")}</p>
-        <p class="text-sm text-slate-500 mt-2 line-clamp-2">${escapeHtml(t.summary||t.conclusion||"")}</p>
-        <div class="task-card-meta">
-          ${deadlineBadge(taskDeadline(t))}${statusBadge(t.status)}
-          <span class="badge b-gray">${escapeHtml(t.unit||"Chưa phân công")}</span>
-          ${(t.horizon==="dài hạn/nhiệm kỳ"||["Nghị quyết","Chương trình làm việc"].includes(t.group))?'<span class="badge tenure-chip">nhiệm kỳ</span>':''}
+
+        <div class="task-card-actions">
+          <button onclick="openDetailModal(this.dataset.id)" data-id="${escapeHtml(t.id)}" class="icon-btn text-[#4D96FF]" title="Xem chi tiết">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+
+          <button onclick="openEditTask(this.dataset.id)" data-id="${escapeHtml(t.id)}" class="icon-btn icon-edit" title="Chỉnh sửa">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"/>
+              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+            </svg>
+          </button>
+
+          <button onclick="deleteTask(this.dataset.id)" data-id="${escapeHtml(t.id)}" class="icon-btn icon-delete" title="Xóa">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18"/>
+              <path d="M8 6V4h8v2"/>
+              <path d="M19 6l-1 14H6L5 6"/>
+              <path d="M10 11v6"/>
+              <path d="M14 11v6"/>
+            </svg>
+          </button>
         </div>
-        <div class="task-card-progress"><span style="width:${taskProgressPercent(t)}%"></span></div>
-        <div class="task-card-footer">
-          <span class="text-xs text-slate-500">${t.updatedAt?`Cập nhật ${fmt(t.updatedAt)}`:"Chưa cập nhật tiến độ"}</span>
-          <button onclick="openEditTask(this.dataset.id)" data-id="${escapeHtml(t.id)}" class="btn btn-ghost py-2 px-3">Sửa tiến độ</button>
-        </div>
-      </article>`).join("") || `<div class="text-center py-10 text-slate-500">Không có nhiệm vụ phù hợp với bộ lọc hiện tại.</div>`;
-    }
+      </div>
+
+      <p class="task-card-title mt-3">${escapeHtml(taskValue(t,"task","") || "Chưa có nội dung nhiệm vụ")}</p>
+
+      <p class="text-sm text-slate-500 mt-2 line-clamp-2">
+        ${escapeHtml(taskValue(t,"summary","") || taskValue(t,"conclusion","") || taskValue(t,"result","") || "Chưa có trích yếu/kết quả")}
+      </p>
+
+      <div class="task-card-meta">
+        ${deadlineBadge(taskDeadline(t))}
+        ${statusBadge(taskValue(t,"status","đang thực hiện"))}
+        <span class="badge b-gray">${escapeHtml(taskUnit(t) || "Chưa phân công")}</span>
+        ${taskIsTenure(t)?'<span class="badge tenure-chip">nhiệm kỳ</span>':""}
+        ${taskHasNoDeadline(t)?'<span class="badge b-coral">chưa có hạn</span>':""}
+      </div>
+
+      <div class="rounded-2xl bg-slate-50 border border-slate-200 p-3 text-sm text-slate-600 mt-2">
+        <b>Kết quả:</b>
+        <span>${escapeHtml(taskResult(t) || "Chưa cập nhật kết quả")}</span>
+      </div>
+
+      <div class="task-card-progress">
+        <span style="width:${taskProgressPercent(t)}%"></span>
+      </div>
+
+      <div class="task-card-footer">
+        <span class="text-xs text-slate-500">
+          ${taskValue(t,"updatedAt","") ? `Cập nhật ${fmt(taskValue(t,"updatedAt",""))}` : "Chưa cập nhật tiến độ"}
+        </span>
+
+        <button onclick="openDetailModal(this.dataset.id)" data-id="${escapeHtml(t.id)}" class="btn btn-ghost py-2 px-3">
+          Xem chi tiết
+        </button>
+      </div>
+    </article>
+  `).join("") || `<div class="text-center py-10 text-slate-500">Không có nhiệm vụ phù hợp với bộ lọc hiện tại.</div>`;
+}
 
     function setQuick(q){
-      resetTaskFilters(q==="all"?"":q);
-      render();
-      const target=document.getElementById(currentPage==="tasks"?"taskListFull":"taskList") || document.getElementById("taskList");
-      target?.scrollIntoView({behavior:"smooth",block:"start"});
-    }
+  resetTaskFilters("");
+
+  if(q==="all"){
+    filters.quick="";
+  }else if(q==="processing"){
+    filters.quick="processing";
+    filters.status="processing";
+  }else if(q==="done"){
+    filters.quick="done";
+    filters.status="done";
+  }else if(q==="late"){
+    filters.quick="late";
+    filters.status="late";
+  }else if(q==="soon7"){
+    filters.quick="soon7";
+    filters.status="soon7";
+    filters.deadline="soon7";
+  }else if(q==="tenure"){
+    filters.quick="tenure";
+  }else if(q==="noDeadline"){
+    filters.deadline="noDeadline";
+  }else{
+    filters.quick=q || "";
+  }
+
+  render();
+
+  const target =
+    (!document.getElementById("page-tasks")?.classList.contains("hidden"))
+      ? document.getElementById("taskListFull")
+      : document.getElementById("taskList");
+
+  target?.scrollIntoView({behavior:"smooth",block:"start"});
+}
     function resetFilters(){resetTaskFilters("");render()}
     function toggleAdvanced(){advanced.classList.toggle("open")}
 
