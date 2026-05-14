@@ -584,7 +584,7 @@
                   <h3 class="text-xl font-extrabold">Trung tâm nhiệm vụ</h3>
                   <p class="text-sm text-slate-500 mt-1">Có kiểm tra trùng số văn bản trước khi thêm nhiệm vụ mới. Danh sách bên dưới chuyển sang dạng thẻ để dễ đọc, dễ sửa.</p>
                 </div>
-                <button onclick="openTaskModal()" class="btn btn-primary">+ Nhập nhiệm vụ mới</button>
+                <button onclick="openTaskModal()" class="btn btn-primary">+ Nhập nhiệm vụ</button>
               </div>
 
               <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
@@ -1220,6 +1220,27 @@
   <div id="conclusionProgressModal" class="modal"></div>
 
   <!-- TASK MODAL -->
+  <div id="taskIntakeModal" class="modal">
+    <div class="modal-card card rounded-[2rem] w-full max-w-3xl">
+      <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+        <h3 class="text-xl font-extrabold">Chọn phương thức nhập nhiệm vụ</h3>
+        <button onclick="closeTaskIntakeModal()" class="btn btn-ghost px-3">✕</button>
+      </div>
+      <div class="p-5 grid md:grid-cols-3 gap-3">
+        <button onclick="openSingleTaskEntry()" class="btn btn-ghost p-4 text-left"><b>Nhập 01 nhiệm vụ</b><p class="text-xs text-slate-500 mt-1">Nhập biểu mẫu đầy đủ.</p></button>
+        <button onclick="openBulkTaskEntry()" class="btn btn-ghost p-4 text-left"><b>Nhập hàng loạt</b><p class="text-xs text-slate-500 mt-1">Bảng nhập nhanh nhiều dòng.</p></button>
+        <div class="rounded-2xl border border-slate-200 p-4"><b>Import Google Sheet</b><p class="text-xs text-slate-500 mt-1">Chuẩn bị triển khai</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="taskBulkModal" class="modal">
+    <div class="modal-card card rounded-[2rem] w-full max-w-6xl">
+      <div class="p-5 border-b border-slate-200 flex items-center justify-between"><h3 class="text-xl font-extrabold">Nhập hàng loạt</h3><button onclick="closeBulkTaskModal()" class="btn btn-ghost px-3">✕</button></div>
+      <div class="p-5"><div class="flex gap-2 mb-3"><button onclick="addBulkTaskRow()" class="btn btn-ghost">+ Thêm dòng</button><button onclick="validateBulkRows()" class="btn btn-ghost">Kiểm tra dữ liệu</button><button onclick="saveBulkTasks()" class="btn btn-primary">Lưu tất cả</button></div><div id="bulkTaskTable" class="overflow-auto"></div></div>
+    </div>
+  </div>
+
   <div id="taskModal" class="modal">
     <div class="modal-card card rounded-[2rem] w-full max-w-5xl">
       <div class="p-5 border-b border-slate-200 flex items-start justify-between gap-3">
@@ -3525,14 +3546,22 @@ listEl.innerHTML=data.map(c=>`<article class="conclusion-card"><div class="flex 
       const t=tasks[idx];
       const ok=confirm(`Bạn có chắc muốn xóa nhiệm vụ này không?\n\n${t.doc || t.docFull || ""}\n${(t.task || "").slice(0,180)}`);
       if(!ok) return;
-      tasks.splice(idx,1);
-      addAudit("Xóa nhiệm vụ", t, "Đã xóa khỏi danh sách theo dõi");
+      tasks[idx]={...t,is_deleted:true,deletedAt:new Date().toISOString(),deletedBy:currentUser?.username || currentUser?.email || "người dùng"};
+      addAudit("Xóa mềm nhiệm vụ", t, "Đánh dấu is_deleted=true");
       persistLocal();
-      deleteFromDatabase(DB_TABLES.tasks, t.id);
       render();
     }
 
-    function openTaskModal(){editingTaskId=null;duplicateConfirmed=false;document.getElementById("taskModalTitle").textContent="Nhập nhiệm vụ trực tiếp";document.getElementById("taskModalDesc").textContent="Chia rõ Văn bản căn cứ và Nội dung nhiệm vụ theo dõi.";clearTaskForm();dupWarning.classList.add("hidden");taskModal.classList.add("open");lockScroll();}
+    function openTaskModal(){taskIntakeModal.classList.add("open");lockScroll();}
+    function closeTaskIntakeModal(){taskIntakeModal.classList.remove("open");unlockScroll();}
+    function openSingleTaskEntry(){closeTaskIntakeModal();editingTaskId=null;duplicateConfirmed=false;document.getElementById("taskModalTitle").textContent="Nhập nhiệm vụ trực tiếp";document.getElementById("taskModalDesc").textContent="Chia rõ Văn bản căn cứ và Nội dung nhiệm vụ theo dõi.";clearTaskForm();dupWarning.classList.add("hidden");taskModal.classList.add("open");lockScroll();}
+    let bulkTaskRows=[];
+    function openBulkTaskEntry(){closeTaskIntakeModal();bulkTaskRows=[{group:"",doc:"",date:"",summary:"",task:"",unit:"",coUnit:"",deadline:"",status:"đang thực hiện",result:"",note:""}];renderBulkTaskTable();taskBulkModal.classList.add("open");lockScroll();}
+    function closeBulkTaskModal(){taskBulkModal.classList.remove("open");unlockScroll();}
+    function addBulkTaskRow(){bulkTaskRows.push({group:"",doc:"",date:"",summary:"",task:"",unit:"",coUnit:"",deadline:"",status:"đang thực hiện",result:"",note:""});renderBulkTaskTable();}
+    function renderBulkTaskTable(){if(!bulkTaskTable)return;bulkTaskTable.innerHTML=`<table class="w-full text-xs"><thead><tr><th>STT</th><th>Nhóm</th><th>Số VB</th><th>Ngày</th><th>Trích yếu</th><th>Nội dung</th><th>Chủ trì</th><th>Phối hợp</th><th>Hạn</th><th>Trạng thái</th><th>Kết quả</th><th>Ghi chú</th></tr></thead><tbody>${bulkTaskRows.map((r,i)=>`<tr><td>${i+1}</td><td><input class='field' value='${r.group}' oninput='bulkTaskRows[${i}].group=this.value'></td><td><input class='field' value='${r.doc}' oninput='bulkTaskRows[${i}].doc=this.value'></td><td><input type='date' class='field' value='${r.date}' oninput='bulkTaskRows[${i}].date=this.value'></td><td><input class='field' value='${r.summary}' oninput='bulkTaskRows[${i}].summary=this.value'></td><td><input class='field' value='${r.task}' oninput='bulkTaskRows[${i}].task=this.value'></td><td><input class='field' value='${r.unit}' oninput='bulkTaskRows[${i}].unit=this.value'></td><td><input class='field' value='${r.coUnit}' oninput='bulkTaskRows[${i}].coUnit=this.value'></td><td><input type='date' class='field' value='${r.deadline}' oninput='bulkTaskRows[${i}].deadline=this.value'></td><td><input class='field' value='${r.status}' oninput='bulkTaskRows[${i}].status=this.value'></td><td><input class='field' value='${r.result}' oninput='bulkTaskRows[${i}].result=this.value'></td><td><input class='field' value='${r.note}' oninput='bulkTaskRows[${i}].note=this.value'></td></tr>`).join("")}</tbody></table>`;}
+    function validateBulkRows(){const bad=bulkTaskRows.filter(r=>!r.doc||!r.task).length;alert(bad?`Có ${bad} dòng lỗi`:\"Dữ liệu hợp lệ cơ bản\");}
+    function saveBulkTasks(){bulkTaskRows.forEach(r=>{if(!r.doc||!r.task)return;tasks.push({...formData(),id:Date.now()+Math.random(),group:r.group,doc:r.doc,date:r.date,summary:r.summary,task:r.task,unit:r.unit,coUnit:r.coUnit,deadline:r.deadline,status:r.status,result:r.result,note:r.note});});persistLocal();render();closeBulkTaskModal();}
     function closeTaskModal(){taskModal.classList.remove("open");unlockScroll()}
     function clearTaskForm(){["inDoc","inDate","inMeet","inSummary","inOrder","inConclusion","inTask","inUnit","inCoUnit","inOwner","inDeadline","inResult","inNote","inSourceResolution"].forEach(id=>document.getElementById(id).value=id==="inOrder"?"1":"");duplicateConfirmed=false;dupWarning.classList.add("hidden")}
 
