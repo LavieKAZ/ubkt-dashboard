@@ -442,6 +442,104 @@
     padding:13px !important;
   }
 }
+    /* GÓI 3.2 - Làm gọn chữ card Trung tâm nhiệm vụ */
+#page-tasks .task-card{
+  position:relative;
+  overflow:hidden;
+}
+
+#page-tasks .task-card-doc{
+  align-items:flex-start;
+}
+
+#page-tasks .task-card-doc > div:first-child{
+  min-width:0;
+  flex:1;
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+
+#page-tasks .task-card-actions{
+  flex-shrink:0;
+}
+
+#page-tasks .task-card-title{
+  min-height:0 !important;
+  max-height:none !important;
+  font-size:15px !important;
+  line-height:1.45 !important;
+  margin-top:10px !important;
+  display:-webkit-box !important;
+  -webkit-line-clamp:3 !important;
+  -webkit-box-orient:vertical !important;
+  overflow:hidden !important;
+}
+
+#page-tasks .task-summary-compact{
+  font-size:13px;
+  line-height:1.45;
+  color:#64748b;
+  margin-top:8px;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+#page-tasks .task-result-compact{
+  padding:10px !important;
+  margin-top:10px !important;
+  max-height:74px !important;
+  overflow:hidden !important;
+  font-size:13px !important;
+  line-height:1.45 !important;
+}
+
+#page-tasks .task-result-compact span{
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+#page-tasks .task-card-meta{
+  min-height:0 !important;
+  margin-top:10px !important;
+  margin-bottom:8px !important;
+}
+
+#page-tasks .task-card .badge{
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+#page-tasks .task-card .badge.b-blue{
+  max-width:210px;
+}
+
+#page-tasks .task-card-progress{
+  height:6px !important;
+}
+
+#page-tasks .task-card-footer{
+  font-size:12px;
+}
+
+@media(max-width:640px){
+  #page-tasks .task-card-title{
+    -webkit-line-clamp:2 !important;
+  }
+
+  #page-tasks .task-summary-compact{
+    -webkit-line-clamp:2;
+  }
+
+  #page-tasks .task-card .badge.b-blue{
+    max-width:180px;
+  }
+}
   </style>
 </head>
 <body>
@@ -4109,7 +4207,9 @@ function setActionFilter(filter){
         <div>
           ${groupBadge(taskGroup(t))}
           <span class="badge b-gray">${escapeHtml(taskValue(t,"sourceTable","") || "")}</span>
-          <span class="badge b-blue">${escapeHtml(taskDoc(t) || taskValue(t,"docFull","") || "")}</span>
+          <span class="badge b-blue" title="${escapeHtml(taskDoc(t) || taskValue(t,"docFull","") || "")}">
+  ${escapeHtml(taskDoc(t) || taskValue(t,"docFull","") || "")}
+</span>
         </div>
 
         <div class="task-card-actions">
@@ -4139,11 +4239,13 @@ function setActionFilter(filter){
         </div>
       </div>
 
-      <p class="task-card-title mt-3">${escapeHtml(taskValue(t,"task","") || "Chưa có nội dung nhiệm vụ")}</p>
+      <p class="task-card-title">
+  ${escapeHtml(taskValue(t,"task","") || "Chưa có nội dung nhiệm vụ")}
+</p>
 
-      <p class="text-sm text-slate-500 mt-2 line-clamp-2">
-        ${escapeHtml(taskValue(t,"summary","") || taskValue(t,"conclusion","") || taskValue(t,"result","") || "Chưa có trích yếu/kết quả")}
-      </p>
+<p class="task-summary-compact">
+  ${escapeHtml(taskValue(t,"summary","") || taskValue(t,"conclusion","") || taskDoc(t) || "Chưa có trích yếu")}
+</p>
 
       <div class="task-card-meta">
         ${deadlineBadge(taskDeadline(t))}
@@ -4153,9 +4255,9 @@ function setActionFilter(filter){
         ${taskHasNoDeadline(t)?'<span class="badge b-coral">chưa có hạn</span>':""}
       </div>
 
-      <div class="rounded-2xl bg-slate-50 border border-slate-200 p-3 text-sm text-slate-600 mt-2">
+      <div class="task-result-compact rounded-2xl bg-slate-50 border border-slate-200 text-slate-600">
   <b>Kết quả:</b>
-  <span class="line-clamp-3">${escapeHtml(taskResult(t) || "Chưa cập nhật")}</span>
+  <span>${escapeHtml(taskResult(t) || "Chưa cập nhật")}</span>
 </div>
 
       <div class="task-card-progress">
