@@ -392,6 +392,246 @@
     .bo-check-vis.checked{background:#6BCB77;border-color:#6BCB77}
     .bo-check-vis.checked::after{content:"✓";color:white;font-size:12px;font-weight:900}
     .bo-check-wrap:hover .bo-check-vis{border-color:#4D96FF;transform:scale(1.08)}
+
+    /* ═══════════════════════════════════════
+       LIQUID GLASS — Chi tiết tick báo cáo
+    ═══════════════════════════════════════ */
+
+    /* Outer card override */
+    .card:has(.lg-section-header){
+      background: rgba(255,255,255,.72);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255,255,255,.55);
+      box-shadow: 0 8px 32px rgba(31,42,68,.10), inset 0 1px 0 rgba(255,255,255,.7);
+      overflow: hidden;
+    }
+
+    /* Section header */
+    .lg-section-header{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      flex-wrap:wrap;padding:18px 20px;
+      background: linear-gradient(135deg,
+        rgba(255,255,255,.65) 0%,
+        rgba(240,248,255,.55) 50%,
+        rgba(255,255,255,.60) 100%);
+      border-bottom: 1px solid rgba(219,231,243,.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      position:sticky;top:0;z-index:10;
+    }
+    .lg-title-group{display:flex;align-items:center;gap:12px}
+    .lg-icon-badge{
+      width:38px;height:38px;border-radius:12px;flex-shrink:0;
+      background:linear-gradient(135deg,rgba(77,150,255,.22),rgba(107,203,119,.18));
+      border:1px solid rgba(77,150,255,.28);
+      box-shadow:0 2px 8px rgba(77,150,255,.15);
+      display:flex;align-items:center;justify-content:center;color:#1d5fbf;
+    }
+    .lg-section-title{font-size:14px;font-weight:950;color:#1f2a44;letter-spacing:-.02em}
+    .lg-section-sub{font-size:11px;color:#64748b;font-weight:600;margin-top:2px}
+
+    /* Liquid search input */
+    .lg-search-wrap{position:relative}
+    .lg-search-ico{
+      position:absolute;left:10px;top:50%;transform:translateY(-50%);
+      width:14px;height:14px;color:#94a3b8;pointer-events:none;
+    }
+    .lg-search-input{
+      height:36px;padding:0 12px 0 32px;font-size:12px;font-weight:600;
+      border-radius:14px;width:240px;outline:none;
+      background: rgba(255,255,255,.65);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(219,231,243,.8);
+      box-shadow: 0 2px 8px rgba(31,42,68,.06), inset 0 1px 0 rgba(255,255,255,.9);
+      color:#334155;
+      transition: box-shadow .2s, border-color .2s, background .2s;
+    }
+    .lg-search-input:focus{
+      border-color:rgba(77,150,255,.45);
+      background:rgba(255,255,255,.88);
+      box-shadow:0 0 0 3px rgba(77,150,255,.12), 0 2px 8px rgba(31,42,68,.06);
+    }
+    .lg-search-input::placeholder{color:#b0bcc8}
+
+    /* Table outer */
+    .lg-table-outer{position:relative}
+    .lg-scroll{
+      background: transparent!important;
+      border-radius: 0 0 1.5rem 1.5rem;
+    }
+
+    /* Table base */
+    .lg-table{
+      border-collapse:separate;border-spacing:0 3px;
+      table-layout:fixed;min-width:1680px;width:max-content;
+    }
+
+    /* Thead glass */
+    .lg-table thead tr{
+      background: linear-gradient(90deg,
+        rgba(248,250,252,.95) 0%,
+        rgba(240,248,255,.88) 100%);
+    }
+    .lg-table thead th{
+      font-size:10px;font-weight:900;text-transform:uppercase;
+      letter-spacing:.05em;color:#64748b;
+      padding:11px 10px;white-space:nowrap;
+      border-bottom:1px solid rgba(219,231,243,.8);
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
+    }
+    .lg-table thead th:first-child{border-radius:0 0 0 0}
+
+    /* Body rows — liquid glass card */
+    .lg-table tbody tr{
+      background: rgba(255,255,255,.78);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: background .18s, transform .18s, box-shadow .18s;
+      cursor:default;
+    }
+    .lg-table tbody tr:hover{
+      background: rgba(240,248,255,.92);
+      transform: translateX(2px);
+      box-shadow: inset 3px 0 0 #4D96FF, 0 2px 12px rgba(77,150,255,.08);
+    }
+    .lg-table tbody tr.lg-row-done{
+      background:rgba(220,252,231,.55);
+    }
+    .lg-table tbody tr.lg-row-done:hover{
+      background:rgba(187,247,208,.78);
+      box-shadow: inset 3px 0 0 #6BCB77, 0 2px 12px rgba(107,203,119,.10);
+    }
+    .lg-table tbody td{
+      padding:10px 10px;
+      border-bottom:1px solid rgba(241,245,249,.9);
+      vertical-align:middle;white-space:nowrap;
+    }
+    .lg-table tbody tr:last-child td{border-bottom:none}
+
+    /* Sticky cols liquid */
+    .lg-sticky-num{
+      position:sticky!important;left:0!important;
+      width:52px;min-width:52px;max-width:52px;
+      background:inherit;z-index:30;
+      backdrop-filter:blur(16px);
+      -webkit-backdrop-filter:blur(16px);
+      box-shadow:2px 0 8px rgba(31,42,68,.06);
+    }
+    .lg-sticky-name{
+      position:sticky!important;left:52px!important;
+      width:320px;min-width:320px;max-width:320px;
+      background:inherit;z-index:30;
+      backdrop-filter:blur(16px);
+      -webkit-backdrop-filter:blur(16px);
+      box-shadow:2px 0 10px rgba(31,42,68,.07);
+    }
+    thead .lg-sticky-num,thead .lg-sticky-name{
+      z-index:45;
+      background:rgba(248,250,252,.96)!important;
+    }
+
+    /* Status pill */
+    .lg-status-pill{
+      display:inline-flex;align-items:center;gap:4px;
+      padding:2px 8px;border-radius:99px;font-size:10px;font-weight:800;
+    }
+    .lg-status-done{
+      background:rgba(220,252,231,.8);color:#15803d;
+      border:1px solid rgba(134,239,172,.5);
+      backdrop-filter:blur(4px);
+    }
+    .lg-status-miss{
+      background:rgba(254,226,226,.8);color:#b91c1c;
+      border:1px solid rgba(252,165,165,.4);
+      backdrop-filter:blur(4px);
+    }
+
+    /* Liquid checkbox */
+    .lg-check-wrap{
+      display:inline-flex;align-items:center;justify-content:center;
+      cursor:pointer;border-radius:8px;padding:3px;
+      transition:background .15s;
+    }
+    .lg-check-wrap:hover{background:rgba(77,150,255,.08)}
+    .lg-check-wrap input[type=checkbox]{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
+    .lg-check{
+      width:24px;height:24px;border-radius:8px;
+      border:2px solid rgba(203,213,225,.8);
+      background:rgba(255,255,255,.6);
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
+      transition:all .2s cubic-bezier(.34,1.56,.64,1);
+      display:flex;align-items:center;justify-content:center;
+      position:relative;overflow:hidden;
+    }
+    .lg-check::before{
+      content:"";position:absolute;inset:0;
+      background:radial-gradient(circle at center,rgba(255,255,255,.8),transparent 70%);
+      opacity:0;transition:opacity .2s;
+    }
+    .lg-check-wrap:hover .lg-check{
+      border-color:rgba(77,150,255,.55);
+      background:rgba(239,246,255,.7);
+      transform:scale(1.08);
+    }
+    .lg-check.is-done{
+      background:linear-gradient(135deg,#6BCB77,#4ade80);
+      border-color:#6BCB77;
+      box-shadow:0 2px 8px rgba(107,203,119,.35), inset 0 1px 0 rgba(255,255,255,.3);
+    }
+    .lg-check.is-done::after{
+      content:"✓";color:white;font-size:13px;font-weight:900;
+      text-shadow:0 1px 2px rgba(0,0,0,.15);
+    }
+    /* Ripple animation on tick */
+    @keyframes lgRipple{
+      0%{transform:scale(0);opacity:.7}
+      100%{transform:scale(2.5);opacity:0}
+    }
+    .lg-check .lg-ripple{
+      position:absolute;width:100%;height:100%;border-radius:50%;
+      background:rgba(107,203,119,.4);
+      animation:lgRipple .4s ease-out forwards;
+    }
+    /* Row entrance animation */
+    @keyframes lgRowIn{
+      from{opacity:0;transform:translateY(6px) scale(.99)}
+      to{opacity:1;transform:translateY(0) scale(1)}
+    }
+    .lg-table tbody tr{
+      animation:lgRowIn .3s ease both;
+    }
+
+    /* Note input liquid */
+    .lg-note-input{
+      width:100%;max-width:240px;
+      height:30px;padding:0 10px;font-size:11px;font-weight:600;
+      border-radius:10px;outline:none;
+      background:rgba(255,255,255,.55);
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
+      border:1px solid rgba(219,231,243,.7);
+      box-shadow:inset 0 1px 2px rgba(31,42,68,.04);
+      color:#334155;transition:all .15s;
+    }
+    .lg-note-input:focus{
+      background:rgba(255,255,255,.9);
+      border-color:rgba(77,150,255,.4);
+      box-shadow:0 0 0 2px rgba(77,150,255,.1);
+    }
+    .lg-note-input::placeholder{color:#b0bcc8}
+
+    /* Member badge */
+    .lg-member-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:32px;height:22px;padding:0 7px;border-radius:8px;
+      font-size:11px;font-weight:800;
+      background:rgba(239,246,255,.8);color:#1d5fbf;
+      border:1px solid rgba(147,197,253,.4);
+    }
     .bo-table{border-collapse:separate;border-spacing:0;table-layout:fixed;min-width:1680px;width:max-content}
     .bo-table th,.bo-table td{white-space:nowrap;vertical-align:middle}
     .bo-sticky-tt{position:sticky!important;left:0!important;width:64px;min-width:64px;max-width:64px;background:inherit;z-index:30;box-shadow:1px 0 0 #e2e8f0}
@@ -1680,15 +1920,28 @@
 
             <!-- BẢNG CHI TIẾT TICK -->
             <div class="card rounded-3xl reveal">
-              <div class="p-5 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
-                <div>
-                  <div class="bento-hd">Chi tiết tick báo cáo từng cơ sở</div>
-                  <div id="boListHint" class="bento-sub mt-1">Tick checkbox để ghi nhận đã nộp báo cáo tháng</div>
+              <!-- LIQUID GLASS HEADER -->
+              <div class="lg-section-header">
+                <div class="lg-title-group">
+                  <div class="lg-icon-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                  </div>
+                  <div>
+                    <div class="lg-section-title">Chi tiết tick báo cáo từng cơ sở</div>
+                    <div id="boListHint" class="lg-section-sub">Tick checkbox để ghi nhận đã nộp báo cáo tháng</div>
+                  </div>
                 </div>
-                <input id="boSearch" oninput="baseOrgFilters.keyword=this.value;renderBaseOrgs()" class="field text-sm" style="width:240px" placeholder="Tìm tên cơ sở Đảng...">
+                <div class="lg-search-wrap">
+                  <svg class="lg-search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  <input id="boSearch" oninput="baseOrgFilters.keyword=this.value;renderBaseOrgs()" class="lg-search-input" placeholder="Tìm tên cơ sở Đảng...">
+                </div>
               </div>
-              <div class="base-org-scroll">
-                <div id="baseOrgTableWrap"></div>
+
+              <!-- LIQUID GLASS TABLE WRAP -->
+              <div class="lg-table-outer">
+                <div class="base-org-scroll lg-scroll">
+                  <div id="baseOrgTableWrap"></div>
+                </div>
               </div>
             </div>
 
@@ -4196,64 +4449,94 @@ listEl.innerHTML=data.map(c=>`<article class="conclusion-card"><div class="flex 
         hmWrap.innerHTML=hmHtml;
       }
 
-      // ── DETAIL TABLE (filtered) ──
-      const topicHeaders=baseSpecialTopics.map(t=>`<th class="p-2 text-center min-w-32">${escapeHtml(t)}</th>`).join("");
-      const monthHeaders=REQUIRED_REPORT_MONTHS.map(m=>`<th class="p-2 text-center min-w-24">${baseMonthLabel(m)}</th>`).join("");
+      // ── LIQUID GLASS DETAIL TABLE (filtered) ──
+      const topicHeaders=baseSpecialTopics.map(t=>`<th class="text-center min-w-32">${escapeHtml(t)}</th>`).join("");
+      const monthHeaders=REQUIRED_REPORT_MONTHS.map(m=>`<th class="text-center min-w-24">${baseMonthLabel(m)}</th>`).join("");
 
-      const rows=visibleOrgs.map(o=>{
-        const requiredCells=REQUIRED_REPORT_MONTHS.map(m=>{
-          const r=reportFor(o.id,yearMonth(year,m));
-          return `<td class="p-2 text-center bo-month-col">
-            <label class="bo-check-wrap" title="${r.monthly?'Đã nộp - click để bỏ':'Chưa nộp - click để tick'}">
-              <input type="checkbox" ${r.monthly?"checked":""} onchange="updateBaseMonthly('${o.id}',${m},this.checked)">
-              <span class="bo-check-vis ${r.monthly?'checked':''}"></span>
-            </label>
-          </td>`;
-        }).join("");
-        const topicCells=baseSpecialTopics.map(t=>{
-          const anyChecked=orgYearReports(o.id,year).some(r=>r.specials?.[t]);
-          return `<td class="p-2 text-center bo-topic-col">
-            <label class="bo-check-wrap" title="${anyChecked?'Đã nộp':'Chưa nộp'}">
-              <input type="checkbox" ${anyChecked?"checked":""} onchange="updateBaseSpecial('${o.id}','${escapeHtml(t).replaceAll("'","&#39;")}',this.checked)">
-              <span class="bo-check-vis ${anyChecked?'checked':''}"></span>
-            </label>
-          </td>`;
-        }).join("");
-        const noteReport=reportFor(o.id,yearMonth(year,1));
+      const rows=visibleOrgs.map((o,idx)=>{
         const complete=isOrgRequiredComplete(o.id,year);
         const missingMonths=REQUIRED_REPORT_MONTHS.filter(m=>!reportFor(o.id,yearMonth(year,m)).monthly);
-        return `<tr class="border-b border-slate-100 ${complete?'bg-green-50/40':'hover:bg-red-50/20'}" style="transition:.12s">
-          <td class="p-3 bo-sticky-tt text-center text-slate-400 text-xs font-bold">${o.order}</td>
-          <td class="p-3 bo-sticky-name">
-            <div class="bo-name-text font-bold text-slate-800">${escapeHtml(o.name)}</div>
-            <div class="flex items-center gap-2 mt-0.5">
-              <span class="text-xs text-slate-400">${escapeHtml(o.type||"")}</span>
-              ${complete?'<span style="font-size:10px;background:#dcfce7;color:#15803d;padding:1px 6px;border-radius:99px;font-weight:700">✓ Đủ BC</span>':
-              `<span style="font-size:10px;background:#fee2e2;color:#b91c1c;padding:1px 6px;border-radius:99px;font-weight:700">Thiếu T${missingMonths.join(",")}</span>`}
+        const isDB=o.type==="Đảng bộ";
+
+        const requiredCells=REQUIRED_REPORT_MONTHS.map(m=>{
+          const r=reportFor(o.id,yearMonth(year,m));
+          const isDone=!!r.monthly;
+          return `<td class="text-center bo-month-col" style="padding:6px 8px">
+            <label class="lg-check-wrap" title="${isDone?'Đã nộp — click bỏ tick':'Chưa nộp — click để tick'}">
+              <input type="checkbox" ${isDone?"checked":""} onchange="
+                updateBaseMonthly('${o.id}',${m},this.checked);
+                const lg=this.nextElementSibling;
+                lg.classList.toggle('is-done',this.checked);
+                if(this.checked){const r=document.createElement('span');r.className='lg-ripple';lg.appendChild(r);setTimeout(()=>r.remove(),400);}
+              ">
+              <span class="lg-check ${isDone?'is-done':''}"></span>
+            </label>
+          </td>`;
+        }).join("");
+
+        const topicCells=baseSpecialTopics.map(t=>{
+          const anyChecked=orgYearReports(o.id,year).some(r=>r.specials?.[t]);
+          return `<td class="text-center bo-topic-col" style="padding:6px 8px">
+            <label class="lg-check-wrap" title="${anyChecked?'Đã nộp':'Chưa nộp'}">
+              <input type="checkbox" ${anyChecked?"checked":""} onchange="
+                updateBaseSpecial('${o.id}','${escapeHtml(t).replaceAll("'","&#39;")}',this.checked);
+                const lg=this.nextElementSibling;
+                lg.classList.toggle('is-done',this.checked);
+                if(this.checked){const r=document.createElement('span');r.className='lg-ripple';lg.appendChild(r);setTimeout(()=>r.remove(),400);}
+              ">
+              <span class="lg-check ${anyChecked?'is-done':''}"></span>
+            </label>
+          </td>`;
+        }).join("");
+
+        const noteReport=reportFor(o.id,yearMonth(year,1));
+        const animDelay=Math.min(idx*22,500);
+
+        return `<tr class="${complete?'lg-row-done':''}" style="animation-delay:${animDelay}ms">
+          <td class="lg-sticky-num text-center" style="font-size:11px;font-weight:800;color:#b0bcc8">${o.order}</td>
+          <td class="lg-sticky-name" style="padding:8px 12px">
+            <div style="font-weight:${isDB?'950':'800'};color:#1f2a44;font-size:12.5px;line-height:1.3">${escapeHtml(o.name)}</div>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:3px">
+              <span style="font-size:10px;color:#94a3b8;font-weight:600">${escapeHtml(o.type||"")}</span>
+              ${complete
+                ?`<span class="lg-status-pill lg-status-done">✓ Đủ BC</span>`
+                :`<span class="lg-status-pill lg-status-miss">Thiếu T${missingMonths.join(",")}</span>`
+              }
             </div>
           </td>
-          <td class="p-3 text-center bo-member-col text-sm font-semibold">${o.members||0}</td>
+          <td class="bo-member-col text-center" style="padding:8px 10px">
+            <span class="lg-member-badge">${o.members||0}</span>
+          </td>
           ${requiredCells}
-          ${topicCells||'<td class="p-2 text-center text-slate-400 text-xs">—</td>'}
-          <td class="p-3 bo-note-col"><input class="field text-xs" value="${escapeHtml(noteReport.note||"")}" onchange="updateBaseNote('${o.id}',this.value)" placeholder="Ghi chú/điểm thi đua"></td>
+          ${topicCells||`<td class="text-center bo-topic-col" style="color:#b0bcc8;font-size:11px">—</td>`}
+          <td class="bo-note-col" style="padding:8px 10px">
+            <input class="lg-note-input" value="${escapeHtml(noteReport.note||"")}"
+              onchange="updateBaseNote('${o.id}',this.value)"
+              placeholder="Ghi chú / điểm thi đua">
+          </td>
         </tr>`;
       }).join("");
 
-      baseOrgTableWrap.innerHTML=`<table class="bo-table text-xs sm:text-sm">
-        <thead class="bg-slate-50">
+      baseOrgTableWrap.innerHTML=`<table class="lg-table text-xs">
+        <thead>
           <tr>
-            <th class="p-3 text-center bo-sticky-tt">TT</th>
-            <th class="p-3 text-left bo-sticky-name">Tên cơ sở Đảng</th>
-            <th class="p-3 text-center bo-member-col">ĐV</th>
-            <th class="p-3 text-center" colspan="12">Báo cáo tháng/quý/năm</th>
-            <th class="p-3 text-center" colspan="${Math.max(baseSpecialTopics.length,1)}">Chuyên đề phát sinh</th>
-            <th class="p-3 text-left">Ghi chú</th>
+            <th class="lg-sticky-num text-center" style="padding:10px">TT</th>
+            <th class="lg-sticky-name" style="padding:10px 12px;text-align:left">Tên cơ sở Đảng</th>
+            <th class="bo-member-col text-center" style="padding:10px">ĐV</th>
+            <th class="text-center" colspan="12" style="padding:10px">Báo cáo tháng / quý / năm</th>
+            <th class="text-center" colspan="${Math.max(baseSpecialTopics.length,1)}" style="padding:10px">Chuyên đề phát sinh</th>
+            <th class="bo-note-col" style="padding:10px;text-align:left">Ghi chú</th>
           </tr>
           <tr>
-            <th class="bo-sticky-tt"></th><th class="bo-sticky-name"></th><th class="bo-member-col"></th>${monthHeaders}${topicHeaders||'<th class="p-2 text-center bo-topic-col text-slate-400">Chưa có</th>'}<th class="bo-note-col"></th>
+            <th class="lg-sticky-num"></th>
+            <th class="lg-sticky-name"></th>
+            <th class="bo-member-col"></th>
+            ${monthHeaders}
+            ${topicHeaders||`<th class="text-center bo-topic-col" style="color:#b0bcc8">Chưa có</th>`}
+            <th class="bo-note-col"></th>
           </tr>
         </thead>
-        <tbody>${rows||`<tr><td colspan="20" class="text-center py-8 text-slate-400">Không tìm thấy cơ sở Đảng phù hợp</td></tr>`}</tbody>
+        <tbody>${rows||`<tr><td colspan="20" style="text-align:center;padding:40px 20px;color:#94a3b8">Không tìm thấy cơ sở Đảng phù hợp</td></tr>`}</tbody>
       </table>`;
     }
     function updateBaseMonthly(orgId,monthNo,value){const r=reportFor(orgId,yearMonth(baseOrgFilters.year,monthNo));r.monthly=value;persistLocal();renderBaseOrgs();}
