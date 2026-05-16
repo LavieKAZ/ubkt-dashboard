@@ -660,6 +660,55 @@
 .pending-empty{text-align:center;padding:40px 20px}
 .pending-empty-icon{font-size:36px;margin-bottom:8px}
 .pending-empty-text{font-size:14px;font-weight:700;color:#94a3b8}
+
+/* ═══ PERIOD SECTION (gộp từ tab Chốt kỳ) ═══ */
+.period-section-wrap{
+  background:rgba(255,255,255,.95);
+  border:1px solid rgba(226,232,240,.9);
+  box-shadow:0 14px 34px rgba(31,42,68,.08);
+  border-radius:24px;
+  overflow:hidden;
+}
+.period-section-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;flex-wrap:wrap;
+  padding:18px 20px;
+  border-bottom:1px solid #f1f5f9;
+  background:linear-gradient(135deg,rgba(77,150,255,.06),rgba(107,203,119,.06));
+}
+.period-section-hd-left{display:flex;align-items:center;gap:12px}
+.period-section-icon{
+  width:40px;height:40px;border-radius:12px;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(77,150,255,.15),rgba(107,203,119,.12));
+  border:1px solid rgba(77,150,255,.2);
+  display:flex;align-items:center;justify-content:center;
+  color:#1d5fbf;
+}
+.period-section-icon svg{width:18px;height:18px}
+.period-section-title{font-size:15px;font-weight:950;color:#1f2a44;letter-spacing:-.02em}
+.period-section-sub{font-size:11px;color:#64748b;font-weight:600;margin-top:2px;line-height:1.4}
+.period-accordion-btn{
+  width:100%;display:flex;align-items:center;justify-content:space-between;
+  padding:12px 20px;background:transparent;border:none;
+  font-size:12px;font-weight:800;color:#64748b;cursor:pointer;
+  border-bottom:1px solid #f1f5f9;
+  transition:background .15s,color .15s;
+}
+.period-accordion-btn:hover{background:#f8fafc;color:#1d5fbf}
+.period-accordion-body{
+  max-height:0;overflow:hidden;
+  transition:max-height .55s cubic-bezier(.22,1,.36,1);
+  padding:0 16px;
+}
+.period-accordion-body.open{
+  max-height:5000px;
+  padding:16px;
+}
+@media(max-width:768px){
+  .period-section-hd{flex-direction:column;align-items:flex-start}
+  .period-section-hd>div:last-child{width:100%}
+  .period-section-hd>div:last-child button{flex:1}
+}
 .delta-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
 .delta-stat{border-radius:14px;padding:12px;text-align:center}
 .delta-stat b{font-size:24px;font-weight:950;display:block;line-height:1}
@@ -732,7 +781,7 @@
           <button class="nav-item" data-page="conclusions" onclick="switchPage('conclusions')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3h10l3 3v15H6z"/><path d="M15 3v4h4"/><path d="M9 12l2 2 4-5"/><path d="M9 17h7"/></svg></span><span class="nav-label">Giám sát KL Thanh tra, Kiểm tra</span></button>
           <button class="nav-item" data-page="baseorgs" onclick="switchPage('baseorgs')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h16"/><path d="M6 20V8l6-4 6 4v12"/><path d="M9 20v-7h6v7"/></svg></span><span class="nav-label">Theo dõi Cơ sở Đảng</span></button>
           <button class="nav-item" data-page="dossiers" onclick="switchPage('dossiers')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h6l2 2h8v10H4z"/><path d="M8 13h8"/><path d="M8 16h5"/></svg></span><span class="nav-label">Hồ sơ KTGS</span></button>
-          <button class="nav-item" data-page="periods" onclick="switchPage('periods')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l5 5-3 3 4 4-3 3-4-4-5 5 5-5-4-4 3-3z"/></svg></span><span class="nav-label">Chốt kỳ báo cáo</span></button>
+
           <button class="nav-item" data-page="reports" onclick="switchPage('reports')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M8 13h8"/><path d="M8 17h6"/></svg></span><span class="nav-label">Báo cáo một trang</span></button>
         </nav>
       </aside>
@@ -954,84 +1003,127 @@
               </div>
 
             </div><!-- end .bento -->
+
+            <!-- ── SECTION CHỐT KỲ (gộp từ tab Chốt kỳ) ── -->
+            <div class="period-section-wrap reveal">
+
+              <!-- Header + nút -->
+              <div class="period-section-hd">
+                <div class="period-section-hd-left">
+                  <div class="period-section-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                  </div>
+                  <div>
+                    <div class="period-section-title">Chốt kỳ &amp; Theo dõi biến động</div>
+                    <div class="period-section-sub">Snapshot theo tuần/tháng — biết từng đơn vị hoàn thành thêm gì, phát sinh mới bao nhiêu, còn nợ gì</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                  <button onclick="previewDashboardPeriod()" class="btn btn-ghost py-2 px-4 text-sm">Xem trước số liệu</button>
+                  <button onclick="openUnitPeriodDrilldown()" class="btn btn-ghost py-2 px-4 text-sm">Chi tiết đơn vị</button>
+                  <button onclick="openClosePeriodModal()" class="btn btn-primary py-2 px-4 text-sm">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="14" height="14"><path d="M5 12l5 5L20 7"/></svg>
+                    Chốt kỳ mới
+                  </button>
+                </div>
+              </div>
+
+              <!-- Accordion toggle -->
+              <button class="period-accordion-btn" id="periodAccordionBtn" onclick="togglePeriodSection()">
+                <span id="periodAccordionLabel">Xem chi tiết biến động &amp; lịch sử kỳ</span>
+                <svg id="periodAccordionArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16" style="transition:.3s;transform:rotate(0deg)"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+
+              <!-- Collapsible body -->
+              <div id="periodAccordionBody" class="period-accordion-body">
+
+                <!-- Bản đồ biến động -->
+                <div class="period-hero" style="margin-bottom:16px">
+                  <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+                    <div>
+                      <h3 class="font-extrabold text-lg">Bản đồ biến động kỳ gần nhất</h3>
+                      <p id="periodRangeText" class="text-sm text-slate-500 mt-1">Đang tính theo kỳ gần nhất</p>
+                    </div>
+                    <div class="flex gap-2 flex-wrap">
+                      <span class="badge b-green">Hoàn thành trong kỳ</span>
+                      <span class="badge b-blue">Phát sinh trong kỳ</span>
+                      <span class="badge b-coral">Nợ/quá hạn cuối kỳ</span>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 xl:grid-cols-5 gap-3">
+                    <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Hoàn thành trong kỳ</p><b id="pkCompleted" class="text-[#6BCB77]">0</b></div>
+                    <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Phát sinh mới</p><b id="pkAdded" class="text-[#4D96FF]">0</b></div>
+                    <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Nợ/quá hạn cuối kỳ</p><b id="pkDebt" class="text-[#FF6B6B]">0</b></div>
+                    <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Tồn cuối kỳ</p><b id="pkOpen" class="text-[#B89400]">0</b></div>
+                    <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Đơn vị có nợ</p><b id="pkUnitsDebt">0</b></div>
+                  </div>
+                  <div class="period-story">
+                    <div class="period-story-card"><p class="text-xs font-extrabold text-slate-500 uppercase">Đơn vị xử lý tốt nhất</p><b id="storyBestUnit" class="text-[#6BCB77]">—</b><p id="storyBestUnitText" class="text-xs text-slate-500 mt-1">—</p></div>
+                    <div class="period-story-card"><p class="text-xs font-extrabold text-slate-500 uppercase">Cần đôn đốc nhất</p><b id="storyRiskUnit" class="text-[#FF6B6B]">—</b><p id="storyRiskUnitText" class="text-xs text-slate-500 mt-1">—</p></div>
+                    <div class="period-story-card"><p class="text-xs font-extrabold text-slate-500 uppercase">Diễn biến kỳ</p><b id="storyTrend" class="text-[#4D96FF]">—</b><p id="storyTrendText" class="text-xs text-slate-500 mt-1">—</p></div>
+                  </div>
+                </div>
+
+                <!-- Biểu đồ + xếp hạng -->
+                <div class="bento" style="margin-bottom:16px">
+                  <div class="card rounded-3xl p-4 b-span-7">
+                    <div class="flex items-center justify-between gap-3 mb-3">
+                      <div>
+                        <h3 class="font-extrabold">Biểu đồ chốt kỳ tổng hợp</h3>
+                        <p class="text-sm text-slate-500">Cột = phát sinh/hoàn thành/nợ · Đường = tồn cuối kỳ</p>
+                      </div>
+                    </div>
+                    <div class="chart-box"><canvas id="periodChart"></canvas></div>
+                  </div>
+                  <div class="card rounded-3xl p-4 b-span-5">
+                    <h3 class="font-extrabold mb-1">Xếp hạng xử lý theo đơn vị</h3>
+                    <p class="text-sm text-slate-500 mb-3">Điểm = hoàn thành + phát sinh được xử lý − nợ/quá hạn</p>
+                    <div id="unitRankList" class="space-y-2 overflow-auto pr-1" style="max-height:300px"></div>
+                  </div>
+                </div>
+
+                <!-- Biến động đơn vị + chi tiết -->
+                <div class="bento" style="margin-bottom:16px">
+                  <div class="card rounded-3xl p-4 b-span-7">
+                    <h3 class="font-extrabold mb-1">Biến động kỳ theo từng đơn vị</h3>
+                    <p class="text-sm text-slate-500 mb-3">Chỉ tính biến động trong kỳ — không lấy tổng lũy kế</p>
+                    <div class="chart-box"><canvas id="unitDeltaChart"></canvas></div>
+                  </div>
+                  <div class="card rounded-3xl p-4 b-span-5">
+                    <h3 class="font-extrabold mb-3">Chi tiết đơn vị trong kỳ gần nhất</h3>
+                    <div id="unitPeriodList" class="space-y-2 overflow-auto pr-1" style="max-height:360px"></div>
+                  </div>
+                </div>
+
+                <!-- Cảnh báo + biến động cũ -->
+                <div class="bento" style="margin-bottom:16px">
+                  <div class="card rounded-3xl p-4 b-span-6">
+                    <h4 class="font-extrabold mb-3">Biến động trong kỳ hiện tại</h4>
+                    <div id="dashboardPeriodDelta" class="space-y-2 text-sm text-slate-600">Chưa tính số liệu.</div>
+                  </div>
+                  <div class="card rounded-3xl p-4 b-span-6">
+                    <h4 class="font-extrabold mb-3">Cảnh báo trước khi chốt kỳ</h4>
+                    <div id="dashboardPeriodWarnings" class="space-y-2 text-sm text-slate-600">Chưa có dữ liệu cảnh báo.</div>
+                  </div>
+                </div>
+
+                <!-- Lịch sử chốt kỳ -->
+                <div class="card rounded-3xl p-4">
+                  <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+                    <div>
+                      <h4 class="font-extrabold">Lịch sử chốt kỳ</h4>
+                      <p class="text-sm text-slate-500 mt-1">Theo dõi lại số liệu đã khóa tại từng kỳ báo cáo</p>
+                    </div>
+                    <button onclick="renderDashboardClosedPeriods()" class="btn btn-ghost py-2 px-3 text-sm">Làm mới</button>
+                  </div>
+                  <div id="dashboardClosedPeriods" class="space-y-3">Chưa có kỳ báo cáo đã chốt.</div>
+                  <div id="periodList" class="grid md:grid-cols-2 xl:grid-cols-3 gap-3 mt-3"></div>
+                </div>
+
+              </div><!-- end accordion body -->
+            </div><!-- end period-section-wrap -->
+
           </section>
-          <div class="card rounded-3xl p-5">
-  <div class="flex flex-col xl:flex-row xl:items-start justify-between gap-4">
-    <div>
-      <h3 class="text-xl font-extrabold">Chốt kỳ báo cáo</h3>
-      <p class="text-sm text-slate-500 mt-1">
-        Chốt số liệu nhiệm vụ tại thời điểm báo cáo. Số liệu chốt kỳ dùng để theo dõi biến động, tồn chuyển kỳ sau và phục vụ báo cáo định kỳ.
-      </p>
-    </div>
-
-    <div class="flex flex-col sm:flex-row gap-2">
-      <button onclick="previewDashboardPeriod()" class="btn btn-ghost">Xem trước số liệu</button>
-      <button onclick="openClosePeriodModal()" class="btn btn-primary">Chốt kỳ</button>
-    </div>
-  </div>
-
-  <div class="grid md:grid-cols-2 xl:grid-cols-5 gap-3 mt-4">
-    <div class="period-kpi">
-      <p class="text-xs font-extrabold text-slate-500 uppercase">Phát sinh trong kỳ</p>
-      <b id="dashAddedInPeriod" class="text-[#4D96FF]">0</b>
-    </div>
-
-    <div class="period-kpi">
-      <p class="text-xs font-extrabold text-slate-500 uppercase">Hoàn thành trong kỳ</p>
-      <b id="dashCompletedInPeriod" class="text-[#6BCB77]">0</b>
-    </div>
-
-    <div class="period-kpi">
-      <p class="text-xs font-extrabold text-slate-500 uppercase">Tồn chuyển kỳ sau</p>
-      <b id="dashCarryOver" class="text-[#B89400]">0</b>
-    </div>
-
-    <div class="period-kpi">
-      <p class="text-xs font-extrabold text-slate-500 uppercase">Quá hạn</p>
-      <b id="dashLatePeriod" class="text-[#FF6B6B]">0</b>
-    </div>
-
-    <div class="period-kpi">
-      <p class="text-xs font-extrabold text-slate-500 uppercase">Cần rà soát</p>
-      <b id="dashWarningCount" class="text-slate-700">0</b>
-    </div>
-  </div>
-
-  <div class="grid xl:grid-cols-2 gap-4 mt-4">
-    <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-      <h4 class="font-extrabold mb-3">Biến động trong kỳ</h4>
-      <div id="dashboardPeriodDelta" class="space-y-2 text-sm text-slate-600">
-        Chưa tính số liệu.
-      </div>
-    </div>
-
-    <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-      <h4 class="font-extrabold mb-3">Cảnh báo trước khi chốt</h4>
-      <div id="dashboardPeriodWarnings" class="space-y-2 text-sm text-slate-600">
-  Chưa có dữ liệu cảnh báo.
-</div>
-    </div>
-  </div>
-
-  <div class="mt-5 rounded-3xl border border-slate-200 bg-white p-4">
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
-      <div>
-        <h4 class="font-extrabold">Danh sách kỳ đã chốt</h4>
-        <p class="text-sm text-slate-500 mt-1">
-          Theo dõi lại số liệu đã khóa tại từng kỳ báo cáo.
-        </p>
-      </div>
-
-      <button onclick="renderDashboardClosedPeriods()" class="btn btn-ghost">
-        Làm mới
-      </button>
-    </div>
-
-    <div id="dashboardClosedPeriods" class="space-y-3">
-      Chưa có kỳ báo cáo đã chốt.
-    </div>
-  </div>
-</div>
 
           <!-- TASKS PAGE -->
 
@@ -1383,81 +1475,13 @@
             <div id="dossierList" class="grid lg:grid-cols-2 gap-4"></div>
           </section>
 
-          <!-- PERIODS PAGE -->
+          <!-- PERIODS PAGE — đã gộp vào Dashboard -->
           <section id="page-periods" class="page hidden space-y-5">
-            <div class="card rounded-3xl p-5">
-              <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                <div>
-                  <h3 class="text-xl font-extrabold">Chốt kỳ báo cáo</h3>
-                  <p class="text-sm text-slate-500 mt-1">Chốt snapshot theo tuần/tháng để biết từng đơn vị đã giải quyết thêm việc gì, phát sinh mới bao nhiêu, còn nợ gì.</p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                  <button onclick="openClosePeriodModal()" class="btn btn-primary">Chốt kỳ hiện tại</button>
-                  <button onclick="openUnitPeriodDrilldown()" class="btn btn-ghost">Xem chi tiết đơn vị</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="period-hero reveal">
-              <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
-                <div>
-                  <h3 class="font-extrabold text-lg">Bản đồ biến động kỳ gần nhất</h3>
-                  <p id="periodRangeText" class="text-sm text-slate-500 mt-1">Đang tính theo kỳ gần nhất</p>
-                </div>
-                <div class="flex gap-2 flex-wrap">
-                  <span class="badge b-green">Hoàn thành trong kỳ</span>
-                  <span class="badge b-blue">Phát sinh trong kỳ</span>
-                  <span class="badge b-coral">Nợ/quá hạn cuối kỳ</span>
-                </div>
-              </div>
-              <div class="grid grid-cols-2 xl:grid-cols-5 gap-3">
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Hoàn thành trong kỳ</p><b id="pkCompleted" class="text-[#6BCB77]">0</b></div>
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Phát sinh mới</p><b id="pkAdded" class="text-[#4D96FF]">0</b></div>
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Nợ/quá hạn cuối kỳ</p><b id="pkDebt" class="text-[#FF6B6B]">0</b></div>
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Tồn cuối kỳ</p><b id="pkOpen" class="text-[#B89400]">0</b></div>
-                <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Đơn vị có nợ</p><b id="pkUnitsDebt">0</b></div>
-              </div>
-
-              <div class="period-story">
-                <div class="period-story-card"><p class="text-xs font-extrabold text-slate-500 uppercase">Đơn vị xử lý tốt nhất</p><b id="storyBestUnit" class="text-[#6BCB77]">—</b><p id="storyBestUnitText" class="text-xs text-slate-500 mt-1">—</p></div>
-                <div class="period-story-card"><p class="text-xs font-extrabold text-slate-500 uppercase">Cần đôn đốc nhất</p><b id="storyRiskUnit" class="text-[#FF6B6B]">—</b><p id="storyRiskUnitText" class="text-xs text-slate-500 mt-1">—</p></div>
-                <div class="period-story-card"><p class="text-xs font-extrabold text-slate-500 uppercase">Diễn biến kỳ</p><b id="storyTrend" class="text-[#4D96FF]">—</b><p id="storyTrendText" class="text-xs text-slate-500 mt-1">—</p></div>
-              </div>
-
-            </div>
-
-            <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
-              <div class="card rounded-3xl p-4 xl:col-span-7">
-                <div class="flex items-center justify-between gap-3 mb-3">
-                  <div>
-                    <h3 class="font-extrabold">Biểu đồ chốt kỳ tổng hợp</h3>
-                    <p class="text-sm text-slate-500">Cột thể hiện phát sinh/hoàn thành/nợ mới; đường thể hiện tồn cuối kỳ.</p>
-                  </div>
-                </div>
-                <div class="chart-box"><canvas id="periodChart"></canvas></div>
-              </div>
-              <div class="card rounded-3xl p-4 xl:col-span-5">
-                <h3 class="font-extrabold mb-3">Xếp hạng xử lý theo đơn vị</h3>
-                <p class="text-sm text-slate-500 mb-3">Điểm xử lý = hoàn thành trong kỳ + phát sinh được xử lý, trừ nợ/quá hạn.</p>
-                <div id="unitRankList" class="space-y-2 max-h-[300px] overflow-auto pr-1"></div>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
-              <div class="card rounded-3xl p-4 xl:col-span-7">
-                <h3 class="font-extrabold mb-3">Biến động kỳ theo từng đơn vị</h3>
-                <p class="text-sm text-slate-500 mb-3">Biểu đồ này chỉ tính biến động trong kỳ, không lấy tổng hoàn thành lũy kế để tránh sai lệch.</p>
-                <div class="chart-box"><canvas id="unitDeltaChart"></canvas></div>
-              </div>
-              <div class="card rounded-3xl p-4 xl:col-span-5">
-                <h3 class="font-extrabold mb-3">Chi tiết đơn vị trong kỳ gần nhất</h3>
-                <div id="unitPeriodList" class="space-y-2 max-h-[360px] overflow-auto pr-1"></div>
-              </div>
-            </div>
-
-            <div class="card rounded-3xl p-4">
-              <h3 class="font-extrabold mb-3">Lịch sử chốt kỳ</h3>
-              <div id="periodList" class="grid md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+            <div class="card rounded-3xl p-8 text-center">
+              <div style="font-size:48px;margin-bottom:12px">📅</div>
+              <h3 class="text-xl font-extrabold mb-2">Chốt kỳ đã chuyển vào Dashboard</h3>
+              <p class="text-slate-500 mb-4">Toàn bộ tính năng chốt kỳ và theo dõi biến động đã được gộp vào tab Dashboard để tiện theo dõi hơn.</p>
+              <button onclick="switchPage('dashboard')" class="btn btn-primary">Về Dashboard</button>
             </div>
           </section>
 
@@ -4639,6 +4663,16 @@ function setActionFilter(filter){
 }
     function resetFilters(){resetTaskFilters("");render()}
     function toggleAdvanced(){advanced.classList.toggle("open")}
+
+    function togglePeriodSection(){
+      const body=document.getElementById('periodAccordionBody');
+      const arrow=document.getElementById('periodAccordionArrow');
+      const label=document.getElementById('periodAccordionLabel');
+      if(!body) return;
+      const isOpen=body.classList.toggle('open');
+      if(arrow) arrow.style.transform=isOpen?'rotate(180deg)':'rotate(0deg)';
+      if(label) label.textContent=isOpen?'Thu gọn biến động & lịch sử kỳ':'Xem chi tiết biến động & lịch sử kỳ';
+    }
 
 
     function addAudit(action, task, details=""){
