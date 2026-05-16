@@ -358,6 +358,40 @@
     .base-org-scroll::-webkit-scrollbar{height:8px}
     .base-org-scroll::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
     .base-org-scroll::-webkit-scrollbar-track{background:#f1f5f9;border-radius:999px}
+
+    /* HEATMAP cơ sở đảng */
+    .bo-heatmap-scroll{overflow-x:auto;padding-bottom:6px}
+    .bo-heatmap-scroll::-webkit-scrollbar{height:6px}
+    .bo-heatmap-scroll::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px}
+    .bo-heatmap-table{border-collapse:collapse;min-width:100%}
+    .bo-hm-org{
+      font-size:11px;font-weight:700;color:#475569;padding:4px 10px 4px 0;
+      white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis;
+      position:sticky;left:0;background:white;z-index:2;
+    }
+    .bo-hm-org.db{color:#1f2a44;font-weight:900}
+    .bo-hm-head{
+      font-size:10px;font-weight:900;color:#94a3b8;text-align:center;
+      padding:0 3px 6px;white-space:nowrap;position:sticky;top:0;background:white;z-index:3;
+    }
+    .bo-hm-cell{
+      width:24px;height:24px;border-radius:5px;cursor:pointer;
+      transition:transform .12s,filter .12s;position:relative;
+    }
+    .bo-hm-cell:hover{transform:scale(1.25);z-index:4;filter:brightness(.9)}
+    .bo-hm-cell td{padding:2px 3px}
+    .bo-hm-done{background:#6BCB77}
+    .bo-hm-miss{background:#FF6B6B}
+    .bo-hm-na{background:#f1f5f9}
+    .bo-hm-special-done{background:#4D96FF}
+    .bo-hm-special-miss{background:#FFD93D}
+    .bo-hm-row:hover .bo-hm-org{color:#1d5fbf}
+    .bo-check-wrap{display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+    .bo-check-wrap input[type=checkbox]{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
+    .bo-check-vis{width:22px;height:22px;border-radius:6px;border:2px solid #cbd5e1;background:white;transition:.15s;display:flex;align-items:center;justify-content:center}
+    .bo-check-vis.checked{background:#6BCB77;border-color:#6BCB77}
+    .bo-check-vis.checked::after{content:"✓";color:white;font-size:12px;font-weight:900}
+    .bo-check-wrap:hover .bo-check-vis{border-color:#4D96FF;transform:scale(1.08)}
     .bo-table{border-collapse:separate;border-spacing:0;table-layout:fixed;min-width:1680px;width:max-content}
     .bo-table th,.bo-table td{white-space:nowrap;vertical-align:middle}
     .bo-sticky-tt{position:sticky!important;left:0!important;width:64px;min-width:64px;max-width:64px;background:inherit;z-index:30;box-shadow:1px 0 0 #e2e8f0}
@@ -1577,30 +1611,87 @@
 
           <!-- BASE ORGS PAGE -->
           <section id="page-baseorgs" class="page hidden space-y-5">
+
+            <!-- HEADER + CONTROLS -->
             <div class="card rounded-3xl p-5">
-              <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
-                  <h3 class="text-xl font-extrabold">Theo dõi Cơ sở Đảng</h3>
-                  <p class="text-sm text-slate-500 mt-1">Tick báo cáo tháng 1-12; tháng 3 là Quý I, tháng 6 là Quý II, tháng 10 là Báo cáo năm. Báo cáo chuyên đề phát sinh được thêm một lần và áp dụng cho tất cả cơ sở Đảng.</p>
+                  <h3 class="text-xl font-extrabold">Theo dõi nộp báo cáo — Cơ sở Đảng</h3>
+                  <p class="text-sm text-slate-500 mt-1">Tháng 3 = Quý I · Tháng 6 = Quý II · Tháng 10 = Báo cáo năm · Chuyên đề = phát sinh</p>
                 </div>
-                <div class="flex flex-wrap gap-2">
-                  <select id="boYear" class="field w-36" onchange="baseOrgFilters.year=this.value;renderBaseOrgs()"></select>
-                  <button onclick="addBaseTopic()" class="btn btn-ghost">+ Nhập báo cáo chuyên đề</button>
-                  <button onclick="saveBaseOrgCompliance()" class="btn btn-primary">Lưu cập nhật</button>
+                <div class="flex flex-wrap gap-2 items-center">
+                  <select id="boYear" class="field w-28 text-sm" onchange="baseOrgFilters.year=this.value;renderBaseOrgs()"></select>
+                  <select id="boFilterType" class="field w-36 text-sm" onchange="baseOrgFilters.type=this.value;renderBaseOrgs()">
+                    <option value="">Tất cả loại</option>
+                    <option value="Đảng bộ">Đảng bộ</option>
+                    <option value="Chi bộ">Chi bộ khu phố</option>
+                  </select>
+                  <select id="boFilterStatus" class="field w-40 text-sm" onchange="baseOrgFilters.status=this.value;renderBaseOrgs()">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="missing">Còn thiếu BC</option>
+                    <option value="done">Đủ BC bắt buộc</option>
+                  </select>
+                  <button onclick="addBaseTopic()" class="btn btn-ghost text-sm py-2">+ Chuyên đề</button>
+                  <button onclick="saveBaseOrgCompliance()" class="btn btn-primary text-sm py-2">Lưu</button>
                 </div>
               </div>
             </div>
-            <div class="grid grid-cols-2 xl:grid-cols-4 gap-3">
-              <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Cơ sở Đảng</p><b id="boTotal">69</b></div>
-              <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Đủ BC bắt buộc</p><b id="boMonthly">0</b></div>
-              <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Đã tick chuyên đề</p><b id="boTopic">0</b></div>
-              <div class="period-kpi"><p class="text-xs font-extrabold text-slate-500 uppercase">Thiếu BC bắt buộc</p><b id="boMissing" class="text-[#FF6B6B]">0</b></div>
+
+            <!-- KPI STRIP -->
+            <div class="grid grid-cols-2 xl:grid-cols-5 gap-3">
+              <div class="period-kpi kpi-bento reveal" style="padding:14px 16px;cursor:default">
+                <div class="kb-label">Tổng cơ sở Đảng</div>
+                <div id="boTotal" class="kb-val" style="color:#1f2a44;font-size:32px">69</div>
+              </div>
+              <div class="period-kpi kpi-bento reveal" onclick="document.getElementById('boFilterStatus').value='done';baseOrgFilters.status='done';renderBaseOrgs()" style="padding:14px 16px;cursor:pointer">
+                <div class="kb-label">Đủ BC bắt buộc</div>
+                <div id="boMonthly" class="kb-val" style="color:#6BCB77;font-size:32px">0</div>
+              </div>
+              <div class="period-kpi kpi-bento reveal" style="padding:14px 16px;cursor:default">
+                <div class="kb-label">Đã nộp chuyên đề</div>
+                <div id="boTopic" class="kb-val" style="color:#4D96FF;font-size:32px">0</div>
+              </div>
+              <div class="period-kpi kpi-bento reveal" onclick="document.getElementById('boFilterStatus').value='missing';baseOrgFilters.status='missing';renderBaseOrgs()" style="padding:14px 16px;cursor:pointer">
+                <div class="kb-label">Còn thiếu BC</div>
+                <div id="boMissing" class="kb-val" style="color:#FF6B6B;font-size:32px">0</div>
+              </div>
+              <div class="period-kpi kpi-bento reveal" style="padding:14px 16px;cursor:default">
+                <div class="kb-label">Tỉ lệ hoàn thành</div>
+                <div id="boRate" class="kb-val" style="color:#B89400;font-size:32px">0<span style="font-size:16px">%</span></div>
+                <div class="kb-bar"><div class="kb-bar-fill" id="boRateFill" style="background:linear-gradient(90deg,#FFD93D,#6BCB77)"></div></div>
+              </div>
             </div>
-            <div class="card rounded-3xl p-4 base-org-card">
+
+            <!-- HEATMAP THÁNG -->
+            <div class="card rounded-3xl p-5 reveal">
+              <div class="bento-hd-row">
+                <div>
+                  <div class="bento-hd">Bản đồ nộp báo cáo theo tháng</div>
+                  <div class="bento-sub">Mỗi hàng = 1 cơ sở · Xanh = đã nộp · Đỏ = thiếu · Xám = không bắt buộc tháng đó</div>
+                </div>
+                <div class="flex gap-3 items-center flex-wrap text-xs font-semibold text-slate-500">
+                  <span class="flex items-center gap-1.5"><span style="width:11px;height:11px;border-radius:3px;background:#6BCB77;display:inline-block"></span>Đã nộp</span>
+                  <span class="flex items-center gap-1.5"><span style="width:11px;height:11px;border-radius:3px;background:#FF6B6B;display:inline-block"></span>Chưa nộp</span>
+                  <span class="flex items-center gap-1.5"><span style="width:11px;height:11px;border-radius:3px;background:#f1f5f9;display:inline-block"></span>Không bắt buộc</span>
+                </div>
+              </div>
+              <div id="boHeatmapWrap" class="bo-heatmap-scroll"></div>
+            </div>
+
+            <!-- BẢNG CHI TIẾT TICK -->
+            <div class="card rounded-3xl reveal">
+              <div class="p-5 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <div class="bento-hd">Chi tiết tick báo cáo từng cơ sở</div>
+                  <div id="boListHint" class="bento-sub mt-1">Tick checkbox để ghi nhận đã nộp báo cáo tháng</div>
+                </div>
+                <input id="boSearch" oninput="baseOrgFilters.keyword=this.value;renderBaseOrgs()" class="field text-sm" style="width:240px" placeholder="Tìm tên cơ sở Đảng...">
+              </div>
               <div class="base-org-scroll">
                 <div id="baseOrgTableWrap"></div>
               </div>
             </div>
+
           </section>
 
           <!-- DOSSIERS PAGE -->
@@ -2647,7 +2738,7 @@
   keyword: ""
 };
     let conclusionFilters={keyword:"",group:"",status:"",unit:"",risk:""};
-    let baseOrgFilters={year:"2026"};
+    let baseOrgFilters={year:"2026",type:"",status:"",keyword:""};
     opinions=[
       {id:"DL-001",source:"Họp chi bộ",date:"2026-05-06",sentiment:"trung tính",risk:"trung bình",entity:"Cán bộ phụ trách địa bàn",unit:"Chi bộ khu phố",content:"Đảng viên phản ánh việc tiếp nhận thông tin từ cơ sở còn chậm, đề nghị tăng cường lịch nắm tình hình địa bàn.",action:"Giao Văn phòng tổng hợp, UBKT theo dõi và báo cáo tại giao ban.",status:"đang xác minh"},
       {id:"DL-002",source:"Tiếp xúc cử tri",date:"2026-05-08",sentiment:"tiêu cực",risk:"cao",entity:"Bộ phận tiếp nhận hồ sơ",unit:"UBND",content:"Một số cử tri phản ánh thái độ hướng dẫn thủ tục hành chính chưa thống nhất, cần kiểm tra trách nhiệm cán bộ liên quan.",action:"Chuyển nội dung sang nhóm theo dõi, đề xuất xác minh ban đầu.",status:"đang xác minh"},
@@ -4037,50 +4128,133 @@ listEl.innerHTML=data.map(c=>`<article class="conclusion-card"><div class="flex 
       if(!document.getElementById("baseOrgTableWrap")) return;
       ensureBaseYears();
       const year=baseOrgFilters.year;
+
+      // ── Apply filters ──
+      const fType=baseOrgFilters.type||"";
+      const fStatus=baseOrgFilters.status||"";
+      const fKeyword=(baseOrgFilters.keyword||"").toLowerCase().trim();
+
+      let visibleOrgs=baseOrgs.filter(o=>{
+        if(fType==="Chi bộ" && !o.name.includes("khu phố")) return false;
+        if(fType==="Đảng bộ" && o.type!=="Đảng bộ") return false;
+        if(fType==="Chi bộ cơ sở" && (o.type!=="Chi bộ" || o.name.includes("khu phố"))) return false;
+        if(fType==="Chi bộ" && o.type!=="Chi bộ") return false;
+        if(fKeyword && !o.name.toLowerCase().includes(fKeyword)) return false;
+        if(fStatus==="done" && !isOrgRequiredComplete(o.id,year)) return false;
+        if(fStatus==="missing" && isOrgRequiredComplete(o.id,year)) return false;
+        return true;
+      });
+
+      // ── KPI ──
+      const totalAll=baseOrgs.length;
+      const requiredDoneAll=baseOrgs.filter(o=>isOrgRequiredComplete(o.id,year)).length;
+      const specialDoneAll=baseOrgs.filter(o=>isOrgSpecialComplete(o.id,year)).length;
+      const pct=totalAll?Math.round(requiredDoneAll/totalAll*100):0;
+      if(document.getElementById("boTotal")) boTotal.textContent=totalAll;
+      if(document.getElementById("boMonthly")) boMonthly.textContent=requiredDoneAll;
+      if(document.getElementById("boTopic")) boTopic.textContent=specialDoneAll;
+      if(document.getElementById("boMissing")) boMissing.textContent=totalAll-requiredDoneAll;
+      const rateEl=document.getElementById("boRate");
+      if(rateEl) rateEl.innerHTML=`${pct}<span style="font-size:16px">%</span>`;
+      const fillEl=document.getElementById("boRateFill");
+      if(fillEl) setTimeout(()=>fillEl.style.width=pct+"%",80);
+      const hintEl=document.getElementById("boListHint");
+      if(hintEl) hintEl.textContent=`Hiển thị ${visibleOrgs.length}/${totalAll} cơ sở · Năm ${year}`;
+
+      // ── HEATMAP ──
+      const hmWrap=document.getElementById("boHeatmapWrap");
+      if(hmWrap){
+        const MONTHS=REQUIRED_REPORT_MONTHS;
+        const topicList=baseSpecialTopics||[];
+        const allCols=[...MONTHS.map(m=>({type:"month",m})),...topicList.map(t=>({type:"topic",t}))];
+        const mLabel=m=>{if(m===3)return"T3/QI";if(m===6)return"T6/QII";if(m===10)return"T10/N";return`T${m}`;};
+
+        let hmHtml=`<table class="bo-heatmap-table"><thead><tr>
+          <th class="bo-hm-head" style="text-align:left;padding-left:4px;min-width:160px">Cơ sở Đảng</th>
+          ${MONTHS.map(m=>`<th class="bo-hm-head">${mLabel(m)}</th>`).join("")}
+          ${topicList.map(t=>`<th class="bo-hm-head" title="${escapeHtml(t)}" style="max-width:40px;overflow:hidden;text-overflow:ellipsis">${escapeHtml(t.substring(0,6))}</th>`).join("")}
+        </tr></thead><tbody>`;
+
+        const hmOrgs=baseOrgs.slice();
+        hmOrgs.forEach(o=>{
+          const done=isOrgRequiredComplete(o.id,year);
+          hmHtml+=`<tr class="bo-hm-row">
+            <td class="bo-hm-org ${o.type==='Đảng bộ'?'db':''}" title="${escapeHtml(o.name)}">${escapeHtml(o.name.replace("Chi bộ khu phố ","KP ").replace("Chi bộ ","CB ").replace("Đảng bộ ","ĐB "))}</td>
+            ${MONTHS.map(m=>{
+              const r=reportFor(o.id,yearMonth(year,m));
+              const cls=r.monthly?"bo-hm-done":"bo-hm-miss";
+              return `<td style="padding:2px 3px"><div class="bo-hm-cell ${cls}" title="${escapeHtml(o.name)} - T${m}: ${r.monthly?'Đã nộp':'Chưa nộp'}" onclick="updateBaseMonthly('${o.id}',${m},${!r.monthly})"></div></td>`;
+            }).join("")}
+            ${topicList.map(t=>{
+              const anyChecked=orgYearReports(o.id,year).some(r=>r.specials?.[t]);
+              const cls=anyChecked?"bo-hm-special-done":"bo-hm-special-miss";
+              return `<td style="padding:2px 3px"><div class="bo-hm-cell ${cls}" title="${escapeHtml(o.name)} - ${escapeHtml(t)}: ${anyChecked?'Đã nộp':'Chưa nộp'}" onclick="updateBaseSpecial('${o.id}','${escapeHtml(t).replaceAll("'","&#39;")}',${!anyChecked})"></div></td>`;
+            }).join("")}
+          </tr>`;
+        });
+        hmHtml+="</tbody></table>";
+        hmWrap.innerHTML=hmHtml;
+      }
+
+      // ── DETAIL TABLE (filtered) ──
       const topicHeaders=baseSpecialTopics.map(t=>`<th class="p-2 text-center min-w-32">${escapeHtml(t)}</th>`).join("");
       const monthHeaders=REQUIRED_REPORT_MONTHS.map(m=>`<th class="p-2 text-center min-w-24">${baseMonthLabel(m)}</th>`).join("");
-      const rows=baseOrgs.map(o=>{
+
+      const rows=visibleOrgs.map(o=>{
         const requiredCells=REQUIRED_REPORT_MONTHS.map(m=>{
           const r=reportFor(o.id,yearMonth(year,m));
-          return `<td class="p-2 text-center bo-month-col"><input type="checkbox" ${r.monthly?"checked":""} onchange="updateBaseMonthly('${o.id}',${m},this.checked)"></td>`;
+          return `<td class="p-2 text-center bo-month-col">
+            <label class="bo-check-wrap" title="${r.monthly?'Đã nộp - click để bỏ':'Chưa nộp - click để tick'}">
+              <input type="checkbox" ${r.monthly?"checked":""} onchange="updateBaseMonthly('${o.id}',${m},this.checked)">
+              <span class="bo-check-vis ${r.monthly?'checked':''}"></span>
+            </label>
+          </td>`;
         }).join("");
         const topicCells=baseSpecialTopics.map(t=>{
           const anyChecked=orgYearReports(o.id,year).some(r=>r.specials?.[t]);
-          return `<td class="p-2 text-center bo-topic-col"><input type="checkbox" ${anyChecked?"checked":""} onchange="updateBaseSpecial('${o.id}','${escapeHtml(t).replaceAll("'","&#39;")}',this.checked)"></td>`;
+          return `<td class="p-2 text-center bo-topic-col">
+            <label class="bo-check-wrap" title="${anyChecked?'Đã nộp':'Chưa nộp'}">
+              <input type="checkbox" ${anyChecked?"checked":""} onchange="updateBaseSpecial('${o.id}','${escapeHtml(t).replaceAll("'","&#39;")}',this.checked)">
+              <span class="bo-check-vis ${anyChecked?'checked':''}"></span>
+            </label>
+          </td>`;
         }).join("");
         const noteReport=reportFor(o.id,yearMonth(year,1));
         const complete=isOrgRequiredComplete(o.id,year);
-        return `<tr class="border-b border-slate-100 ${complete?'bg-green-50/35':'bg-white'}">
-          <td class="p-3 bo-sticky-tt text-center">${o.order}</td>
-          <td class="p-3 font-bold bo-sticky-name"><div class="bo-name-text">${escapeHtml(o.name)}<div class="text-xs text-slate-500 font-medium">${escapeHtml(o.type||"")}</div></div></td>
-          <td class="p-3 text-center bo-member-col">${o.members||0}</td>
+        const missingMonths=REQUIRED_REPORT_MONTHS.filter(m=>!reportFor(o.id,yearMonth(year,m)).monthly);
+        return `<tr class="border-b border-slate-100 ${complete?'bg-green-50/40':'hover:bg-red-50/20'}" style="transition:.12s">
+          <td class="p-3 bo-sticky-tt text-center text-slate-400 text-xs font-bold">${o.order}</td>
+          <td class="p-3 bo-sticky-name">
+            <div class="bo-name-text font-bold text-slate-800">${escapeHtml(o.name)}</div>
+            <div class="flex items-center gap-2 mt-0.5">
+              <span class="text-xs text-slate-400">${escapeHtml(o.type||"")}</span>
+              ${complete?'<span style="font-size:10px;background:#dcfce7;color:#15803d;padding:1px 6px;border-radius:99px;font-weight:700">✓ Đủ BC</span>':
+              `<span style="font-size:10px;background:#fee2e2;color:#b91c1c;padding:1px 6px;border-radius:99px;font-weight:700">Thiếu T${missingMonths.join(",")}</span>`}
+            </div>
+          </td>
+          <td class="p-3 text-center bo-member-col text-sm font-semibold">${o.members||0}</td>
           ${requiredCells}
-          ${topicCells || '<td class="p-2 text-center text-slate-400">Chưa có</td>'}
-          <td class="p-3 bo-note-col"><input class="field" value="${escapeHtml(noteReport.note||"")}" onchange="updateBaseNote('${o.id}',this.value)" placeholder="Điểm thi đua/ghi chú"></td>
+          ${topicCells||'<td class="p-2 text-center text-slate-400 text-xs">—</td>'}
+          <td class="p-3 bo-note-col"><input class="field text-xs" value="${escapeHtml(noteReport.note||"")}" onchange="updateBaseNote('${o.id}',this.value)" placeholder="Ghi chú/điểm thi đua"></td>
         </tr>`;
       }).join("");
+
       baseOrgTableWrap.innerHTML=`<table class="bo-table text-xs sm:text-sm">
         <thead class="bg-slate-50">
           <tr>
             <th class="p-3 text-center bo-sticky-tt">TT</th>
             <th class="p-3 text-left bo-sticky-name">Tên cơ sở Đảng</th>
-            <th class="p-3 text-center bo-member-col">Đảng viên</th>
-            <th class="p-3 text-center" colspan="12">Báo cáo bắt buộc theo tháng/quý/năm</th>
-            <th class="p-3 text-center" colspan="${Math.max(baseSpecialTopics.length,1)}">Báo cáo chuyên đề phát sinh</th>
-            <th class="p-3 text-left">Ghi chú/chấm điểm</th>
+            <th class="p-3 text-center bo-member-col">ĐV</th>
+            <th class="p-3 text-center" colspan="12">Báo cáo tháng/quý/năm</th>
+            <th class="p-3 text-center" colspan="${Math.max(baseSpecialTopics.length,1)}">Chuyên đề phát sinh</th>
+            <th class="p-3 text-left">Ghi chú</th>
           </tr>
           <tr>
-            <th class="bo-sticky-tt"></th><th class="bo-sticky-name"></th><th class="bo-member-col"></th>${monthHeaders}${topicHeaders || '<th class="p-2 text-center bo-topic-col">Chưa có chuyên đề</th>'}<th class="bo-note-col"></th>
+            <th class="bo-sticky-tt"></th><th class="bo-sticky-name"></th><th class="bo-member-col"></th>${monthHeaders}${topicHeaders||'<th class="p-2 text-center bo-topic-col text-slate-400">Chưa có</th>'}<th class="bo-note-col"></th>
           </tr>
         </thead>
-        <tbody>${rows}</tbody>
+        <tbody>${rows||`<tr><td colspan="20" class="text-center py-8 text-slate-400">Không tìm thấy cơ sở Đảng phù hợp</td></tr>`}</tbody>
       </table>`;
-      const requiredDone=baseOrgs.filter(o=>isOrgRequiredComplete(o.id,year)).length;
-      const specialDone=baseOrgs.filter(o=>isOrgSpecialComplete(o.id,year)).length;
-      boTotal.textContent=baseOrgs.length;
-      boMonthly.textContent=requiredDone;
-      boTopic.textContent=specialDone;
-      boMissing.textContent=baseOrgs.length-requiredDone;
     }
     function updateBaseMonthly(orgId,monthNo,value){const r=reportFor(orgId,yearMonth(baseOrgFilters.year,monthNo));r.monthly=value;persistLocal();renderBaseOrgs();}
     function updateBaseSpecial(orgId,topic,value){
