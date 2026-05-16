@@ -733,6 +733,85 @@
   .bento{grid-template-columns:1fr}
   .b-span-2,.b-span-3,.b-span-4,.b-span-5,.b-span-6,.b-span-7,.b-span-8,.b-span-12{grid-column:span 1}
 }
+
+/* ═══ AI DIGEST ═══ */
+.ai-digest-icon{
+  width:44px;height:44px;border-radius:14px;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(77,150,255,.15),rgba(107,203,119,.12));
+  border:1px solid rgba(77,150,255,.25);
+  display:flex;align-items:center;justify-content:center;color:#1d5fbf;
+}
+.ai-digest-icon svg{width:20px;height:20px}
+.ai-generate-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  background:linear-gradient(135deg,#4D96FF,#2f7ceb);
+  box-shadow:0 4px 14px rgba(77,150,255,.35);
+  transition:.2s;
+}
+.ai-generate-btn:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(77,150,255,.45)}
+.ai-generate-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.ai-status-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  border-radius:99px;padding:4px 12px;font-size:11px;font-weight:800;
+  border:1px solid transparent;transition:.3s;
+}
+.ai-status-idle{background:#f1f5f9;color:#64748b;border-color:#e2e8f0}
+.ai-status-running{background:rgba(77,150,255,.12);color:#1d5fbf;border-color:rgba(77,150,255,.28)}
+.ai-status-done{background:rgba(107,203,119,.15);color:#1a5e35;border-color:rgba(107,203,119,.3)}
+.ai-status-dot{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+.ai-status-running .ai-status-dot{animation:aiDotPulse 1s ease infinite}
+@keyframes aiDotPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}
+
+.ai-config-row{
+  display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;
+  background:#f8fafc;border-radius:16px;padding:12px 14px;margin-top:12px;
+  border:1px solid #eef3f9;
+}
+.ai-config-item{display:flex;flex-direction:column;gap:4px}
+.ai-config-label{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:#8fa3bb}
+
+.ai-typing-wrap{margin-top:16px;border-radius:18px;background:linear-gradient(135deg,#f0f7ff,#f8fbff);border:1px solid rgba(77,150,255,.18);padding:16px}
+.ai-typing-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ai-pulse-ring{
+  width:28px;height:28px;border-radius:50%;flex-shrink:0;
+  background:rgba(77,150,255,.15);border:2px solid #4D96FF;
+  display:flex;align-items:center;justify-content:center;
+  animation:aiRing 1.5s ease infinite;
+}
+.ai-pulse-ring::after{content:"✦";font-size:12px;color:#4D96FF}
+@keyframes aiRing{0%,100%{box-shadow:0 0 0 0 rgba(77,150,255,.4)}50%{box-shadow:0 0 0 8px rgba(77,150,255,0)}}
+.ai-progress-bar{height:3px;background:#dde9f7;border-radius:99px;margin-bottom:12px;overflow:hidden}
+.ai-progress-fill{height:100%;background:linear-gradient(90deg,#4D96FF,#6BCB77);border-radius:99px;width:0;transition:width .6s ease}
+.ai-stream-box{
+  font-size:13px;line-height:1.8;color:#334155;font-weight:500;
+  min-height:60px;max-height:300px;overflow-y:auto;
+  white-space:pre-wrap;font-family:inherit;
+}
+
+.ai-output{
+  margin-top:14px;border-radius:18px;
+  border:1px solid rgba(107,203,119,.25);
+  background:linear-gradient(135deg,#f6fdf8,#f0f9ff);
+  overflow:hidden;
+  animation:aiOutputIn .5s var(--ease) both;
+}
+@keyframes aiOutputIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.ai-content{
+  padding:20px;font-size:13.5px;line-height:1.85;color:#1e293b;
+  white-space:pre-wrap;font-family:inherit;font-weight:500;
+}
+.ai-content strong,.ai-content b{font-weight:900;color:#1f2a44}
+.ai-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 20px;border-top:1px solid rgba(107,203,119,.2);
+  background:rgba(255,255,255,.6);
+}
+.ai-meta{font-size:10px;color:#94a3b8;font-weight:700}
+.ai-badge{
+  font-size:10px;font-weight:900;color:#1d5fbf;
+  background:rgba(77,150,255,.1);border:1px solid rgba(77,150,255,.2);
+  border-radius:99px;padding:3px 10px;letter-spacing:.04em;
+}
   </style>
 </head>
 <body>
@@ -977,21 +1056,82 @@
                 </div>
               </div>
 
-              <!-- ── DANH SÁCH NHIỆM VỤ TỒN ĐỌNG ── -->
-              <div class="card rounded-3xl bento-card b-span-12 reveal">
-                <div class="bento-hd-row" style="flex-wrap:wrap;gap:10px">
-                  <div>
-                    <div class="bento-hd">Danh sách nhiệm vụ tồn đọng</div>
-                    <p id="listHint" class="bento-sub">Tìm kiếm toàn văn hoặc mở tìm kiếm nâng cao.</p>
+              <!-- ── AI DIGEST ── -->
+              <div class="card rounded-3xl bento-card b-span-12 reveal" id="aiDigestCard">
+                <div class="bento-hd-row" style="flex-wrap:wrap;gap:12px;align-items:flex-start">
+                  <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+                    <div id="aiDigestIcon" class="ai-digest-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l3 3"/><path d="M22 2 12 12"/><circle cx="19" cy="5" r="3" fill="currentColor" stroke="none" style="fill:#4D96FF"/></svg>
+                    </div>
+                    <div>
+                      <div class="bento-hd">Tóm tắt họp giao ban — AI tổng hợp</div>
+                      <div class="bento-sub">AI đọc toàn bộ dữ liệu nhiệm vụ và viết bản tóm tắt văn phong hành chính, sẵn sàng đưa vào biên bản họp</div>
+                    </div>
                   </div>
-                  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-                    <input id="quickSearch" oninput="filters.keyword=this.value;render()" class="field" style="width:280px" placeholder="Tìm số văn bản, nhiệm vụ, đơn vị...">
-                    <button onclick="toggleAdvanced()" class="btn btn-ghost py-2">Tìm nâng cao</button>
-                    <button onclick="resetFilters()" class="btn btn-ghost py-2">Xóa lọc</button>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                    <div id="aiDigestStatus" class="ai-status-chip ai-status-idle">
+                      <span class="ai-status-dot"></span>
+                      <span id="aiDigestStatusText">Sẵn sàng</span>
+                    </div>
+                    <button id="aiDigestBtn" onclick="runAIDigest()" class="btn btn-primary ai-generate-btn">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="14" height="14"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                      Tạo tóm tắt AI
+                    </button>
+                    <button onclick="copyAIDigest()" id="aiCopyBtn" class="btn btn-ghost py-2 px-3 text-sm" style="display:none">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                      Sao chép
+                    </button>
+                    <button onclick="resetAIDigest()" id="aiResetBtn" class="btn btn-ghost py-2 px-3 text-sm" style="display:none">Làm mới</button>
                   </div>
                 </div>
-                <div id="advanced" class="drawer">
-                  <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-3 pb-4">
+
+                <!-- Config row -->
+                <div class="ai-config-row" id="aiConfigRow">
+                  <div class="ai-config-item">
+                    <label class="ai-config-label">Loại tóm tắt</label>
+                    <select id="aiDigestType" class="field" style="font-size:12px;padding:6px 10px">
+                      <option value="weekly">Giao ban tuần</option>
+                      <option value="monthly">Báo cáo tháng</option>
+                      <option value="urgent">Chỉ việc khẩn cấp</option>
+                      <option value="full">Toàn diện</option>
+                    </select>
+                  </div>
+                  <div class="ai-config-item">
+                    <label class="ai-config-label">Giọng văn</label>
+                    <select id="aiDigestTone" class="field" style="font-size:12px;padding:6px 10px">
+                      <option value="formal">Hành chính trang trọng</option>
+                      <option value="concise">Ngắn gọn súc tích</option>
+                      <option value="detail">Chi tiết đầy đủ</option>
+                    </select>
+                  </div>
+                  <div class="ai-config-item" style="flex:1">
+                    <label class="ai-config-label">API Key Claude (Anthropic)</label>
+                    <input id="aiApiKey" type="password" class="field" style="font-size:12px;padding:6px 10px;width:100%" placeholder="sk-ant-..." oninput="saveApiKey(this.value)">
+                  </div>
+                </div>
+
+                <!-- Output -->
+                <div id="aiDigestOutput" class="ai-output" style="display:none">
+                  <div id="aiDigestContent" class="ai-content"></div>
+                  <div class="ai-footer">
+                    <span id="aiDigestMeta" class="ai-meta"></span>
+                    <span class="ai-badge">✦ Claude AI</span>
+                  </div>
+                </div>
+
+                <!-- Typing indicator -->
+                <div id="aiTypingWrap" style="display:none" class="ai-typing-wrap">
+                  <div class="ai-typing-header">
+                    <div class="ai-pulse-ring"></div>
+                    <span id="aiTypingMsg">AI đang đọc dữ liệu...</span>
+                  </div>
+                  <div class="ai-progress-bar"><div id="aiProgressFill" class="ai-progress-fill"></div></div>
+                  <div id="aiStreamBox" class="ai-stream-box"></div>
+                </div>
+
+                <!-- hidden IDs for taskList compat -->
+                <div id="advanced" class="drawer" style="margin-top:0;padding:0">
+                  <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-3 pb-4" style="margin-top:12px">
                     <select id="fGroup" onchange="filters.group=this.value;render()" class="field"><option value="">Tất cả nhóm văn bản</option></select>
                     <select id="fUnit" onchange="filters.unit=this.value;render()" class="field"><option value="">Tất cả đơn vị</option></select>
                     <select id="fStatus" onchange="filters.status=this.value;render()" class="field"><option value="">Tất cả trạng thái</option><option value="new">chưa thực hiện</option><option value="processing">đang thực hiện</option><option value="done">hoàn thành</option><option value="late">quá hạn</option></select>
@@ -999,7 +1139,15 @@
                     <input id="fDoc" oninput="filters.doc=this.value;render()" class="field" placeholder="Số văn bản">
                   </div>
                 </div>
-                <div id="taskList" class="space-y-3 overflow-auto pr-1" style="max-height:560px"></div>
+                <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+                  <span class="bento-sub" style="font-size:11px">Lọc nhanh nhiệm vụ:</span>
+                  <input id="quickSearch" oninput="filters.keyword=this.value;render()" class="field" style="width:220px;font-size:12px;padding:6px 10px" placeholder="Tìm theo đơn vị, nội dung...">
+                  <button onclick="toggleAdvanced()" class="tool-btn" style="padding:6px 12px">Lọc nâng cao</button>
+                  <button onclick="resetFilters()" class="tool-btn" style="padding:6px 12px">Xóa lọc</button>
+                  <span id="listHint" class="bento-sub" style="margin-left:4px"></span>
+                </div>
+                <div id="taskList" class="space-y-3 overflow-auto pr-1" style="max-height:0;overflow:hidden;transition:max-height .4s"></div>
+
               </div>
 
             </div><!-- end .bento -->
@@ -4673,6 +4821,198 @@ function setActionFilter(filter){
       if(arrow) arrow.style.transform=isOpen?'rotate(180deg)':'rotate(0deg)';
       if(label) label.textContent=isOpen?'Thu gọn biến động & lịch sử kỳ':'Xem chi tiết biến động & lịch sử kỳ';
     }
+
+    // ══ AI DIGEST ══
+    function saveApiKey(v){ try{localStorage.setItem('ubkt_ai_key',v)}catch(e){} }
+    function loadApiKey(){ try{return localStorage.getItem('ubkt_ai_key')||''}catch(e){return''} }
+
+    function buildDigestPrompt(){
+      const type=document.getElementById('aiDigestType')?.value||'weekly';
+      const tone=document.getElementById('aiDigestTone')?.value||'formal';
+      const today=new Date().toLocaleDateString('vi-VN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+      const allTasks=Array.isArray(window.tasks)?window.tasks:[];
+      const total=allTasks.length;
+      const done=allTasks.filter(taskIsDone).length;
+      const doing=allTasks.filter(t=>!taskIsDone(t)).length;
+      const late=allTasks.filter(t=>!taskIsDone(t)&&taskIsLateUnified(t)).length;
+
+      // Unit breakdown
+      const units=[...new Set(allTasks.map(taskUnit).filter(Boolean))];
+      const unitLines=units.map(u=>{
+        const all=allTasks.filter(t=>taskUnit(t)===u);
+        const d=all.filter(taskIsDone).length;
+        const l=all.filter(t=>!taskIsDone(t)&&taskIsLateUnified(t)).length;
+        return `  - ${u}: ${all.length} nhiệm vụ, hoàn thành ${d}, còn tồn ${all.length-d}${l>0?`, QUÁ HẠN ${l}`:''}`;
+      }).join('\n');
+
+      // Late tasks detail
+      const lateTasks=allTasks.filter(t=>!taskIsDone(t)&&taskIsLateUnified(t)).slice(0,8);
+      const lateLines=lateTasks.map(t=>`  - [${taskUnit(t)}] ${(taskValue(t,'task','')||'').substring(0,100)}... (Số VB: ${t.doc||'—'})`).join('\n');
+
+      // Pending no result
+      const noResult=allTasks.filter(t=>!taskIsDone(t)&&taskHasNoResult(t)).length;
+
+      const typeMap={weekly:'giao ban tuần',monthly:'báo cáo tháng',urgent:'xử lý khẩn cấp',full:'tổng hợp toàn diện'};
+      const toneMap={formal:'văn phong hành chính trang trọng, đúng chuẩn công văn nhà nước',concise:'ngắn gọn súc tích, đi thẳng vào trọng tâm',detail:'chi tiết đầy đủ, có phân tích và đánh giá'};
+
+      return `Bạn là trợ lý hành chính của Ủy ban Kiểm tra Đảng ủy phường Tân Mỹ, TP.HCM.
+
+Hôm nay: ${today}
+
+DỮ LIỆU THỰC TẾ TỪ HỆ THỐNG:
+- Tổng nhiệm vụ: ${total}
+- Hoàn thành: ${done} (${total?Math.round(done/total*100):0}%)
+- Đang thực hiện: ${doing}
+- Quá hạn: ${late}
+- Chưa có kết quả: ${noResult}
+
+THEO ĐƠN VỊ:
+${unitLines}
+
+NHIỆM VỤ QUÁ HẠN CỤ THỂ:
+${lateLines||'  Không có nhiệm vụ quá hạn'}
+
+YÊU CẦU: Viết bản TÓM TẮT ${typeMap[type]||'giao ban tuần'} bằng ${toneMap[tone]||toneMap.formal}.
+
+Cấu trúc bắt buộc:
+I. TÌNH HÌNH CHUNG
+II. KẾT QUẢ NỔI BẬT
+III. TỒN ĐỌNG VÀ KIẾN NGHỊ
+IV. NHIỆM VỤ TRỌNG TÂM TUẦN TỚI
+
+Chỉ viết nội dung, không giải thích thêm. Dùng số liệu thực tế từ dữ liệu trên.`;
+    }
+
+    async function runAIDigest(){
+      const key=document.getElementById('aiApiKey')?.value||loadApiKey();
+      if(!key||!key.startsWith('sk-ant-')){
+        alert('Vui lòng nhập API Key Claude hợp lệ (bắt đầu bằng sk-ant-)');
+        document.getElementById('aiApiKey')?.focus();
+        return;
+      }
+      saveApiKey(key);
+
+      // UI: loading state
+      const btn=document.getElementById('aiDigestBtn');
+      const status=document.getElementById('aiDigestStatus');
+      const statusText=document.getElementById('aiDigestStatusText');
+      const typingWrap=document.getElementById('aiTypingWrap');
+      const typingMsg=document.getElementById('aiTypingMsg');
+      const output=document.getElementById('aiDigestOutput');
+      const streamBox=document.getElementById('aiStreamBox');
+      const progressFill=document.getElementById('aiProgressFill');
+      const copyBtn=document.getElementById('aiCopyBtn');
+      const resetBtn=document.getElementById('aiResetBtn');
+
+      btn.disabled=true;
+      output.style.display='none';
+      typingWrap.style.display='block';
+      streamBox.textContent='';
+      status.className='ai-status-chip ai-status-running';
+      statusText.textContent='Đang tạo...';
+
+      // Animate progress
+      const msgs=['AI đang đọc dữ liệu...','Phân tích tiến độ đơn vị...','Xác định điểm tồn đọng...','Soạn thảo tóm tắt...'];
+      let mi=0;
+      const progInterval=setInterval(()=>{
+        typingMsg.textContent=msgs[mi%msgs.length]; mi++;
+        progressFill.style.width=Math.min(85,parseInt(progressFill.style.width||0)+Math.random()*18)+'%';
+      },900);
+
+      try{
+        const prompt=buildDigestPrompt();
+        const resp=await fetch('https://api.anthropic.com/v1/messages',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+          body:JSON.stringify({
+            model:'claude-sonnet-4-20250514',
+            max_tokens:1200,
+            messages:[{role:'user',content:prompt}]
+          })
+        });
+
+        clearInterval(progInterval);
+        progressFill.style.width='100%';
+
+        if(!resp.ok){
+          const err=await resp.json().catch(()=>({}));
+          throw new Error(err?.error?.message||`HTTP ${resp.status}`);
+        }
+
+        const data=await resp.json();
+        const text=data?.content?.[0]?.text||'Không có phản hồi.';
+
+        // Typewriter effect
+        typingMsg.textContent='Hoàn tất!';
+        await new Promise(r=>setTimeout(r,400));
+        typingWrap.style.display='none';
+
+        // Render output with typing animation
+        output.style.display='block';
+        const contentEl=document.getElementById('aiDigestContent');
+        const meta=document.getElementById('aiDigestMeta');
+        const words=text.split(' ');
+        contentEl.textContent='';
+        let i=0;
+        const typeInterval=setInterval(()=>{
+          if(i>=words.length){clearInterval(typeInterval);return;}
+          const chunk=words.slice(i,i+4).join(' ');
+          contentEl.textContent+=(i===0?'':' ')+chunk;
+          i+=4;
+          contentEl.scrollTop=contentEl.scrollHeight;
+        },30);
+
+        const now=new Date().toLocaleString('vi-VN');
+        meta.textContent=`Tạo lúc ${now} · ${total} nhiệm vụ · ${data?.usage?.output_tokens||'?'} tokens`;
+        status.className='ai-status-chip ai-status-done';
+        statusText.textContent='Đã tạo xong';
+        copyBtn.style.display='';
+        resetBtn.style.display='';
+
+        // Store for copy
+        window._aiDigestText=text;
+
+      }catch(err){
+        clearInterval(progInterval);
+        typingWrap.style.display='none';
+        status.className='ai-status-chip ai-status-idle';
+        statusText.textContent='Lỗi';
+        btn.disabled=false;
+        const errMsg=err.message||String(err);
+        alert('Lỗi khi gọi Claude API:\n'+errMsg+'\n\nKiểm tra lại API Key và kết nối mạng.');
+        console.error('[AI Digest]',err);
+      }finally{
+        btn.disabled=false;
+      }
+    }
+
+    function copyAIDigest(){
+      const text=window._aiDigestText||document.getElementById('aiDigestContent')?.textContent||'';
+      navigator.clipboard.writeText(text).then(()=>{
+        const btn=document.getElementById('aiCopyBtn');
+        const orig=btn.innerHTML;
+        btn.innerHTML='✓ Đã sao chép!';
+        setTimeout(()=>btn.innerHTML=orig,2000);
+      });
+    }
+
+    function resetAIDigest(){
+      document.getElementById('aiDigestOutput').style.display='none';
+      document.getElementById('aiCopyBtn').style.display='none';
+      document.getElementById('aiResetBtn').style.display='none';
+      document.getElementById('aiDigestStatus').className='ai-status-chip ai-status-idle';
+      document.getElementById('aiDigestStatusText').textContent='Sẵn sàng';
+      document.getElementById('aiProgressFill').style.width='0';
+      window._aiDigestText='';
+    }
+
+    // Load saved key on init
+    document.addEventListener('DOMContentLoaded',()=>{
+      const k=loadApiKey();
+      const el=document.getElementById('aiApiKey');
+      if(el&&k) el.value=k;
+    });
 
 
     function addAudit(action, task, details=""){
