@@ -1348,6 +1348,62 @@ body{
     scroll-margin-top:64px;
   }
 }
+    /* GÓI C - Liquid scroll indicator cho bảng ngang */
+.liquid-scroll-x{
+  position:relative;
+  overflow-x:auto;
+  overflow-y:visible;
+  scrollbar-gutter:stable;
+  transition:box-shadow .18s ease;
+}
+
+.liquid-scroll-x::-webkit-scrollbar{
+  height:8px;
+}
+
+.liquid-scroll-x::-webkit-scrollbar-thumb{
+  background:#cbd5e1;
+  border-radius:999px;
+}
+
+.liquid-scroll-x::-webkit-scrollbar-track{
+  background:#f1f5f9;
+  border-radius:999px;
+}
+
+.liquid-scroll-x.scroll-right{
+  box-shadow:inset -18px 0 18px -18px rgba(31,42,68,.34);
+}
+
+.liquid-scroll-x.scroll-left{
+  box-shadow:inset 18px 0 18px -18px rgba(31,42,68,.28);
+}
+
+.liquid-scroll-x.scroll-left.scroll-right{
+  box-shadow:
+    inset 18px 0 18px -18px rgba(31,42,68,.28),
+    inset -18px 0 18px -18px rgba(31,42,68,.34);
+}
+
+/* Tăng cảm giác còn nội dung khi mobile */
+@media(max-width:768px){
+  .liquid-scroll-x{
+    border-radius:1.25rem;
+  }
+
+  .liquid-scroll-x.scroll-right{
+    box-shadow:
+      inset -24px 0 22px -20px rgba(31,42,68,.42),
+      0 8px 20px rgba(31,42,68,.04);
+  }
+
+  .liquid-scroll-x.scroll-left.scroll-right{
+    box-shadow:
+      inset 24px 0 22px -20px rgba(31,42,68,.34),
+      inset -24px 0 22px -20px rgba(31,42,68,.42),
+      0 8px 20px rgba(31,42,68,.04);
+  }
+}
   </style>
 </head>
 <body>
@@ -7096,6 +7152,63 @@ window.addEventListener("resize", function(){
     document.body.style.width = "";
   }
 });
+    /* GÓI C - Tự gắn hiệu ứng còn nội dung bên trái/phải cho bảng cuộn ngang */
+function updateLiquidScrollState(el){
+  if(!el) return;
+
+  const maxScroll = el.scrollWidth - el.clientWidth;
+  const left = el.scrollLeft;
+
+  if(maxScroll > 8){
+    el.classList.add("liquid-scroll-x");
+  }else{
+    el.classList.remove("liquid-scroll-x", "scroll-left", "scroll-right");
+    return;
+  }
+
+  el.classList.toggle("scroll-left", left > 6);
+  el.classList.toggle("scroll-right", left < maxScroll - 6);
+}
+
+function initLiquidScrollIndicators(){
+  const selectors = [
+    ".pending-animated-wrap",
+    ".base-org-scroll",
+    ".bo-heatmap-scroll",
+    ".lg-scroll",
+    ".overflow-x-auto"
+  ];
+
+  const scrollers = document.querySelectorAll(selectors.join(","));
+
+  scrollers.forEach(el=>{
+    el.classList.add("liquid-scroll-x");
+    updateLiquidScrollState(el);
+
+    if(!el.dataset.liquidScrollReady){
+      el.addEventListener("scroll", ()=>updateLiquidScrollState(el), {passive:true});
+      el.dataset.liquidScrollReady = "1";
+    }
+  });
+}
+
+/* Chạy sau mỗi lần render vì bảng có thể được vẽ lại */
+const originalRenderForLiquidScroll = typeof render === "function" ? render : null;
+
+if(originalRenderForLiquidScroll && !window.__liquidScrollRenderPatched){
+  window.__liquidScrollRenderPatched = true;
+
+  render = function(){
+    originalRenderForLiquidScroll();
+    setTimeout(initLiquidScrollIndicators, 80);
+  };
+}
+
+window.addEventListener("resize", ()=>{
+  setTimeout(initLiquidScrollIndicators, 120);
+});
+
+setTimeout(initLiquidScrollIndicators, 300);
   </script>
   <div id="moduleToast" class="module-toast">
     <b id="moduleToastTitle">Thông báo</b>
