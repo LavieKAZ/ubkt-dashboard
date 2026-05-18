@@ -66,6 +66,35 @@
   }
 
   function programOf(id){return STATE.programs.find(p=>p.id===id)||{};}
+  function childrenOf(parentId){
+    return STATE.indicators.filter(i=>i.parent_indicator_id===parentId).sort((a,b)=>{
+      const ao=indicatorSortValue(a), bo=indicatorSortValue(b);
+      if(ao!==bo) return ao-bo;
+      return String(a.code||'').localeCompare(String(b.code||''),'vi',{numeric:true,sensitivity:'base'});
+    });
+  }
+  function parentOf(child){return child?.parent_indicator_id ? (STATE.indicators.find(i=>i.id===child.parent_indicator_id)||null) : null;}
+  function nextChildCode(parent){
+    const kids=childrenOf(parent.id);
+    const base=String(parent.code||'CT').trim();
+    return `${base}.${kids.length+1}`;
+  }
+  function nextChildSort(parent){
+    const base=Number(parent.sort_order ?? parent.ordinal ?? 0);
+    const kids=childrenOf(parent.id);
+    return base*100 + kids.length + 1;
+  }
+  function needsSplit(i){
+    return !i.parent_indicator_id && ((i.data && i.data.should_split===true) || i.measure_type==='mixed');
+  }
+  function statusSummary(list){
+    const total=list.length;
+    const ok=list.filter(i=>i.status==='Đạt'||i.status==='Hoàn thành').length;
+    const bad=list.filter(i=>i.status==='Chưa đạt'||i.status==='Quá hạn').length;
+    const doing=list.filter(i=>i.status==='Đang thực hiện'||i.status==='Chưa đến kỳ').length;
+    const missing=list.filter(i=>!i.status||i.status==='Chưa có số liệu').length;
+    return {total,ok,bad,doing,missing};
+  }
   function statusClass(s){
     if(s==='Đạt' || s==='Hoàn thành') return 'nq-badge-ok';
     if(s==='Chưa đạt' || s==='Quá hạn') return 'nq-badge-bad';
@@ -113,8 +142,13 @@
     }).sort((a,b)=>{
       const po=String(a.program_id||'').localeCompare(String(b.program_id||''),'vi',{numeric:true,sensitivity:'base'});
       if(po) return po;
-      const ao=indicatorSortValue(a), bo=indicatorSortValue(b);
+      const ap=parentOf(a), bp=parentOf(b);
+      const aRoot=ap || a, bRoot=bp || b;
+      const ao=indicatorSortValue(aRoot), bo=indicatorSortValue(bRoot);
       if(ao!==bo) return ao-bo;
+      if(aRoot.id!==bRoot.id) return String(aRoot.code||'').localeCompare(String(bRoot.code||''),'vi',{numeric:true,sensitivity:'base'});
+      if(!a.parent_indicator_id && b.parent_indicator_id) return -1;
+      if(a.parent_indicator_id && !b.parent_indicator_id) return 1;
       return String(a.code||'').localeCompare(String(b.code||''),'vi',{numeric:true,sensitivity:'base'});
     });
   }
@@ -571,6 +605,176 @@
     }finally{STATE.saving=false;}
   }
 
+
+  function renderSplitForm(parentId){
+    const parent=STATE.indicators.find(x=>x.id===parentId)||{};
+    const p=programOf(parent.program_id);
+    const childCode=nextChildCode(parent);
+    const childSort=nextChildSort(parent);
+    return `<div class="nq-form-panel">
+      <div class="nq-form-head">
+        <div><p class="text-sm font-extrabold text-[#4D96FF]">Tách chỉ tiêu con</p><h2 class="text-xl font-extrabold mt-1">${esc(parent.code||'Chỉ tiêu mẹ')}</h2><p class="text-sm text-slate-500 mt-1">Dùng khi một chỉ tiêu lớn có nhiều số đo. Chỉ tiêu con sẽ gắn với chỉ tiêu mẹ và cập nhật số liệu riêng.</p></div>
+        <button class="nq-btn nq-btn-ghost" type="button" onclick="window.NQIndicators.closeForm()">Đóng</button>
+      </div>
+      <form id="nqSplitForm" class="nq-form-body">
+        <input type="hidden" id="nqSplitParentId" value="${esc(parentId)}">
+        <div class="nq-parent-preview">
+          <b>Chỉ tiêu mẹ:</b>
+          <p>${esc(parent.source_excerpt||parent.title||'')}</p>
+          <span>${esc(p.code||'')} • ${esc(parent.group_name||'')} • ${esc(parent.lead_unit||'')}</span>
+        </div>
+        <div class="nq-form-section-title">1. Nội dung chỉ tiêu con</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label class="nq-label">Mã chỉ tiêu con
+            <input id="nqChildCode" class="nq-field" required value="${esc(childCode)}">
+          </label>
+          <label class="nq-label">Số thứ tự hiển thị
+            <input id="nqChildSortOrder" class="nq-field" type="number" value="${esc(childSort)}">
+          </label>
+          <label class="nq-label md:col-span-2">Nội dung chỉ tiêu con
+            <textarea id="nqChildSourceExcerpt" class="nq-field" rows="3" required placeholder="VD: Tỷ lệ giải quyết hồ sơ hành chính đúng hạn đạt trên 97%"></textarea>
+          </label>
+          <label class="nq-label">Nhóm lĩnh vực
+            <input id="nqChildGroup" class="nq-field" value="${esc(parent.group_name||'')}">
+          </label>
+          <label class="nq-label">Đơn vị chủ trì
+            <input id="nqChildLeadUnit" class="nq-field" value="${esc(parent.lead_unit||'')}">
+          </label>
+        </div>
+        <div class="nq-form-section-title">2. Cách đo chỉ tiêu con</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label class="nq-label">Loại chỉ tiêu
+            <select id="nqChildMeasureType" class="nq-field">${pairOptionList(MEASURE_TYPE_OPTIONS,'percentage')}</select>
+          </label>
+          <label class="nq-label">Kiểu so sánh
+            <select id="nqChildCompare" class="nq-field">${pairOptionList(COMPARE_OPTIONS,'>=')}</select>
+          </label>
+          <label class="nq-label">Giá trị mục tiêu
+            <input id="nqChildTargetValue" class="nq-field" type="number" step="any" placeholder="VD: 97">
+          </label>
+          <label class="nq-label">Đơn vị tính
+            <input id="nqChildTargetUnit" class="nq-field" placeholder="%, tuyến, mô hình, hộ...">
+          </label>
+          <label class="nq-label">Giá trị thấp nhất nếu là khoảng
+            <input id="nqChildTargetMin" class="nq-field" type="number" step="any" placeholder="VD: 3">
+          </label>
+          <label class="nq-label">Giá trị cao nhất nếu là khoảng
+            <input id="nqChildTargetMax" class="nq-field" type="number" step="any" placeholder="VD: 5">
+          </label>
+          <label class="nq-label md:col-span-2">Mục tiêu hiển thị
+            <input id="nqChildTargetLabel" class="nq-field" placeholder="VD: ≥97%; từ 3%-5%/năm; hoàn thành đến năm 2030">
+          </label>
+        </div>
+        <div class="nq-form-section-title">3. Theo dõi</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label class="nq-label">Chu kỳ báo cáo
+            <select id="nqChildCycle" class="nq-field">${optionList(CYCLE_OPTIONS,parent.cycle||'Hằng năm')}</select>
+          </label>
+          <label class="nq-label">Phạm vi theo dõi
+            <select id="nqChildTrackingScope" class="nq-field">${optionList(TRACKING_SCOPE_OPTIONS,parent.tracking_scope||parent.cycle||'Hằng năm')}</select>
+          </label>
+          <label class="nq-label">Năm/mốc hoàn thành
+            <input id="nqChildTargetYear" class="nq-field" type="number" value="${esc(parent.target_year||2030)}">
+          </label>
+          <label class="nq-label">Mức ưu tiên
+            <select id="nqChildPriority" class="nq-field">${optionList(PRIORITY_OPTIONS,parent.priority||'Bình thường')}</select>
+          </label>
+        </div>
+        <div class="nq-form-actions">
+          <button class="nq-btn nq-btn-ghost" type="button" onclick="window.NQIndicators.closeForm()">Hủy</button>
+          <button class="nq-btn nq-btn-primary" type="submit">Lưu chỉ tiêu con</button>
+        </div>
+      </form>
+    </div>`;
+  }
+
+  function openSplitForm(parentId){
+    const parent=STATE.indicators.find(x=>x.id===parentId);
+    if(!parent){alert('Không tìm thấy chỉ tiêu mẹ.');return;}
+    const overlay=ensureOverlay();
+    overlay.innerHTML=renderSplitForm(parentId);
+    overlay.classList.add('open');
+    overlay.onclick=e=>{if(e.target.id==='nqFormOverlay') closeForm();};
+    const form=document.getElementById('nqSplitForm');
+    if(form) form.onsubmit=saveChildIndicatorFromForm;
+  }
+
+  function collectChildPayload(){
+    const parentId=document.getElementById('nqSplitParentId').value;
+    const parent=STATE.indicators.find(x=>x.id===parentId);
+    if(!parent) throw new Error('Không tìm thấy chỉ tiêu mẹ.');
+    const sourceExcerpt=document.getElementById('nqChildSourceExcerpt').value.trim();
+    const compare=document.getElementById('nqChildCompare').value;
+    const targetValue=numOrNull(document.getElementById('nqChildTargetValue').value);
+    const targetMin=numOrNull(document.getElementById('nqChildTargetMin').value);
+    const targetMax=numOrNull(document.getElementById('nqChildTargetMax').value);
+    const targetUnit=document.getElementById('nqChildTargetUnit').value.trim();
+    let targetLabel=document.getElementById('nqChildTargetLabel').value.trim();
+    if(!targetLabel){
+      if(compare==='range' && targetMin!=null && targetMax!=null) targetLabel=`Từ ${targetMin} đến ${targetMax}${targetUnit?' '+targetUnit:''}`;
+      else if(targetValue!=null) targetLabel=`${compare||'>='} ${targetValue}${targetUnit?' '+targetUnit:''}`;
+    }
+    const payload={
+      id:id('ind-child'),
+      program_id:parent.program_id,
+      parent_indicator_id:parent.id,
+      code:document.getElementById('nqChildCode').value.trim(),
+      ordinal:parent.ordinal,
+      title:sourceExcerpt,
+      source_excerpt:sourceExcerpt,
+      group_name:document.getElementById('nqChildGroup').value.trim() || parent.group_name,
+      measure_type:document.getElementById('nqChildMeasureType').value,
+      compare_operator:compare,
+      target_value:targetValue,
+      target_min:targetMin,
+      target_max:targetMax,
+      target_unit:targetUnit,
+      target_label:targetLabel,
+      target_text:targetLabel,
+      target_year:intOrNull(document.getElementById('nqChildTargetYear').value) || parent.target_year || 2030,
+      cycle:document.getElementById('nqChildCycle').value,
+      tracking_scope:document.getElementById('nqChildTrackingScope').value,
+      lead_unit:document.getElementById('nqChildLeadUnit').value.trim() || parent.lead_unit,
+      co_units:Array.isArray(parent.co_units)?parent.co_units:[],
+      status:'Chưa có số liệu',
+      priority:document.getElementById('nqChildPriority').value,
+      sort_order:intOrNull(document.getElementById('nqChildSortOrder').value) || nextChildSort(parent),
+      is_active:true,
+      input_mode:'child_target',
+      data:{source:'manual', updatedFrom:'split_indicator_form', parentCode:parent.code}
+    };
+    if(!payload.code) throw new Error('Chưa nhập mã chỉ tiêu con.');
+    if(!payload.source_excerpt) throw new Error('Chưa nhập nội dung chỉ tiêu con.');
+    return {payload,parent};
+  }
+
+  async function saveChildIndicatorFromForm(e){
+    e.preventDefault();
+    if(STATE.saving) return;
+    const client=getClient();
+    if(!client){alert('Chưa kết nối Supabase.');return;}
+    let payload,parent;
+    try{({payload,parent}=collectChildPayload());}
+    catch(err){alert(err.message||err);return;}
+    STATE.saving=true;
+    try{
+      const res=await client.from(TABLES.indicators).insert(payload);
+      if(res.error) throw res.error;
+      await client.from(TABLES.indicators).update({
+        measure_type:'mixed',
+        input_mode:'parent_with_children',
+        data:{...(parent.data||{}), should_split:false, has_children:true}
+      }).eq('id',parent.id);
+      closeForm();
+      STATE.loaded=false;
+      await loadData(true);
+      STATE.filters.program=parent.program_id;
+      render();
+      alert('Đã tách và lưu chỉ tiêu con. Từ nay có thể cập nhật kỳ riêng cho chỉ tiêu con này.');
+    }catch(err){console.error(err);alert('Không lưu được chỉ tiêu con: '+(err.message||err));}
+    finally{STATE.saving=false;}
+  }
+
   function renderUpdateForm(indicatorId){
     const i=STATE.indicators.find(x=>x.id===indicatorId)||{};
     return `<div class="nq-form-panel nq-form-panel-sm">
@@ -658,6 +862,8 @@
       const res=await client.from(TABLES.updates).select('*').eq('indicator_id',id).order('report_year',{ascending:false}).order('updated_at',{ascending:false});
       if(!res.error) updates=res.data||[];
     }
+    const children=childrenOf(id);
+    const childStats=statusSummary(children);
     let drawer=document.getElementById('nqIndicatorDrawer');
     if(!drawer){drawer=document.createElement('div');drawer.id='nqIndicatorDrawer';drawer.className='nq-drawer';document.body.appendChild(drawer);}
     drawer.innerHTML=`<div class="nq-drawer-panel">
@@ -672,9 +878,10 @@
           <div class="nq-card p-4"><b>Mục tiêu</b><p class="mt-1 text-slate-600">${esc(indicatorTargetLabel(i))}</p><p class="text-xs nq-muted mt-2">${esc(measureLabel(i.measure_type))} • ${esc(i.compare_operator||'note')}</p></div>
           <div class="nq-card p-4"><b>Chu kỳ / mốc</b><p class="mt-1 text-slate-600">${esc(i.tracking_scope||i.cycle||'—')} • ${esc(i.target_year||'—')}</p></div>
         </div>
+        ${children.length?`<div class="nq-card p-4"><div class="flex items-start justify-between gap-3 mb-3"><div><b>Chỉ tiêu con đã tách</b><p class="text-sm text-slate-500 mt-1">${childStats.total} chỉ tiêu con • đạt ${childStats.ok} • chưa đạt ${childStats.bad} • chưa số liệu ${childStats.missing}</p></div><button class="nq-btn nq-btn-ghost" onclick="window.NQIndicators.openSplitForm('${esc(i.id)}')">+ Tách thêm</button></div><div class="nq-child-list">${children.map(c=>`<div class="nq-child-card"><div><b>${esc(c.code)}</b><p>${esc(c.source_excerpt||c.title)}</p><span>${esc(indicatorTargetLabel(c))} • ${esc(c.lead_unit||'')}</span></div><div class="flex gap-2 flex-wrap justify-end">${badge(c.status)}<button class="nq-btn nq-btn-ghost px-3 py-2" onclick="window.NQIndicators.openUpdateForm('${esc(c.id)}')">Cập nhật kỳ</button><button class="nq-btn nq-btn-ghost px-3 py-2" onclick="window.NQIndicators.openIndicatorForm('${esc(c.id)}')">Sửa</button></div></div>`).join('')}</div></div>`:''}
         <div class="nq-card p-4"><b>Lịch sử cập nhật kỳ báo cáo</b><div class="nq-timeline mt-3">${updates.length?updates.map(u=>`
           <div class="nq-timeline-item"><b>${esc(u.report_period)} ${esc(u.report_year)} • ${esc(u.assessment)}</b><p class="text-sm text-slate-600 mt-1">${esc(u.actual_text||'')}</p>${u.reason?`<p class="text-sm mt-2"><b>Nguyên nhân:</b> ${esc(u.reason)}</p>`:''}${u.solution?`<p class="text-sm mt-1"><b>Giải pháp:</b> ${esc(u.solution)}</p>`:''}</div>`).join(''):'<div class="nq-empty">Chưa có bản cập nhật kỳ.</div>'}</div></div>
-        <div class="flex justify-end gap-2 flex-wrap"><button class="nq-btn nq-btn-ghost" onclick="window.NQIndicators.openIndicatorForm('${esc(i.id)}')">Sửa chỉ tiêu</button><button class="nq-btn nq-btn-ghost" onclick="window.NQIndicators.openUpdateForm('${esc(i.id)}')">Cập nhật kỳ</button><button class="nq-btn nq-btn-primary" onclick="alert('Gói NQ-4 sẽ kết nối tạo nhiệm vụ đôn đốc sang Trung tâm nhiệm vụ.')">Tạo nhiệm vụ đôn đốc</button></div>
+        <div class="flex justify-end gap-2 flex-wrap"><button class="nq-btn nq-btn-ghost" onclick="window.NQIndicators.openSplitForm('${esc(i.id)}')">Tách chỉ tiêu con</button><button class="nq-btn nq-btn-ghost" onclick="window.NQIndicators.openIndicatorForm('${esc(i.id)}')">Sửa chỉ tiêu</button><button class="nq-btn nq-btn-ghost" onclick="window.NQIndicators.openUpdateForm('${esc(i.id)}')">Cập nhật kỳ</button><button class="nq-btn nq-btn-primary" onclick="alert('Gói NQ-5 sẽ kết nối tạo nhiệm vụ đôn đốc sang Trung tâm nhiệm vụ.')">Tạo nhiệm vụ đôn đốc</button></div>
       </div>
     </div>`;
     drawer.classList.add('open');
@@ -688,6 +895,7 @@
     if(kw){kw.value=STATE.filters.keyword||''; kw.oninput=debounce(()=>{STATE.filters.keyword=kw.value; render();},220);}
     document.querySelectorAll('[data-nq-detail]').forEach(btn=>btn.onclick=()=>openDetail(btn.dataset.nqDetail));
     document.querySelectorAll('[data-nq-edit]').forEach(btn=>btn.onclick=()=>openIndicatorForm(btn.dataset.nqEdit));
+    document.querySelectorAll('[data-nq-split]').forEach(btn=>btn.onclick=()=>openSplitForm(btn.dataset.nqSplit));
     document.querySelectorAll('[data-nq-program-edit]').forEach(btn=>btn.onclick=()=>openProgramForm(btn.dataset.nqProgramEdit));
   }
 
@@ -724,6 +932,7 @@
     resetFilters:()=>{STATE.filters={program:'',group:'',unit:'',year:'',status:'',keyword:''};render();},
     openIndicatorForm,
     openProgramForm,
+    openSplitForm,
     openUpdateForm,
     closeForm
   };
