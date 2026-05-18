@@ -1459,6 +1459,10 @@ body{
             <span class="nav-ico">◎</span>
             <span class="nav-label">Chỉ tiêu NQ-CTHĐ</span>
           </button>
+          <button class="nav-item" data-page="kpReports" onclick="switchPage('kpReports')">
+             <span class="nav-ico">▣</span>
+            <span class="nav-label">Báo cáo KTGS khu phố</span>
+          </button>
           <button class="nav-item" data-page="baseorgs" onclick="switchPage('baseorgs')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h16"/><path d="M6 20V8l6-4 6 4v12"/><path d="M9 20v-7h6v7"/></svg></span><span class="nav-label">Theo dõi Cơ sở Đảng</span></button>
           <button class="nav-item" data-page="dossiers" onclick="switchPage('dossiers')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h6l2 2h8v10H4z"/><path d="M8 13h8"/><path d="M8 16h5"/></svg></span><span class="nav-label">Hồ sơ KTGS</span></button>
 
@@ -2176,7 +2180,9 @@ body{
           <section id="page-indicators" class="page hidden space-y-5">
   <div id="nqIndicatorsRoot"></div>
 </section>
-
+          <section id="page-kpReports" class="page hidden space-y-5">
+  <div id="kpReportsRoot"></div>
+</section>
 
 
           <!-- BASE ORGS PAGE -->
@@ -3553,6 +3559,7 @@ body{
   dossiers:"Hồ sơ sau kiểm tra, giám sát",
   periods:"Chốt kỳ báo cáo",
   indicators:"Chỉ tiêu NQ-CTHĐ",
+  kpReports:"Báo cáo KTGS khu phố",
   reports:"Báo cáo một trang"
 };
       document.getElementById("pageTitle").textContent=titles[page];
@@ -3575,6 +3582,9 @@ if(periodBtn){
       toggleSidebar(false);
       if(page === "indicators" && window.NQIndicators){
   window.NQIndicators.mount();
+      if(page === "kpReports" && window.KPReports){
+  window.KPReports.mount();
+}
 }
       render();
       revealInit();
@@ -7229,5 +7239,7 @@ setTimeout(initLiquidScrollIndicators, 300);
     <p id="moduleToastText">Nội dung thông báo.</p>
   </div>
 <script src="./modules/indicators/indicators.js" charset="UTF-8"></script>
+<link rel="stylesheet" href="./modules/kp-reports/kp_reports.css">
+<script src="./modules/kp-reports/kp_reports.js" charset="UTF-8"></script>
 </body>
 </html>
