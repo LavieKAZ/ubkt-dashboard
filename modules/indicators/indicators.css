@@ -39,3 +39,16 @@
 .nq-timeline-item{border-left:5px solid #4D96FF;background:#f8fafc;border-radius:1rem;padding:.8rem .9rem}
 .nq-empty{padding:2.5rem;text-align:center;color:#64748b}
 @media(max-width:760px){.nq-table{min-width:980px}.nq-matrix{min-width:700px}.nq-drawer-panel{width:100%}}
+
+/* Gói NQ-3 - Form nhập/điều chỉnh chỉ tiêu */
+.nq-form-overlay{position:fixed;inset:0;display:none;background:rgba(15,23,42,.42);z-index:90;backdrop-filter:blur(6px);padding:18px;align-items:flex-end;justify-content:center}
+.nq-form-overlay.open{display:flex}
+.nq-form-panel{width:min(980px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:1.7rem;box-shadow:0 28px 90px rgba(31,42,68,.25);animation:nqFormUp .28s cubic-bezier(.22,1,.36,1) both}
+.nq-form-panel-sm{width:min(760px,100%)}
+@keyframes nqFormUp{from{transform:translateY(24px) scale(.985);opacity:.72}to{transform:translateY(0) scale(1);opacity:1}}
+.nq-form-head{position:sticky;top:0;background:#fff;z-index:2;padding:1.1rem 1.25rem;border-bottom:1px solid #e2e8f0;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
+.nq-form-body{padding:1.25rem;display:grid;gap:1rem}
+.nq-label{display:grid;gap:.42rem;font-size:.75rem;font-weight:900;text-transform:uppercase;color:#64748b;letter-spacing:.02em}
+.nq-label textarea,.nq-label input,.nq-label select{text-transform:none;font-weight:600;color:#1f2a44;letter-spacing:0}
+.nq-form-actions{display:flex;gap:.6rem;justify-content:flex-end;flex-wrap:wrap;border-top:1px solid #e2e8f0;padding-top:1rem}
+@media(max-width:760px){.nq-form-overlay{padding:0}.nq-form-panel{border-radius:1.7rem 1.7rem 0 0;max-height:94vh}.nq-form-head{padding:1rem}.nq-form-body{padding:1rem}}
