@@ -52,3 +52,7 @@
 .nq-label textarea,.nq-label input,.nq-label select{text-transform:none;font-weight:600;color:#1f2a44;letter-spacing:0}
 .nq-form-actions{display:flex;gap:.6rem;justify-content:flex-end;flex-wrap:wrap;border-top:1px solid #e2e8f0;padding-top:1rem}
 @media(max-width:760px){.nq-form-overlay{padding:0}.nq-form-panel{border-radius:1.7rem 1.7rem 0 0;max-height:94vh}.nq-form-head{padding:1rem}.nq-form-body{padding:1rem}}
+
+/* Gói NQ-3B - Quản lý văn bản nguồn */
+.nq-mini-link{border:1px solid #e2e8f0;background:#fff;color:#334155;border-radius:.75rem;padding:.35rem .55rem;font-size:.72rem;font-weight:850;line-height:1;transition:.16s}
+.nq-mini-link:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(31,42,68,.08);color:#1d5fbf;border-color:rgba(77,150,255,.32)}
