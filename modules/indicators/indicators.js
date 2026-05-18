@@ -1,41 +1,288 @@
-/* Module Chỉ tiêu NQ-CTHĐ - tách riêng để không làm nặng index.html */
-.nq-shell{animation:nqFadeUp .42s cubic-bezier(.22,1,.36,1) both}
-@keyframes nqFadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-.nq-card{background:rgba(255,255,255,.94);border:1px solid rgba(226,232,240,.92);box-shadow:0 14px 34px rgba(31,42,68,.08);border-radius:1.5rem}
-.nq-card:hover{box-shadow:0 20px 48px rgba(31,42,68,.12)}
-.nq-kpi{position:relative;overflow:hidden;transition:.22s transform,.22s box-shadow}
-.nq-kpi:hover{transform:translateY(-2px)}
-.nq-kpi:after{content:"";position:absolute;right:-2.4rem;bottom:-2.4rem;width:7rem;height:7rem;border-radius:45% 55% 65% 35%;opacity:.13;background:linear-gradient(135deg,#4D96FF,#6BCB77)}
-.nq-field{width:100%;border:1px solid #e2e8f0;background:#fff;border-radius:1rem;padding:.72rem .86rem;outline:none;transition:border .2s,box-shadow .2s}
-.nq-field:focus{border-color:rgba(77,150,255,.55);box-shadow:0 0 0 4px rgba(77,150,255,.12)}
-.nq-btn{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;border-radius:1rem;padding:.72rem 1rem;font-weight:800;transition:.18s;white-space:nowrap}
-.nq-btn:hover{transform:translateY(-1px)}
-.nq-btn-primary{background:linear-gradient(135deg,#4D96FF,#2f7ceb);color:#fff;box-shadow:0 10px 22px rgba(77,150,255,.22)}
-.nq-btn-ghost{background:#fff;border:1px solid #e2e8f0;color:#334155}
-.nq-badge{display:inline-flex;align-items:center;gap:.3rem;border-radius:999px;padding:.28rem .65rem;font-size:.72rem;font-weight:850;border:1px solid transparent;white-space:nowrap}
-.nq-badge-ok{background:rgba(107,203,119,.16);color:#247c35;border-color:rgba(107,203,119,.28)}
-.nq-badge-bad{background:rgba(255,107,107,.16);color:#c84854;border-color:rgba(255,107,107,.30)}
-.nq-badge-doing{background:rgba(77,150,255,.13);color:#1d5fbf;border-color:rgba(77,150,255,.26)}
-.nq-badge-wait{background:#f8fafc;color:#475569;border-color:#dbe3ef}
-.nq-badge-soon{background:rgba(255,217,61,.28);color:#967a00;border-color:rgba(255,217,61,.38)}
-.nq-matrix{display:grid;grid-template-columns:minmax(180px,1.3fr) repeat(6,minmax(62px,.45fr));gap:8px;align-items:center;min-width:760px}
-.nq-matrix-head{font-size:.74rem;font-weight:900;color:#64748b;text-transform:uppercase}
-.nq-matrix-cell{height:42px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;font-weight:900}
-.nq-matrix-cell.active{background:rgba(77,150,255,.13);color:#1d5fbf;border-color:rgba(77,150,255,.26)}
-.nq-matrix-cell.warn{background:rgba(255,217,61,.28);color:#967a00;border-color:rgba(255,217,61,.38)}
-.nq-matrix-cell.done{background:rgba(107,203,119,.16);color:#247c35;border-color:rgba(107,203,119,.28)}
-.nq-table-wrap{overflow-x:auto;scrollbar-gutter:stable}
-.nq-table{min-width:1120px;width:100%;border-collapse:separate;border-spacing:0}
-.nq-table th{position:sticky;top:0;background:#f8fafc;color:#64748b;font-size:.72rem;text-transform:uppercase;letter-spacing:.03em;text-align:left;padding:.85rem;border-bottom:1px solid #e2e8f0;z-index:1}
-.nq-table td{padding:.95rem .85rem;border-bottom:1px solid #edf2f7;vertical-align:top;font-size:.86rem}
-.nq-table tr:hover td{background:#fbfdff}
-.nq-title-clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35;font-weight:850;color:#1f2a44}
-.nq-muted{color:#64748b}
-.nq-drawer{position:fixed;inset:0;display:none;background:rgba(15,23,42,.36);z-index:80;backdrop-filter:blur(5px)}
-.nq-drawer.open{display:block}
-.nq-drawer-panel{position:absolute;right:0;top:0;height:100%;width:min(720px,100%);background:#fff;box-shadow:-20px 0 60px rgba(31,42,68,.20);overflow:auto;animation:nqSlideIn .28s cubic-bezier(.22,1,.36,1) both}
-@keyframes nqSlideIn{from{transform:translateX(28px);opacity:.7}to{transform:translateX(0);opacity:1}}
-.nq-timeline{display:grid;gap:.75rem}
-.nq-timeline-item{border-left:5px solid #4D96FF;background:#f8fafc;border-radius:1rem;padding:.8rem .9rem}
-.nq-empty{padding:2.5rem;text-align:center;color:#64748b}
-@media(max-width:760px){.nq-table{min-width:980px}.nq-matrix{min-width:700px}.nq-drawer-panel{width:100%}}
+(function(){
+  const STATE = {
+    loaded:false,
+    programs:[],
+    indicators:[],
+    filters:{program:'',group:'',unit:'',year:'',status:'',keyword:''},
+    client:null
+  };
+
+  const TABLES = {
+    programs:'ubkt_programs',
+    indicators:'ubkt_indicators',
+    updates:'ubkt_indicator_updates'
+  };
+
+  function esc(s){return String(s ?? '').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+  function norm(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();}
+  function debounce(fn,delay=220){let t;return (...args)=>{clearTimeout(t);t=setTimeout(()=>fn(...args),delay);};}
+
+  function ensureCss(){
+    if(document.getElementById('nqIndicatorsCss')) return;
+    const link=document.createElement('link');
+    link.id='nqIndicatorsCss';
+    link.rel='stylesheet';
+    link.href='./modules/indicators/indicators.css';
+    document.head.appendChild(link);
+  }
+
+  function getClient(){
+    if(STATE.client) return STATE.client;
+    const url=(window.UBKT_SUPABASE_URL||'').trim();
+    const key=(window.UBKT_SUPABASE_ANON_KEY||'').trim();
+    if(!url || !key || !window.supabase) return null;
+    STATE.client=window.supabase.createClient(url,key);
+    return STATE.client;
+  }
+
+  async function loadData(force=false){
+    if(STATE.loaded && !force) return;
+    const client=getClient();
+    if(!client) throw new Error('Chưa cấu hình Supabase URL/anon key hoặc chưa tải supabase-js.');
+
+    const [pRes,iRes]=await Promise.all([
+      client.from(TABLES.programs).select('*').eq('is_active',true).order('sort_order',{ascending:true}),
+      client.from(TABLES.indicators).select('*').eq('is_active',true).order('sort_order',{ascending:true})
+    ]);
+    if(pRes.error) throw pRes.error;
+    if(iRes.error) throw iRes.error;
+    STATE.programs=pRes.data||[];
+    STATE.indicators=iRes.data||[];
+    STATE.loaded=true;
+  }
+
+  function programOf(id){return STATE.programs.find(p=>p.id===id)||{};}
+  function statusClass(s){
+    if(s==='Đạt' || s==='Hoàn thành') return 'nq-badge-ok';
+    if(s==='Chưa đạt' || s==='Quá hạn') return 'nq-badge-bad';
+    if(s==='Đang thực hiện') return 'nq-badge-doing';
+    if(s==='Chưa đến kỳ') return 'nq-badge-soon';
+    return 'nq-badge-wait';
+  }
+  function badge(s){return `<span class="nq-badge ${statusClass(s)}">${esc(s||'Chưa có số liệu')}</span>`;}
+
+  function filteredIndicators(){
+    const f=STATE.filters;
+    const kw=norm(f.keyword);
+    return STATE.indicators.filter(i=>{
+      if(f.program && i.program_id!==f.program) return false;
+      if(f.group && i.group_name!==f.group) return false;
+      if(f.unit && i.lead_unit!==f.unit) return false;
+      if(f.year && String(i.target_year||'')!==String(f.year)) return false;
+      if(f.status && (i.status||'')!==f.status) return false;
+      if(kw){
+        const p=programOf(i.program_id);
+        const hay=norm(`${i.code} ${i.title} ${i.group_name} ${i.lead_unit} ${p.code} ${p.title} ${i.target_text} ${i.latest_result}`);
+        if(!hay.includes(kw)) return false;
+      }
+      return true;
+    });
+  }
+
+  function calcStats(list=STATE.indicators){
+    return {
+      programs:STATE.programs.length,
+      total:list.length,
+      ok:list.filter(i=>i.status==='Đạt'||i.status==='Hoàn thành').length,
+      bad:list.filter(i=>i.status==='Chưa đạt'||i.status==='Quá hạn').length,
+      missing:list.filter(i=>!i.status||i.status==='Chưa có số liệu').length,
+      doing:list.filter(i=>i.status==='Đang thực hiện').length
+    };
+  }
+
+  function unique(arr){return [...new Set(arr.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'vi',{numeric:true,sensitivity:'base'}));}
+
+  function renderFilters(){
+    const programs=STATE.programs.map(p=>`<option value="${esc(p.id)}">${esc(p.code)} - ${esc(p.title)}</option>`).join('');
+    const groups=unique(STATE.indicators.map(i=>i.group_name)).map(x=>`<option>${esc(x)}</option>`).join('');
+    const units=unique(STATE.indicators.map(i=>i.lead_unit)).map(x=>`<option>${esc(x)}</option>`).join('');
+    const years=unique(STATE.indicators.map(i=>String(i.target_year||''))).map(x=>`<option>${esc(x)}</option>`).join('');
+    const statuses=unique(STATE.indicators.map(i=>i.status||'Chưa có số liệu')).map(x=>`<option>${esc(x)}</option>`).join('');
+
+    return `
+      <div class="nq-card p-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-3">
+          <label class="text-xs font-extrabold text-slate-500 uppercase">Văn bản nguồn
+            <select id="nqFilterProgram" class="nq-field mt-1"><option value="">Tất cả</option>${programs}</select>
+          </label>
+          <label class="text-xs font-extrabold text-slate-500 uppercase">Lĩnh vực
+            <select id="nqFilterGroup" class="nq-field mt-1"><option value="">Tất cả</option>${groups}</select>
+          </label>
+          <label class="text-xs font-extrabold text-slate-500 uppercase">Đơn vị chủ trì
+            <select id="nqFilterUnit" class="nq-field mt-1"><option value="">Tất cả</option>${units}</select>
+          </label>
+          <label class="text-xs font-extrabold text-slate-500 uppercase">Năm/mốc
+            <select id="nqFilterYear" class="nq-field mt-1"><option value="">Tất cả</option>${years}</select>
+          </label>
+          <label class="text-xs font-extrabold text-slate-500 uppercase">Trạng thái
+            <select id="nqFilterStatus" class="nq-field mt-1"><option value="">Tất cả</option>${statuses}</select>
+          </label>
+          <label class="text-xs font-extrabold text-slate-500 uppercase">Từ khóa
+            <input id="nqFilterKeyword" class="nq-field mt-1" placeholder="Tìm chỉ tiêu, đơn vị..." />
+          </label>
+        </div>
+      </div>`;
+  }
+
+  function renderKpis(list){
+    const s=calcStats(list);
+    const items=[
+      ['Văn bản nguồn',s.programs,'text-[#1f2a44]'],
+      ['Tổng chỉ tiêu',s.total,'text-[#1f2a44]'],
+      ['Đạt',s.ok,'text-[#6BCB77]'],
+      ['Chưa đạt',s.bad,'text-[#FF6B6B]'],
+      ['Đang thực hiện',s.doing,'text-[#4D96FF]'],
+      ['Chưa số liệu',s.missing,'text-slate-500']
+    ];
+    return `<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">${items.map(([label,value,cls])=>`
+      <div class="nq-card nq-kpi p-4">
+        <p class="text-xs font-extrabold text-slate-500 uppercase">${label}</p>
+        <p class="text-3xl font-extrabold mt-2 ${cls}">${value}</p>
+      </div>`).join('')}</div>`;
+  }
+
+  function renderMatrix(){
+    const years=[2025,2026,2027,2028,2029,2030];
+    const rows=STATE.programs.map(p=>{
+      const inds=STATE.indicators.filter(i=>i.program_id===p.id);
+      const cells=years.map(y=>{
+        const ys=inds.filter(i=>Number(i.target_year)===y || (Number(i.target_year)===2030 && y===2030));
+        const hasBad=ys.some(i=>i.status==='Chưa đạt'||i.status==='Quá hạn');
+        const hasDoing=ys.some(i=>i.status==='Đang thực hiện'||i.status==='Chưa đến kỳ');
+        const hasOk=ys.some(i=>i.status==='Đạt'||i.status==='Hoàn thành');
+        const cls=hasBad?'warn':hasOk?'done':hasDoing?'active':'';
+        const txt=ys.length? (hasBad?'!':hasOk?'✓':'•') : '—';
+        return `<div class="nq-matrix-cell ${cls}" title="${esc(p.code)} - ${y}">${txt}</div>`;
+      }).join('');
+      return `<div class="font-extrabold text-sm text-slate-700 truncate" title="${esc(p.title)}">${esc(p.code)}</div>${cells}`;
+    }).join('');
+    return `<div class="nq-card p-4 overflow-x-auto">
+      <div class="flex items-start justify-between gap-3 mb-3">
+        <div><h3 class="text-lg font-extrabold">Ma trận theo dõi 2025-2030</h3><p class="text-sm text-slate-500">Xem nhanh văn bản nào đang có chỉ tiêu cần theo dõi theo từng năm.</p></div>
+        <div class="hidden md:flex gap-2 text-xs text-slate-500"><span>• đang theo dõi</span><span>! cần chú ý</span><span>✓ đạt</span></div>
+      </div>
+      <div class="nq-matrix">
+        <div class="nq-matrix-head">Văn bản</div>${years.map(y=>`<div class="nq-matrix-head text-center">${y}</div>`).join('')}
+        ${rows}
+      </div>
+    </div>`;
+  }
+
+  function renderProgressByProgram(){
+    const lines=STATE.programs.map(p=>{
+      const inds=STATE.indicators.filter(i=>i.program_id===p.id);
+      const total=inds.length||1;
+      const ok=inds.filter(i=>i.status==='Đạt'||i.status==='Hoàn thành').length;
+      const bad=inds.filter(i=>i.status==='Chưa đạt'||i.status==='Quá hạn').length;
+      const pct=Math.round(ok/total*100);
+      return `<div class="grid grid-cols-[120px_1fr_72px] gap-3 items-center text-sm">
+        <b class="truncate" title="${esc(p.title)}">${esc(p.code)}</b>
+        <div class="h-3 bg-slate-100 rounded-full overflow-hidden"><div class="h-full rounded-full ${bad?'bg-[#FF6B6B]':'bg-[#6BCB77]'}" style="width:${pct}%"></div></div>
+        <span class="text-right font-extrabold">${ok}/${total}</span>
+      </div>`;
+    }).join('');
+    return `<div class="nq-card p-4"><h3 class="text-lg font-extrabold mb-3">Tiến độ theo văn bản</h3><div class="grid gap-3">${lines}</div></div>`;
+  }
+
+  function renderUnitMissing(){
+    const missing=STATE.indicators.filter(i=>!i.status||i.status==='Chưa có số liệu');
+    const by={}; missing.forEach(i=>{by[i.lead_unit||'Chưa xác định']=(by[i.lead_unit||'Chưa xác định']||0)+1;});
+    const rows=Object.entries(by).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([u,c])=>`
+      <div class="flex items-center justify-between gap-3 py-2 border-b border-slate-100 last:border-0"><span class="font-bold text-sm">${esc(u)}</span><span class="nq-badge nq-badge-wait">${c} thiếu</span></div>`).join('');
+    return `<div class="nq-card p-4"><h3 class="text-lg font-extrabold mb-3">Đơn vị còn thiếu số liệu</h3>${rows||'<div class="nq-empty">Không có đơn vị thiếu số liệu.</div>'}</div>`;
+  }
+
+  function renderTable(list){
+    const rows=list.map(i=>{
+      const p=programOf(i.program_id);
+      return `<tr>
+        <td><b>${esc(i.code)}</b><div class="text-xs nq-muted mt-1">${esc(i.group_name||'')}</div></td>
+        <td><div class="nq-title-clamp" title="${esc(i.title)}">${esc(i.title)}</div><div class="text-xs nq-muted mt-1">Mục tiêu: ${esc(i.target_text||'—')}</div></td>
+        <td><b>${esc(p.code||'')}</b><div class="text-xs nq-muted mt-1 line-clamp-2">${esc(p.title||'')}</div></td>
+        <td><b>${esc(i.lead_unit||'')}</b><div class="text-xs nq-muted mt-1">${esc((i.co_units||[]).slice(0,2).join(', '))}</div></td>
+        <td>${esc(i.cycle||'—')}<div class="text-xs nq-muted mt-1">Mốc ${esc(i.target_year||'—')}</div></td>
+        <td>${esc(i.latest_result||'Chưa cập nhật')}<div class="text-xs nq-muted mt-1">${esc(i.latest_period||'')} ${esc(i.latest_year||'')}</div></td>
+        <td>${badge(i.status)}</td>
+        <td><button class="nq-btn nq-btn-ghost px-3 py-2" data-nq-detail="${esc(i.id)}">Chi tiết</button></td>
+      </tr>`;
+    }).join('');
+    return `<div class="nq-card overflow-hidden">
+      <div class="p-4 border-b border-slate-200 flex items-center justify-between gap-3">
+        <div><h3 class="text-lg font-extrabold">Bảng chỉ tiêu</h3><p id="nqShowingText" class="text-sm text-slate-500">Đang hiển thị ${list.length}/${STATE.indicators.length} chỉ tiêu.</p></div>
+        <button class="nq-btn nq-btn-primary" onclick="window.NQIndicators.reload()">Tải lại</button>
+      </div>
+      <div class="nq-table-wrap"><table class="nq-table"><thead><tr>
+        <th>Mã</th><th>Chỉ tiêu</th><th>Văn bản</th><th>Đơn vị</th><th>Chu kỳ</th><th>Kết quả gần nhất</th><th>Trạng thái</th><th></th>
+      </tr></thead><tbody>${rows||`<tr><td colspan="8"><div class="nq-empty">Không có chỉ tiêu phù hợp bộ lọc.</div></td></tr>`}</tbody></table></div>
+    </div>`;
+  }
+
+  async function openDetail(id){
+    const i=STATE.indicators.find(x=>x.id===id); if(!i) return;
+    const p=programOf(i.program_id);
+    const client=getClient();
+    let updates=[];
+    if(client){
+      const res=await client.from(TABLES.updates).select('*').eq('indicator_id',id).order('report_year',{ascending:false}).order('updated_at',{ascending:false});
+      if(!res.error) updates=res.data||[];
+    }
+    let drawer=document.getElementById('nqIndicatorDrawer');
+    if(!drawer){drawer=document.createElement('div');drawer.id='nqIndicatorDrawer';drawer.className='nq-drawer';document.body.appendChild(drawer);}
+    drawer.innerHTML=`<div class="nq-drawer-panel">
+      <div class="sticky top-0 bg-white border-b border-slate-200 p-5 z-10 flex items-start justify-between gap-3">
+        <div><p class="text-sm font-extrabold text-[#4D96FF]">${esc(i.code)} • ${esc(p.code||'')}</p><h2 class="text-xl font-extrabold mt-1">${esc(i.title)}</h2><p class="text-sm text-slate-500 mt-1">${esc(p.title||'')}</p></div>
+        <button class="nq-btn nq-btn-ghost" onclick="document.getElementById('nqIndicatorDrawer').classList.remove('open')">Đóng</button>
+      </div>
+      <div class="p-5 grid gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="nq-card p-4"><b>Đơn vị chủ trì</b><p class="mt-1 text-slate-600">${esc(i.lead_unit||'—')}</p></div>
+          <div class="nq-card p-4"><b>Trạng thái</b><p class="mt-2">${badge(i.status)}</p></div>
+          <div class="nq-card p-4"><b>Mục tiêu</b><p class="mt-1 text-slate-600">${esc(i.target_text||'—')}</p></div>
+          <div class="nq-card p-4"><b>Chu kỳ / mốc</b><p class="mt-1 text-slate-600">${esc(i.cycle||'—')} • ${esc(i.target_year||'—')}</p></div>
+        </div>
+        <div class="nq-card p-4"><b>Lịch sử cập nhật kỳ báo cáo</b><div class="nq-timeline mt-3">${updates.length?updates.map(u=>`
+          <div class="nq-timeline-item"><b>${esc(u.report_period)} ${esc(u.report_year)} • ${esc(u.assessment)}</b><p class="text-sm text-slate-600 mt-1">${esc(u.actual_text||'')}</p>${u.reason?`<p class="text-sm mt-2"><b>Nguyên nhân:</b> ${esc(u.reason)}</p>`:''}${u.solution?`<p class="text-sm mt-1"><b>Giải pháp:</b> ${esc(u.solution)}</p>`:''}</div>`).join(''):'<div class="nq-empty">Chưa có bản cập nhật kỳ.</div>'}</div></div>
+        <div class="flex justify-end gap-2"><button class="nq-btn nq-btn-ghost">Cập nhật kỳ</button><button class="nq-btn nq-btn-primary" onclick="alert('Gói NQ-4 sẽ kết nối tạo nhiệm vụ đôn đốc sang Trung tâm nhiệm vụ.')">Tạo nhiệm vụ đôn đốc</button></div>
+      </div>
+    </div>`;
+    drawer.classList.add('open');
+    drawer.onclick=e=>{if(e.target.id==='nqIndicatorDrawer') drawer.classList.remove('open');};
+  }
+
+  function bindFilters(){
+    const map={nqFilterProgram:'program',nqFilterGroup:'group',nqFilterUnit:'unit',nqFilterYear:'year',nqFilterStatus:'status'};
+    Object.entries(map).forEach(([id,key])=>{const el=document.getElementById(id); if(el){el.value=STATE.filters[key]||''; el.onchange=()=>{STATE.filters[key]=el.value; render();};}});
+    const kw=document.getElementById('nqFilterKeyword');
+    if(kw){kw.value=STATE.filters.keyword||''; kw.oninput=debounce(()=>{STATE.filters.keyword=kw.value; render();},220);}
+    document.querySelectorAll('[data-nq-detail]').forEach(btn=>btn.onclick=()=>openDetail(btn.dataset.nqDetail));
+  }
+
+  function render(){
+    const root=document.getElementById('nqIndicatorsRoot');
+    if(!root) return;
+    const list=filteredIndicators();
+    root.innerHTML=`<div class="nq-shell space-y-5">
+      <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-3">
+        <div><h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Chỉ tiêu NQ-CTHĐ</h1><p class="text-sm text-slate-500 mt-1">Theo dõi chỉ tiêu nghị quyết, chương trình hành động, kế hoạch giai đoạn 2025-2030.</p></div>
+        <div class="flex gap-2 flex-wrap"><button class="nq-btn nq-btn-ghost" onclick="window.NQIndicators.resetFilters()">Xóa lọc</button><button class="nq-btn nq-btn-primary" onclick="alert('Gói NQ-3 sẽ bổ sung màn hình nhập 01 chỉ tiêu và nhập hàng loạt.')">+ Nhập chỉ tiêu</button></div>
+      </div>
+      ${renderKpis(list)}
+      ${renderMatrix()}
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-4"><div class="xl:col-span-2">${renderProgressByProgram()}</div>${renderUnitMissing()}</div>
+      ${renderFilters()}
+      ${renderTable(list)}
+    </div>`;
+    bindFilters();
+  }
+
+  async function mount(){
+    ensureCss();
+    const root=document.getElementById('nqIndicatorsRoot');
+    if(!root) return;
+    root.innerHTML='<div class="nq-card p-6 text-slate-500">Đang tải dữ liệu chỉ tiêu NQ-CTHĐ...</div>';
+    try{await loadData();render();}
+    catch(err){console.error(err);root.innerHTML=`<div class="nq-card p-6"><h3 class="font-extrabold text-[#FF6B6B]">Không tải được module Chỉ tiêu NQ-CTHĐ</h3><p class="text-sm text-slate-600 mt-2">${esc(err.message||err)}</p></div>`;}
+  }
+
+  window.NQIndicators={mount,reload:async()=>{STATE.loaded=false;await mount();},resetFilters:()=>{STATE.filters={program:'',group:'',unit:'',year:'',status:'',keyword:''};render();}};
+})();
