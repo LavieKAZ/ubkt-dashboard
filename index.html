@@ -1455,6 +1455,10 @@ body{
           <button class="nav-item" data-page="tasks" onclick="switchPage('tasks')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h16"/><path d="M6 4h8l4 4v9a2 2 0 0 1-2 2H6z"/><path d="M14 4v5h5"/><path d="M8 13h8"/><path d="M8 16h5"/></svg></span><span class="nav-label">Trung tâm nhiệm vụ</span></button>
           <button class="nav-item" data-page="opinion" onclick="switchPage('opinion')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16v10H7l-3 3z"/><path d="M8 9h8"/><path d="M8 12h5"/></svg></span><span class="nav-label">Tổ Công tác 1374</span></button>
           <button class="nav-item" data-page="conclusions" onclick="switchPage('conclusions')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3h10l3 3v15H6z"/><path d="M15 3v4h4"/><path d="M9 12l2 2 4-5"/><path d="M9 17h7"/></svg></span><span class="nav-label">Giám sát KL Thanh tra, Kiểm tra</span></button>
+          <button class="nav-item" data-page="indicators" onclick="switchPage('indicators')">
+            <span class="nav-ico">◎</span>
+            <span class="nav-label">Chỉ tiêu NQ-CTHĐ</span>
+          </button>
           <button class="nav-item" data-page="baseorgs" onclick="switchPage('baseorgs')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h16"/><path d="M6 20V8l6-4 6 4v12"/><path d="M9 20v-7h6v7"/></svg></span><span class="nav-label">Theo dõi Cơ sở Đảng</span></button>
           <button class="nav-item" data-page="dossiers" onclick="switchPage('dossiers')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h6l2 2h8v10H4z"/><path d="M8 13h8"/><path d="M8 16h5"/></svg></span><span class="nav-label">Hồ sơ KTGS</span></button>
 
@@ -2169,6 +2173,9 @@ body{
               <div id="conclusionList" class="conclusion-grid"></div>
             </div>
           </section>
+          <section id="page-indicators" class="page hidden space-y-5">
+  <div id="nqIndicatorsRoot"></div>
+</section>
 
 
 
@@ -3076,7 +3083,10 @@ body{
       baseOrgs: "ubkt_base_orgs",
       baseReports: "ubkt_base_reports",
       dossiers: "ubkt_dossiers",
-      audit: "ubkt_audit_logs"
+      audit: "ubkt_audit_logs",
+      programs: "ubkt_programs",
+      indicators: "ubkt_indicators",
+      indicatorUpdates: "ubkt_indicator_updates",
     };
 
     let supabaseClient = null;
@@ -3542,6 +3552,7 @@ body{
   baseorgs:"Theo dõi Cơ sở Đảng",
   dossiers:"Hồ sơ sau kiểm tra, giám sát",
   periods:"Chốt kỳ báo cáo",
+  indicators:"Chỉ tiêu NQ-CTHĐ",
   reports:"Báo cáo một trang"
 };
       document.getElementById("pageTitle").textContent=titles[page];
@@ -3562,6 +3573,9 @@ if(periodBtn){
         showModuleToast("Tab Giám sát KL Thanh tra, Kiểm tra", "Đây là khu vực theo dõi riêng các kết luận kiểm tra, giám sát, thanh tra và thông báo kết luận; có thể tạo nhiệm vụ đôn đốc từ từng kết luận.");
       }
       toggleSidebar(false);
+      if(page === "indicators" && window.NQIndicators){
+  window.NQIndicators.mount();
+}
       render();
       revealInit();
     }
@@ -7214,6 +7228,6 @@ setTimeout(initLiquidScrollIndicators, 300);
     <b id="moduleToastTitle">Thông báo</b>
     <p id="moduleToastText">Nội dung thông báo.</p>
   </div>
-
+<script src="./modules/indicators/indicators.js"></script>
 </body>
 </html>
