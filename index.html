@@ -3580,13 +3580,19 @@ if(periodBtn){
         showModuleToast("Tab Giám sát KL Thanh tra, Kiểm tra", "Đây là khu vực theo dõi riêng các kết luận kiểm tra, giám sát, thanh tra và thông báo kết luận; có thể tạo nhiệm vụ đôn đốc từ từng kết luận.");
       }
       toggleSidebar(false);
-      if(page === "indicators" && window.NQIndicators){
-  window.NQIndicators.mount();
-      if(page === "kpReports" && window.KPReports){
-  window.KPReports.mount();
-}
-}
+      
       render();
+if(page === "indicators" && window.NQIndicators){
+  setTimeout(function(){
+    window.NQIndicators.mount();
+  }, 80);
+}
+
+if(page === "kpReports" && window.KPReports){
+  setTimeout(function(){
+    window.KPReports.mount();
+  }, 80);
+}
       revealInit();
     }
 
