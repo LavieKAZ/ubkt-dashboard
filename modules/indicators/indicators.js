@@ -4,7 +4,8 @@
     programs:[],
     indicators:[],
     filters:{program:'',group:'',unit:'',year:'',status:'',keyword:''},
-    client:null
+    client:null,
+    saving:false
   };
 
   const TABLES = {
@@ -13,9 +14,19 @@
     updates:'ubkt_indicator_updates'
   };
 
+  const STATUS_OPTIONS=['Chưa có số liệu','Chưa đến kỳ','Đang thực hiện','Đạt','Chưa đạt','Hoàn thành','Quá hạn'];
+  const PRIORITY_OPTIONS=['Bình thường','Cao','Rất cao'];
+  const CYCLE_OPTIONS=['Quý','6 tháng','Năm','Theo kế hoạch','Quý/Năm'];
+  const PERIOD_OPTIONS=['Quý I','6 tháng','Quý III','Năm','Sơ kết','Tổng kết'];
+
   function esc(s){return String(s ?? '').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
   function norm(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();}
   function debounce(fn,delay=220){let t;return (...args)=>{clearTimeout(t);t=setTimeout(()=>fn(...args),delay);};}
+  function id(prefix){return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;}
+  function numOrNull(v){const s=String(v??'').trim(); if(!s) return null; const n=Number(s.replace(',','.')); return Number.isFinite(n)?n:null;}
+  function intOrNull(v){const n=parseInt(String(v??'').trim(),10); return Number.isFinite(n)?n:null;}
+  function arrFromComma(v){return String(v||'').split(',').map(x=>x.trim()).filter(Boolean);}
+  function todayYear(){return new Date().getFullYear();}
 
   function ensureCss(){
     if(document.getElementById('nqIndicatorsCss')) return;
@@ -42,7 +53,7 @@
 
     const [pRes,iRes]=await Promise.all([
       client.from(TABLES.programs).select('*').eq('is_active',true).order('sort_order',{ascending:true}),
-      client.from(TABLES.indicators).select('*').eq('is_active',true).order('sort_order',{ascending:true})
+      client.from(TABLES.indicators).select('*').eq('is_active',true).order('program_id',{ascending:true}).order('sort_order',{ascending:true})
     ]);
     if(pRes.error) throw pRes.error;
     if(iRes.error) throw iRes.error;
@@ -60,6 +71,9 @@
     return 'nq-badge-wait';
   }
   function badge(s){return `<span class="nq-badge ${statusClass(s)}">${esc(s||'Chưa có số liệu')}</span>`;}
+  function optionList(values,current=''){
+    return values.map(v=>`<option value="${esc(v)}" ${String(current)===String(v)?'selected':''}>${esc(v)}</option>`).join('');
+  }
 
   function filteredIndicators(){
     const f=STATE.filters;
@@ -203,18 +217,241 @@
         <td>${esc(i.cycle||'—')}<div class="text-xs nq-muted mt-1">Mốc ${esc(i.target_year||'—')}</div></td>
         <td>${esc(i.latest_result||'Chưa cập nhật')}<div class="text-xs nq-muted mt-1">${esc(i.latest_period||'')} ${esc(i.latest_year||'')}</div></td>
         <td>${badge(i.status)}</td>
-        <td><button class="nq-btn nq-btn-ghost px-3 py-2" data-nq-detail="${esc(i.id)}">Chi tiết</button></td>
+        <td><div class="flex gap-2"><button class="nq-btn nq-btn-ghost px-3 py-2" data-nq-detail="${esc(i.id)}">Chi tiết</button><button class="nq-btn nq-btn-ghost px-3 py-2" data-nq-edit="${esc(i.id)}">Sửa</button></div></td>
       </tr>`;
     }).join('');
     return `<div class="nq-card overflow-hidden">
       <div class="p-4 border-b border-slate-200 flex items-center justify-between gap-3">
         <div><h3 class="text-lg font-extrabold">Bảng chỉ tiêu</h3><p id="nqShowingText" class="text-sm text-slate-500">Đang hiển thị ${list.length}/${STATE.indicators.length} chỉ tiêu.</p></div>
-        <button class="nq-btn nq-btn-primary" onclick="window.NQIndicators.reload()">Tải lại</button>
+        <div class="flex gap-2"><button class="nq-btn nq-btn-ghost" onclick="window.NQIndicators.reload()">Tải lại</button><button class="nq-btn nq-btn-primary" onclick="window.NQIndicators.openIndicatorForm()">+ Nhập chỉ tiêu</button></div>
       </div>
       <div class="nq-table-wrap"><table class="nq-table"><thead><tr>
         <th>Mã</th><th>Chỉ tiêu</th><th>Văn bản</th><th>Đơn vị</th><th>Chu kỳ</th><th>Kết quả gần nhất</th><th>Trạng thái</th><th></th>
       </tr></thead><tbody>${rows||`<tr><td colspan="8"><div class="nq-empty">Không có chỉ tiêu phù hợp bộ lọc.</div></td></tr>`}</tbody></table></div>
     </div>`;
+  }
+
+  function ensureOverlay(){
+    let overlay=document.getElementById('nqFormOverlay');
+    if(!overlay){
+      overlay=document.createElement('div');
+      overlay.id='nqFormOverlay';
+      overlay.className='nq-form-overlay';
+      document.body.appendChild(overlay);
+    }
+    return overlay;
+  }
+
+  function closeForm(){
+    const overlay=document.getElementById('nqFormOverlay');
+    if(overlay) overlay.classList.remove('open');
+  }
+
+  function renderIndicatorForm(item){
+    const isEdit=!!item;
+    const programs=STATE.programs.map(p=>`<option value="${esc(p.id)}" ${item?.program_id===p.id?'selected':''}>${esc(p.code)} - ${esc(p.title)}</option>`).join('');
+    const statusOptions=optionList(STATUS_OPTIONS,item?.status||'Chưa có số liệu');
+    const priorityOptions=optionList(PRIORITY_OPTIONS,item?.priority||'Bình thường');
+    const cycleOptions=optionList(CYCLE_OPTIONS,item?.cycle||'Năm');
+    const coUnits=Array.isArray(item?.co_units)?item.co_units.join(', '):'';
+    return `<div class="nq-form-panel">
+      <div class="nq-form-head">
+        <div><p class="text-sm font-extrabold text-[#4D96FF]">${isEdit?'Điều chỉnh chỉ tiêu':'Nhập chỉ tiêu mới'}</p><h2 class="text-xl font-extrabold mt-1">${isEdit?esc(item.code):'Thêm chỉ tiêu NQ-CTHĐ'}</h2><p class="text-sm text-slate-500 mt-1">Dữ liệu lưu trực tiếp vào Supabase.</p></div>
+        <button class="nq-btn nq-btn-ghost" type="button" onclick="window.NQIndicators.closeForm()">Đóng</button>
+      </div>
+      <form id="nqIndicatorForm" class="nq-form-body">
+        <input type="hidden" id="nqFormId" value="${esc(item?.id||'')}">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label class="nq-label">Văn bản nguồn
+            <select id="nqFormProgram" class="nq-field" required>${programs}</select>
+          </label>
+          <label class="nq-label">Mã chỉ tiêu
+            <input id="nqFormCode" class="nq-field" required placeholder="VD: 09.06" value="${esc(item?.code||'')}">
+          </label>
+          <label class="nq-label md:col-span-2">Nội dung chỉ tiêu
+            <textarea id="nqFormTitle" class="nq-field" rows="3" required placeholder="Nhập nội dung chỉ tiêu cần theo dõi">${esc(item?.title||'')}</textarea>
+          </label>
+          <label class="nq-label">Nhóm lĩnh vực
+            <input id="nqFormGroup" class="nq-field" placeholder="VD: Cải cách hành chính" value="${esc(item?.group_name||'')}">
+          </label>
+          <label class="nq-label">Đơn vị chủ trì
+            <input id="nqFormLeadUnit" class="nq-field" placeholder="VD: UBND phường" value="${esc(item?.lead_unit||'')}">
+          </label>
+          <label class="nq-label md:col-span-2">Đơn vị phối hợp, cách nhau bằng dấu phẩy
+            <input id="nqFormCoUnits" class="nq-field" placeholder="VD: MTTQ phường, Công an phường" value="${esc(coUnits)}">
+          </label>
+          <label class="nq-label md:col-span-2">Mục tiêu/mốc cần đạt
+            <textarea id="nqFormTargetText" class="nq-field" rows="2" placeholder="VD: Tỷ lệ hồ sơ đúng hạn đạt trên 97%">${esc(item?.target_text||'')}</textarea>
+          </label>
+          <label class="nq-label">Giá trị mục tiêu số
+            <input id="nqFormTargetValue" class="nq-field" type="number" step="any" placeholder="VD: 97" value="${esc(item?.target_value??'')}">
+          </label>
+          <label class="nq-label">Đơn vị tính
+            <input id="nqFormTargetUnit" class="nq-field" placeholder="%, hồ sơ, cuộc..." value="${esc(item?.target_unit||'')}">
+          </label>
+          <label class="nq-label">Năm/mốc hoàn thành
+            <input id="nqFormTargetYear" class="nq-field" type="number" min="2025" max="2035" value="${esc(item?.target_year||2030)}">
+          </label>
+          <label class="nq-label">Chu kỳ báo cáo
+            <select id="nqFormCycle" class="nq-field">${cycleOptions}</select>
+          </label>
+          <label class="nq-label">Trạng thái
+            <select id="nqFormStatus" class="nq-field">${statusOptions}</select>
+          </label>
+          <label class="nq-label">Mức ưu tiên
+            <select id="nqFormPriority" class="nq-field">${priorityOptions}</select>
+          </label>
+          <label class="nq-label">Thứ tự hiển thị
+            <input id="nqFormSortOrder" class="nq-field" type="number" value="${esc(item?.sort_order??0)}">
+          </label>
+        </div>
+        <div class="nq-form-actions">
+          <button class="nq-btn nq-btn-ghost" type="button" onclick="window.NQIndicators.closeForm()">Hủy</button>
+          <button class="nq-btn nq-btn-primary" type="submit">${isEdit?'Lưu điều chỉnh':'Lưu chỉ tiêu'}</button>
+        </div>
+      </form>
+    </div>`;
+  }
+
+  function openIndicatorForm(indicatorId){
+    const item=indicatorId?STATE.indicators.find(x=>x.id===indicatorId):null;
+    const overlay=ensureOverlay();
+    overlay.innerHTML=renderIndicatorForm(item);
+    overlay.classList.add('open');
+    overlay.onclick=e=>{if(e.target.id==='nqFormOverlay') closeForm();};
+    const form=document.getElementById('nqIndicatorForm');
+    if(form) form.onsubmit=saveIndicatorFromForm;
+  }
+
+  function collectIndicatorPayload(){
+    const existingId=document.getElementById('nqFormId').value.trim();
+    const isEdit=!!existingId;
+    const payload={
+      id: isEdit ? existingId : id('ind'),
+      program_id: document.getElementById('nqFormProgram').value,
+      code: document.getElementById('nqFormCode').value.trim(),
+      title: document.getElementById('nqFormTitle').value.trim(),
+      group_name: document.getElementById('nqFormGroup').value.trim(),
+      target_text: document.getElementById('nqFormTargetText').value.trim(),
+      target_value: numOrNull(document.getElementById('nqFormTargetValue').value),
+      target_unit: document.getElementById('nqFormTargetUnit').value.trim(),
+      target_year: intOrNull(document.getElementById('nqFormTargetYear').value) || 2030,
+      cycle: document.getElementById('nqFormCycle').value,
+      lead_unit: document.getElementById('nqFormLeadUnit').value.trim(),
+      co_units: arrFromComma(document.getElementById('nqFormCoUnits').value),
+      status: document.getElementById('nqFormStatus').value,
+      priority: document.getElementById('nqFormPriority').value,
+      sort_order: intOrNull(document.getElementById('nqFormSortOrder').value) || 0,
+      is_active:true,
+      data:{source:'manual', updatedFrom:'indicator_form'}
+    };
+    if(!payload.code) throw new Error('Chưa nhập mã chỉ tiêu.');
+    if(!payload.title) throw new Error('Chưa nhập nội dung chỉ tiêu.');
+    if(!payload.program_id) throw new Error('Chưa chọn văn bản nguồn.');
+    return {payload,isEdit};
+  }
+
+  async function saveIndicatorFromForm(e){
+    e.preventDefault();
+    if(STATE.saving) return;
+    const client=getClient();
+    if(!client){alert('Chưa kết nối Supabase.');return;}
+    let payload,isEdit;
+    try{({payload,isEdit}=collectIndicatorPayload());}
+    catch(err){alert(err.message||err);return;}
+    STATE.saving=true;
+    try{
+      const res=isEdit
+        ? await client.from(TABLES.indicators).update(payload).eq('id',payload.id)
+        : await client.from(TABLES.indicators).insert(payload);
+      if(res.error) throw res.error;
+      closeForm();
+      STATE.loaded=false;
+      await loadData(true);
+      render();
+      alert(isEdit?'Đã lưu điều chỉnh chỉ tiêu.':'Đã thêm chỉ tiêu mới.');
+    }catch(err){
+      console.error(err);
+      alert('Không lưu được chỉ tiêu: '+(err.message||err));
+    }finally{STATE.saving=false;}
+  }
+
+  function renderUpdateForm(indicatorId){
+    const i=STATE.indicators.find(x=>x.id===indicatorId)||{};
+    return `<div class="nq-form-panel nq-form-panel-sm">
+      <div class="nq-form-head">
+        <div><p class="text-sm font-extrabold text-[#4D96FF]">Cập nhật kỳ báo cáo</p><h2 class="text-xl font-extrabold mt-1">${esc(i.code||'')}</h2><p class="text-sm text-slate-500 mt-1">${esc(i.title||'')}</p></div>
+        <button class="nq-btn nq-btn-ghost" type="button" onclick="window.NQIndicators.closeForm()">Đóng</button>
+      </div>
+      <form id="nqUpdateForm" class="nq-form-body">
+        <input type="hidden" id="nqUpdateIndicatorId" value="${esc(indicatorId)}">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label class="nq-label">Kỳ báo cáo<select id="nqUpdatePeriod" class="nq-field">${optionList(PERIOD_OPTIONS,'Năm')}</select></label>
+          <label class="nq-label">Năm<input id="nqUpdateYear" class="nq-field" type="number" value="${todayYear()}"></label>
+          <label class="nq-label">Kết quả số<input id="nqUpdateValue" class="nq-field" type="number" step="any" placeholder="VD: 96.5"></label>
+          <label class="nq-label">Đánh giá<select id="nqUpdateAssessment" class="nq-field">${optionList(['Đạt','Chưa đạt','Đang thực hiện','Chưa đánh giá'],'Chưa đánh giá')}</select></label>
+          <label class="nq-label md:col-span-2">Kết quả đạt được<textarea id="nqUpdateText" class="nq-field" rows="3" placeholder="Nhập kết quả kỳ báo cáo"></textarea></label>
+          <label class="nq-label md:col-span-2">Nguyên nhân/khó khăn<textarea id="nqUpdateReason" class="nq-field" rows="2"></textarea></label>
+          <label class="nq-label md:col-span-2">Giải pháp/kiến nghị<textarea id="nqUpdateSolution" class="nq-field" rows="2"></textarea></label>
+          <label class="nq-label md:col-span-2">Minh chứng<input id="nqUpdateEvidence" class="nq-field" placeholder="Tên báo cáo, đường link, phụ lục..."></label>
+        </div>
+        <div class="nq-form-actions"><button class="nq-btn nq-btn-ghost" type="button" onclick="window.NQIndicators.closeForm()">Hủy</button><button class="nq-btn nq-btn-primary" type="submit">Lưu cập nhật kỳ</button></div>
+      </form>
+    </div>`;
+  }
+
+  function openUpdateForm(indicatorId){
+    const overlay=ensureOverlay();
+    overlay.innerHTML=renderUpdateForm(indicatorId);
+    overlay.classList.add('open');
+    overlay.onclick=e=>{if(e.target.id==='nqFormOverlay') closeForm();};
+    const form=document.getElementById('nqUpdateForm');
+    if(form) form.onsubmit=saveUpdateFromForm;
+  }
+
+  async function saveUpdateFromForm(e){
+    e.preventDefault();
+    const client=getClient();
+    if(!client){alert('Chưa kết nối Supabase.');return;}
+    const indicatorId=document.getElementById('nqUpdateIndicatorId').value;
+    const assessment=document.getElementById('nqUpdateAssessment').value;
+    const reportPeriod=document.getElementById('nqUpdatePeriod').value;
+    const reportYear=intOrNull(document.getElementById('nqUpdateYear').value)||todayYear();
+    const actualText=document.getElementById('nqUpdateText').value.trim();
+    const payload={
+      id:id('upd'),
+      indicator_id:indicatorId,
+      report_period:reportPeriod,
+      report_year:reportYear,
+      actual_value:numOrNull(document.getElementById('nqUpdateValue').value),
+      actual_text:actualText,
+      assessment,
+      reason:document.getElementById('nqUpdateReason').value.trim(),
+      solution:document.getElementById('nqUpdateSolution').value.trim(),
+      evidence:document.getElementById('nqUpdateEvidence').value.trim(),
+      updated_by:'web',
+      data:{source:'manual', updatedFrom:'indicator_update_form'}
+    };
+    try{
+      const res=await client.from(TABLES.updates).insert(payload);
+      if(res.error) throw res.error;
+      const status=assessment==='Đạt'?'Đạt':assessment==='Chưa đạt'?'Chưa đạt':assessment==='Đang thực hiện'?'Đang thực hiện':'Chưa có số liệu';
+      const ures=await client.from(TABLES.indicators).update({
+        latest_period:reportPeriod,
+        latest_year:reportYear,
+        latest_result:actualText,
+        latest_assessment:assessment,
+        status
+      }).eq('id',indicatorId);
+      if(ures.error) throw ures.error;
+      closeForm();
+      const drawer=document.getElementById('nqIndicatorDrawer');
+      if(drawer) drawer.classList.remove('open');
+      STATE.loaded=false;
+      await loadData(true);
+      render();
+      alert('Đã lưu cập nhật kỳ báo cáo.');
+    }catch(err){console.error(err);alert('Không lưu được cập nhật kỳ: '+(err.message||err));}
   }
 
   async function openDetail(id){
@@ -242,7 +479,7 @@
         </div>
         <div class="nq-card p-4"><b>Lịch sử cập nhật kỳ báo cáo</b><div class="nq-timeline mt-3">${updates.length?updates.map(u=>`
           <div class="nq-timeline-item"><b>${esc(u.report_period)} ${esc(u.report_year)} • ${esc(u.assessment)}</b><p class="text-sm text-slate-600 mt-1">${esc(u.actual_text||'')}</p>${u.reason?`<p class="text-sm mt-2"><b>Nguyên nhân:</b> ${esc(u.reason)}</p>`:''}${u.solution?`<p class="text-sm mt-1"><b>Giải pháp:</b> ${esc(u.solution)}</p>`:''}</div>`).join(''):'<div class="nq-empty">Chưa có bản cập nhật kỳ.</div>'}</div></div>
-        <div class="flex justify-end gap-2"><button class="nq-btn nq-btn-ghost">Cập nhật kỳ</button><button class="nq-btn nq-btn-primary" onclick="alert('Gói NQ-4 sẽ kết nối tạo nhiệm vụ đôn đốc sang Trung tâm nhiệm vụ.')">Tạo nhiệm vụ đôn đốc</button></div>
+        <div class="flex justify-end gap-2 flex-wrap"><button class="nq-btn nq-btn-ghost" onclick="window.NQIndicators.openIndicatorForm('${esc(i.id)}')">Sửa chỉ tiêu</button><button class="nq-btn nq-btn-ghost" onclick="window.NQIndicators.openUpdateForm('${esc(i.id)}')">Cập nhật kỳ</button><button class="nq-btn nq-btn-primary" onclick="alert('Gói NQ-4 sẽ kết nối tạo nhiệm vụ đôn đốc sang Trung tâm nhiệm vụ.')">Tạo nhiệm vụ đôn đốc</button></div>
       </div>
     </div>`;
     drawer.classList.add('open');
@@ -255,6 +492,7 @@
     const kw=document.getElementById('nqFilterKeyword');
     if(kw){kw.value=STATE.filters.keyword||''; kw.oninput=debounce(()=>{STATE.filters.keyword=kw.value; render();},220);}
     document.querySelectorAll('[data-nq-detail]').forEach(btn=>btn.onclick=()=>openDetail(btn.dataset.nqDetail));
+    document.querySelectorAll('[data-nq-edit]').forEach(btn=>btn.onclick=()=>openIndicatorForm(btn.dataset.nqEdit));
   }
 
   function render(){
@@ -264,7 +502,7 @@
     root.innerHTML=`<div class="nq-shell space-y-5">
       <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-3">
         <div><h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Chỉ tiêu NQ-CTHĐ</h1><p class="text-sm text-slate-500 mt-1">Theo dõi chỉ tiêu nghị quyết, chương trình hành động, kế hoạch giai đoạn 2025-2030.</p></div>
-        <div class="flex gap-2 flex-wrap"><button class="nq-btn nq-btn-ghost" onclick="window.NQIndicators.resetFilters()">Xóa lọc</button><button class="nq-btn nq-btn-primary" onclick="alert('Gói NQ-3 sẽ bổ sung màn hình nhập 01 chỉ tiêu và nhập hàng loạt.')">+ Nhập chỉ tiêu</button></div>
+        <div class="flex gap-2 flex-wrap"><button class="nq-btn nq-btn-ghost" onclick="window.NQIndicators.resetFilters()">Xóa lọc</button><button class="nq-btn nq-btn-primary" onclick="window.NQIndicators.openIndicatorForm()">+ Nhập chỉ tiêu</button></div>
       </div>
       ${renderKpis(list)}
       ${renderMatrix()}
@@ -284,5 +522,12 @@
     catch(err){console.error(err);root.innerHTML=`<div class="nq-card p-6"><h3 class="font-extrabold text-[#FF6B6B]">Không tải được module Chỉ tiêu NQ-CTHĐ</h3><p class="text-sm text-slate-600 mt-2">${esc(err.message||err)}</p></div>`;}
   }
 
-  window.NQIndicators={mount,reload:async()=>{STATE.loaded=false;await mount();},resetFilters:()=>{STATE.filters={program:'',group:'',unit:'',year:'',status:'',keyword:''};render();}};
+  window.NQIndicators={
+    mount,
+    reload:async()=>{STATE.loaded=false;await mount();},
+    resetFilters:()=>{STATE.filters={program:'',group:'',unit:'',year:'',status:'',keyword:''};render();},
+    openIndicatorForm,
+    openUpdateForm,
+    closeForm
+  };
 })();
