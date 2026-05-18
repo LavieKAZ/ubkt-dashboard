@@ -16,7 +16,10 @@
 
   const STATUS_OPTIONS=['Chưa có số liệu','Chưa đến kỳ','Đang thực hiện','Đạt','Chưa đạt','Hoàn thành','Quá hạn'];
   const PRIORITY_OPTIONS=['Bình thường','Cao','Rất cao'];
-  const CYCLE_OPTIONS=['Quý','6 tháng','Năm','Theo kế hoạch','Quý/Năm'];
+  const CYCLE_OPTIONS=['Quý','6 tháng','Năm','Hằng năm','Theo kế hoạch','Quý/Năm'];
+  const MEASURE_TYPE_OPTIONS=[['percentage','Tỷ lệ %'],['number','Số lượng'],['growth','Tăng/giảm theo năm'],['milestone','Định tính/mốc hoàn thành'],['mixed','Chỉ tiêu hỗn hợp']];
+  const COMPARE_OPTIONS=[['>=','Đạt từ / lớn hơn hoặc bằng'],['>','Lớn hơn'],['<=','Nhỏ hơn hoặc bằng'],['=','Bằng'],['range','Trong khoảng'],['complete','Hoàn thành/chưa hoàn thành'],['note','Theo mô tả']];
+  const TRACKING_SCOPE_OPTIONS=['Hằng năm','Theo quý','6 tháng','Đến 2030','Giai đoạn 2025-2030','Theo kế hoạch'];
   const PERIOD_OPTIONS=['Quý I','6 tháng','Quý III','Năm','Sơ kết','Tổng kết'];
 
   function esc(s){return String(s ?? '').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
@@ -74,6 +77,23 @@
   function optionList(values,current=''){
     return values.map(v=>`<option value="${esc(v)}" ${String(current)===String(v)?'selected':''}>${esc(v)}</option>`).join('');
   }
+  function pairOptionList(pairs,current=''){
+    return pairs.map(([value,label])=>`<option value="${esc(value)}" ${String(current)===String(value)?'selected':''}>${esc(label)}</option>`).join('');
+  }
+  function indicatorSortValue(i){
+    const n=Number(i.ordinal ?? i.sort_order ?? 999999);
+    return Number.isFinite(n)?n:999999;
+  }
+  function indicatorTargetLabel(i){
+    if(i.target_label) return i.target_label;
+    if(i.compare_operator==='range' && i.target_min!=null && i.target_max!=null) return `Từ ${i.target_min} đến ${i.target_max}${i.target_unit?' '+i.target_unit:''}`;
+    if(i.target_value!=null) return `${i.compare_operator||'>='} ${i.target_value}${i.target_unit?' '+i.target_unit:''}`;
+    return i.target_text || '—';
+  }
+  function measureLabel(v){
+    const f=MEASURE_TYPE_OPTIONS.find(x=>x[0]===v);
+    return f?f[1]:(v||'—');
+  }
 
   function filteredIndicators(){
     const f=STATE.filters;
@@ -86,10 +106,16 @@
       if(f.status && (i.status||'')!==f.status) return false;
       if(kw){
         const p=programOf(i.program_id);
-        const hay=norm(`${i.code} ${i.title} ${i.group_name} ${i.lead_unit} ${p.code} ${p.title} ${i.target_text} ${i.latest_result}`);
+        const hay=norm(`${i.code} ${i.ordinal} ${i.title} ${i.source_excerpt} ${i.group_name} ${i.lead_unit} ${p.code} ${p.title} ${i.target_text} ${i.target_label} ${i.tracking_scope} ${i.latest_result}`);
         if(!hay.includes(kw)) return false;
       }
       return true;
+    }).sort((a,b)=>{
+      const po=String(a.program_id||'').localeCompare(String(b.program_id||''),'vi',{numeric:true,sensitivity:'base'});
+      if(po) return po;
+      const ao=indicatorSortValue(a), bo=indicatorSortValue(b);
+      if(ao!==bo) return ao-bo;
+      return String(a.code||'').localeCompare(String(b.code||''),'vi',{numeric:true,sensitivity:'base'});
     });
   }
 
@@ -210,12 +236,13 @@
   function renderTable(list){
     const rows=list.map(i=>{
       const p=programOf(i.program_id);
+      const shouldSplit=i?.data?.should_split===true || String(i?.data?.should_split).toLowerCase()==='true' || i.measure_type==='mixed';
       return `<tr>
-        <td><b>${esc(i.code)}</b><div class="text-xs nq-muted mt-1">${esc(i.group_name||'')}</div></td>
-        <td><div class="nq-title-clamp" title="${esc(i.title)}">${esc(i.title)}</div><div class="text-xs nq-muted mt-1">Mục tiêu: ${esc(i.target_text||'—')}</div></td>
-        <td><b>${esc(p.code||'')}</b><div class="text-xs nq-muted mt-1 line-clamp-2">${esc(p.title||'')}</div></td>
+        <td><b>${esc(i.ordinal ?? i.sort_order ?? '')}</b><div class="text-xs nq-muted mt-1">${esc(i.code||'')}</div></td>
+        <td><div class="nq-title-clamp" title="${esc(i.source_excerpt||i.title)}">${esc(i.source_excerpt||i.title)}</div>${shouldSplit?'<div class="nq-split-hint mt-2">Nên tách chỉ tiêu con khi cập nhật số liệu</div>':''}</td>
+        <td><b>${esc(i.group_name||'')}</b><div class="text-xs nq-muted mt-1">${esc(measureLabel(i.measure_type))}</div></td>
         <td><b>${esc(i.lead_unit||'')}</b><div class="text-xs nq-muted mt-1">${esc((i.co_units||[]).slice(0,2).join(', '))}</div></td>
-        <td>${esc(i.cycle||'—')}<div class="text-xs nq-muted mt-1">Mốc ${esc(i.target_year||'—')}</div></td>
+        <td><b>${esc(indicatorTargetLabel(i))}</b><div class="text-xs nq-muted mt-1">${esc(i.tracking_scope||i.cycle||'—')} • ${esc(i.target_year||'—')}</div></td>
         <td>${esc(i.latest_result||'Chưa cập nhật')}<div class="text-xs nq-muted mt-1">${esc(i.latest_period||'')} ${esc(i.latest_year||'')}</div></td>
         <td>${badge(i.status)}</td>
         <td><div class="flex gap-2"><button class="nq-btn nq-btn-ghost px-3 py-2" data-nq-detail="${esc(i.id)}">Chi tiết</button><button class="nq-btn nq-btn-ghost px-3 py-2" data-nq-edit="${esc(i.id)}">Sửa</button></div></td>
@@ -223,11 +250,11 @@
     }).join('');
     return `<div class="nq-card overflow-hidden">
       <div class="p-4 border-b border-slate-200 flex items-center justify-between gap-3">
-        <div><h3 class="text-lg font-extrabold">Bảng chỉ tiêu</h3><p id="nqShowingText" class="text-sm text-slate-500">Đang hiển thị ${list.length}/${STATE.indicators.length} chỉ tiêu.</p></div>
+        <div><h3 class="text-lg font-extrabold">Bảng chỉ tiêu cụ thể</h3><p id="nqShowingText" class="text-sm text-slate-500">Đang hiển thị ${list.length}/${STATE.indicators.length} chỉ tiêu.</p></div>
         <div class="flex gap-2"><button class="nq-btn nq-btn-ghost" onclick="window.NQIndicators.reload()">Tải lại</button><button class="nq-btn nq-btn-primary" onclick="window.NQIndicators.openIndicatorForm()">+ Nhập chỉ tiêu</button></div>
       </div>
       <div class="nq-table-wrap"><table class="nq-table"><thead><tr>
-        <th>Mã</th><th>Chỉ tiêu</th><th>Văn bản</th><th>Đơn vị</th><th>Chu kỳ</th><th>Kết quả gần nhất</th><th>Trạng thái</th><th></th>
+        <th>STT</th><th>Chỉ tiêu cụ thể</th><th>Nhóm / loại</th><th>Đơn vị</th><th>Mục tiêu</th><th>Kết quả gần nhất</th><th>Trạng thái</th><th></th>
       </tr></thead><tbody>${rows||`<tr><td colspan="8"><div class="nq-empty">Không có chỉ tiêu phù hợp bộ lọc.</div></td></tr>`}</tbody></table></div>
     </div>`;
   }
@@ -366,48 +393,81 @@
     const programs=STATE.programs.map(p=>`<option value="${esc(p.id)}" ${item?.program_id===p.id?'selected':''}>${esc(p.code)} - ${esc(p.title)}</option>`).join('');
     const statusOptions=optionList(STATUS_OPTIONS,item?.status||'Chưa có số liệu');
     const priorityOptions=optionList(PRIORITY_OPTIONS,item?.priority||'Bình thường');
-    const cycleOptions=optionList(CYCLE_OPTIONS,item?.cycle||'Năm');
+    const cycleOptions=optionList(CYCLE_OPTIONS,item?.cycle||'Hằng năm');
+    const trackingOptions=optionList(TRACKING_SCOPE_OPTIONS,item?.tracking_scope||item?.cycle||'Hằng năm');
+    const measureOptions=pairOptionList(MEASURE_TYPE_OPTIONS,item?.measure_type||'mixed');
+    const compareOptions=pairOptionList(COMPARE_OPTIONS,item?.compare_operator||'note');
     const coUnits=Array.isArray(item?.co_units)?item.co_units.join(', '):'';
     return `<div class="nq-form-panel">
       <div class="nq-form-head">
-        <div><p class="text-sm font-extrabold text-[#4D96FF]">${isEdit?'Điều chỉnh chỉ tiêu':'Nhập chỉ tiêu mới'}</p><h2 class="text-xl font-extrabold mt-1">${isEdit?esc(item.code):'Thêm chỉ tiêu NQ-CTHĐ'}</h2><p class="text-sm text-slate-500 mt-1">Dữ liệu lưu trực tiếp vào Supabase.</p></div>
+        <div><p class="text-sm font-extrabold text-[#4D96FF]">${isEdit?'Điều chỉnh chỉ tiêu cụ thể':'Nhập chỉ tiêu cụ thể'}</p><h2 class="text-xl font-extrabold mt-1">${isEdit?esc(item.code):'Thêm chỉ tiêu NQ-CTHĐ'}</h2><p class="text-sm text-slate-500 mt-1">Chỉ nhập phần chỉ tiêu cụ thể trong nghị quyết/chương trình, không nhập thành nhiệm vụ ngắn hạn.</p></div>
         <button class="nq-btn nq-btn-ghost" type="button" onclick="window.NQIndicators.closeForm()">Đóng</button>
       </div>
       <form id="nqIndicatorForm" class="nq-form-body">
         <input type="hidden" id="nqFormId" value="${esc(item?.id||'')}">
+        <div class="nq-form-section-title">1. Thông tin gốc của chỉ tiêu</div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <label class="nq-label">Văn bản nguồn
             <select id="nqFormProgram" class="nq-field" required>${programs}</select>
           </label>
-          <label class="nq-label">Mã chỉ tiêu
-            <input id="nqFormCode" class="nq-field" required placeholder="VD: 09.06" value="${esc(item?.code||'')}">
+          <label class="nq-label">Số thứ tự trong văn bản
+            <input id="nqFormOrdinal" class="nq-field" type="number" placeholder="VD: 14" value="${esc(item?.ordinal??item?.sort_order??'')}">
           </label>
-          <label class="nq-label md:col-span-2">Nội dung chỉ tiêu
-            <textarea id="nqFormTitle" class="nq-field" rows="3" required placeholder="Nhập nội dung chỉ tiêu cần theo dõi">${esc(item?.title||'')}</textarea>
+          <label class="nq-label">Mã chỉ tiêu
+            <input id="nqFormCode" class="nq-field" required placeholder="VD: CT.14 hoặc 09.02" value="${esc(item?.code||'')}">
           </label>
           <label class="nq-label">Nhóm lĩnh vực
             <input id="nqFormGroup" class="nq-field" placeholder="VD: Cải cách hành chính" value="${esc(item?.group_name||'')}">
           </label>
+          <label class="nq-label md:col-span-2">Nội dung chỉ tiêu cụ thể / trích nguyên văn
+            <textarea id="nqFormSourceExcerpt" class="nq-field" rows="4" required placeholder="Dán nguyên văn chỉ tiêu trong văn bản, ví dụ: Hằng năm, tỷ lệ giải quyết hồ sơ hành chính đúng hạn...">${esc(item?.source_excerpt||item?.title||'')}</textarea>
+          </label>
           <label class="nq-label">Đơn vị chủ trì
             <input id="nqFormLeadUnit" class="nq-field" placeholder="VD: UBND phường" value="${esc(item?.lead_unit||'')}">
           </label>
-          <label class="nq-label md:col-span-2">Đơn vị phối hợp, cách nhau bằng dấu phẩy
+          <label class="nq-label">Đơn vị phối hợp, cách nhau bằng dấu phẩy
             <input id="nqFormCoUnits" class="nq-field" placeholder="VD: MTTQ phường, Công an phường" value="${esc(coUnits)}">
           </label>
-          <label class="nq-label md:col-span-2">Mục tiêu/mốc cần đạt
-            <textarea id="nqFormTargetText" class="nq-field" rows="2" placeholder="VD: Tỷ lệ hồ sơ đúng hạn đạt trên 97%">${esc(item?.target_text||'')}</textarea>
+        </div>
+
+        <div class="nq-form-section-title">2. Cách đo và mục tiêu cần đạt</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label class="nq-label">Loại chỉ tiêu
+            <select id="nqFormMeasureType" class="nq-field">${measureOptions}</select>
           </label>
-          <label class="nq-label">Giá trị mục tiêu số
+          <label class="nq-label">Kiểu so sánh
+            <select id="nqFormCompare" class="nq-field">${compareOptions}</select>
+          </label>
+          <label class="nq-label">Giá trị mục tiêu
             <input id="nqFormTargetValue" class="nq-field" type="number" step="any" placeholder="VD: 97" value="${esc(item?.target_value??'')}">
           </label>
           <label class="nq-label">Đơn vị tính
-            <input id="nqFormTargetUnit" class="nq-field" placeholder="%, hồ sơ, cuộc..." value="${esc(item?.target_unit||'')}">
+            <input id="nqFormTargetUnit" class="nq-field" placeholder="%, tuyến, mô hình, cuộc..." value="${esc(item?.target_unit||'')}">
+          </label>
+          <label class="nq-label">Giá trị thấp nhất nếu là khoảng
+            <input id="nqFormTargetMin" class="nq-field" type="number" step="any" placeholder="VD: 3" value="${esc(item?.target_min??'')}">
+          </label>
+          <label class="nq-label">Giá trị cao nhất nếu là khoảng
+            <input id="nqFormTargetMax" class="nq-field" type="number" step="any" placeholder="VD: 5" value="${esc(item?.target_max??'')}">
+          </label>
+          <label class="nq-label md:col-span-2">Mục tiêu hiển thị trên bảng
+            <input id="nqFormTargetLabel" class="nq-field" placeholder="VD: ≥97%; từ 3%-5%/năm; hoàn thành đến năm 2030" value="${esc(item?.target_label||indicatorTargetLabel(item||{}).replace('—',''))}">
+          </label>
+          <label class="nq-label md:col-span-2">Mô tả mục tiêu/mốc cần đạt
+            <textarea id="nqFormTargetText" class="nq-field" rows="2" placeholder="Diễn giải mục tiêu theo văn bản nếu cần">${esc(item?.target_text||'')}</textarea>
+          </label>
+        </div>
+
+        <div class="nq-form-section-title">3. Theo dõi thực hiện</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label class="nq-label">Chu kỳ báo cáo
+            <select id="nqFormCycle" class="nq-field">${cycleOptions}</select>
+          </label>
+          <label class="nq-label">Phạm vi theo dõi
+            <select id="nqFormTrackingScope" class="nq-field">${trackingOptions}</select>
           </label>
           <label class="nq-label">Năm/mốc hoàn thành
             <input id="nqFormTargetYear" class="nq-field" type="number" min="2025" max="2035" value="${esc(item?.target_year||2030)}">
-          </label>
-          <label class="nq-label">Chu kỳ báo cáo
-            <select id="nqFormCycle" class="nq-field">${cycleOptions}</select>
           </label>
           <label class="nq-label">Trạng thái
             <select id="nqFormStatus" class="nq-field">${statusOptions}</select>
@@ -416,7 +476,7 @@
             <select id="nqFormPriority" class="nq-field">${priorityOptions}</select>
           </label>
           <label class="nq-label">Thứ tự hiển thị
-            <input id="nqFormSortOrder" class="nq-field" type="number" value="${esc(item?.sort_order??0)}">
+            <input id="nqFormSortOrder" class="nq-field" type="number" value="${esc(item?.sort_order??item?.ordinal??0)}">
           </label>
         </div>
         <div class="nq-form-actions">
@@ -440,27 +500,48 @@
   function collectIndicatorPayload(){
     const existingId=document.getElementById('nqFormId').value.trim();
     const isEdit=!!existingId;
+    const ordinal=intOrNull(document.getElementById('nqFormOrdinal').value);
+    const sourceExcerpt=document.getElementById('nqFormSourceExcerpt').value.trim();
+    const targetValue=numOrNull(document.getElementById('nqFormTargetValue').value);
+    const targetMin=numOrNull(document.getElementById('nqFormTargetMin').value);
+    const targetMax=numOrNull(document.getElementById('nqFormTargetMax').value);
+    const targetUnit=document.getElementById('nqFormTargetUnit').value.trim();
+    let targetLabel=document.getElementById('nqFormTargetLabel').value.trim();
+    const compare=document.getElementById('nqFormCompare').value;
+    if(!targetLabel){
+      if(compare==='range' && targetMin!=null && targetMax!=null) targetLabel=`Từ ${targetMin} đến ${targetMax}${targetUnit?' '+targetUnit:''}`;
+      else if(targetValue!=null) targetLabel=`${compare||'>='} ${targetValue}${targetUnit?' '+targetUnit:''}`;
+    }
     const payload={
       id: isEdit ? existingId : id('ind'),
       program_id: document.getElementById('nqFormProgram').value,
       code: document.getElementById('nqFormCode').value.trim(),
-      title: document.getElementById('nqFormTitle').value.trim(),
+      ordinal,
+      title: sourceExcerpt,
+      source_excerpt: sourceExcerpt,
       group_name: document.getElementById('nqFormGroup').value.trim(),
+      measure_type: document.getElementById('nqFormMeasureType').value,
+      compare_operator: compare,
+      target_value: targetValue,
+      target_min: targetMin,
+      target_max: targetMax,
+      target_unit: targetUnit,
+      target_label: targetLabel,
       target_text: document.getElementById('nqFormTargetText').value.trim(),
-      target_value: numOrNull(document.getElementById('nqFormTargetValue').value),
-      target_unit: document.getElementById('nqFormTargetUnit').value.trim(),
       target_year: intOrNull(document.getElementById('nqFormTargetYear').value) || 2030,
       cycle: document.getElementById('nqFormCycle').value,
+      tracking_scope: document.getElementById('nqFormTrackingScope').value,
       lead_unit: document.getElementById('nqFormLeadUnit').value.trim(),
       co_units: arrFromComma(document.getElementById('nqFormCoUnits').value),
       status: document.getElementById('nqFormStatus').value,
       priority: document.getElementById('nqFormPriority').value,
-      sort_order: intOrNull(document.getElementById('nqFormSortOrder').value) || 0,
+      sort_order: intOrNull(document.getElementById('nqFormSortOrder').value) || ordinal || 0,
       is_active:true,
-      data:{source:'manual', updatedFrom:'indicator_form'}
+      input_mode:'specific_target',
+      data:{source:'manual', updatedFrom:'specific_indicator_form'}
     };
     if(!payload.code) throw new Error('Chưa nhập mã chỉ tiêu.');
-    if(!payload.title) throw new Error('Chưa nhập nội dung chỉ tiêu.');
+    if(!payload.source_excerpt) throw new Error('Chưa nhập nội dung chỉ tiêu cụ thể.');
     if(!payload.program_id) throw new Error('Chưa chọn văn bản nguồn.');
     return {payload,isEdit};
   }
@@ -588,8 +669,8 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div class="nq-card p-4"><b>Đơn vị chủ trì</b><p class="mt-1 text-slate-600">${esc(i.lead_unit||'—')}</p></div>
           <div class="nq-card p-4"><b>Trạng thái</b><p class="mt-2">${badge(i.status)}</p></div>
-          <div class="nq-card p-4"><b>Mục tiêu</b><p class="mt-1 text-slate-600">${esc(i.target_text||'—')}</p></div>
-          <div class="nq-card p-4"><b>Chu kỳ / mốc</b><p class="mt-1 text-slate-600">${esc(i.cycle||'—')} • ${esc(i.target_year||'—')}</p></div>
+          <div class="nq-card p-4"><b>Mục tiêu</b><p class="mt-1 text-slate-600">${esc(indicatorTargetLabel(i))}</p><p class="text-xs nq-muted mt-2">${esc(measureLabel(i.measure_type))} • ${esc(i.compare_operator||'note')}</p></div>
+          <div class="nq-card p-4"><b>Chu kỳ / mốc</b><p class="mt-1 text-slate-600">${esc(i.tracking_scope||i.cycle||'—')} • ${esc(i.target_year||'—')}</p></div>
         </div>
         <div class="nq-card p-4"><b>Lịch sử cập nhật kỳ báo cáo</b><div class="nq-timeline mt-3">${updates.length?updates.map(u=>`
           <div class="nq-timeline-item"><b>${esc(u.report_period)} ${esc(u.report_year)} • ${esc(u.assessment)}</b><p class="text-sm text-slate-600 mt-1">${esc(u.actual_text||'')}</p>${u.reason?`<p class="text-sm mt-2"><b>Nguyên nhân:</b> ${esc(u.reason)}</p>`:''}${u.solution?`<p class="text-sm mt-1"><b>Giải pháp:</b> ${esc(u.solution)}</p>`:''}</div>`).join(''):'<div class="nq-empty">Chưa có bản cập nhật kỳ.</div>'}</div></div>
