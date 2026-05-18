@@ -1,0 +1,41 @@
+/* Module Chỉ tiêu NQ-CTHĐ - tách riêng để không làm nặng index.html */
+.nq-shell{animation:nqFadeUp .42s cubic-bezier(.22,1,.36,1) both}
+@keyframes nqFadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.nq-card{background:rgba(255,255,255,.94);border:1px solid rgba(226,232,240,.92);box-shadow:0 14px 34px rgba(31,42,68,.08);border-radius:1.5rem}
+.nq-card:hover{box-shadow:0 20px 48px rgba(31,42,68,.12)}
+.nq-kpi{position:relative;overflow:hidden;transition:.22s transform,.22s box-shadow}
+.nq-kpi:hover{transform:translateY(-2px)}
+.nq-kpi:after{content:"";position:absolute;right:-2.4rem;bottom:-2.4rem;width:7rem;height:7rem;border-radius:45% 55% 65% 35%;opacity:.13;background:linear-gradient(135deg,#4D96FF,#6BCB77)}
+.nq-field{width:100%;border:1px solid #e2e8f0;background:#fff;border-radius:1rem;padding:.72rem .86rem;outline:none;transition:border .2s,box-shadow .2s}
+.nq-field:focus{border-color:rgba(77,150,255,.55);box-shadow:0 0 0 4px rgba(77,150,255,.12)}
+.nq-btn{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;border-radius:1rem;padding:.72rem 1rem;font-weight:800;transition:.18s;white-space:nowrap}
+.nq-btn:hover{transform:translateY(-1px)}
+.nq-btn-primary{background:linear-gradient(135deg,#4D96FF,#2f7ceb);color:#fff;box-shadow:0 10px 22px rgba(77,150,255,.22)}
+.nq-btn-ghost{background:#fff;border:1px solid #e2e8f0;color:#334155}
+.nq-badge{display:inline-flex;align-items:center;gap:.3rem;border-radius:999px;padding:.28rem .65rem;font-size:.72rem;font-weight:850;border:1px solid transparent;white-space:nowrap}
+.nq-badge-ok{background:rgba(107,203,119,.16);color:#247c35;border-color:rgba(107,203,119,.28)}
+.nq-badge-bad{background:rgba(255,107,107,.16);color:#c84854;border-color:rgba(255,107,107,.30)}
+.nq-badge-doing{background:rgba(77,150,255,.13);color:#1d5fbf;border-color:rgba(77,150,255,.26)}
+.nq-badge-wait{background:#f8fafc;color:#475569;border-color:#dbe3ef}
+.nq-badge-soon{background:rgba(255,217,61,.28);color:#967a00;border-color:rgba(255,217,61,.38)}
+.nq-matrix{display:grid;grid-template-columns:minmax(180px,1.3fr) repeat(6,minmax(62px,.45fr));gap:8px;align-items:center;min-width:760px}
+.nq-matrix-head{font-size:.74rem;font-weight:900;color:#64748b;text-transform:uppercase}
+.nq-matrix-cell{height:42px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;font-weight:900}
+.nq-matrix-cell.active{background:rgba(77,150,255,.13);color:#1d5fbf;border-color:rgba(77,150,255,.26)}
+.nq-matrix-cell.warn{background:rgba(255,217,61,.28);color:#967a00;border-color:rgba(255,217,61,.38)}
+.nq-matrix-cell.done{background:rgba(107,203,119,.16);color:#247c35;border-color:rgba(107,203,119,.28)}
+.nq-table-wrap{overflow-x:auto;scrollbar-gutter:stable}
+.nq-table{min-width:1120px;width:100%;border-collapse:separate;border-spacing:0}
+.nq-table th{position:sticky;top:0;background:#f8fafc;color:#64748b;font-size:.72rem;text-transform:uppercase;letter-spacing:.03em;text-align:left;padding:.85rem;border-bottom:1px solid #e2e8f0;z-index:1}
+.nq-table td{padding:.95rem .85rem;border-bottom:1px solid #edf2f7;vertical-align:top;font-size:.86rem}
+.nq-table tr:hover td{background:#fbfdff}
+.nq-title-clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35;font-weight:850;color:#1f2a44}
+.nq-muted{color:#64748b}
+.nq-drawer{position:fixed;inset:0;display:none;background:rgba(15,23,42,.36);z-index:80;backdrop-filter:blur(5px)}
+.nq-drawer.open{display:block}
+.nq-drawer-panel{position:absolute;right:0;top:0;height:100%;width:min(720px,100%);background:#fff;box-shadow:-20px 0 60px rgba(31,42,68,.20);overflow:auto;animation:nqSlideIn .28s cubic-bezier(.22,1,.36,1) both}
+@keyframes nqSlideIn{from{transform:translateX(28px);opacity:.7}to{transform:translateX(0);opacity:1}}
+.nq-timeline{display:grid;gap:.75rem}
+.nq-timeline-item{border-left:5px solid #4D96FF;background:#f8fafc;border-radius:1rem;padding:.8rem .9rem}
+.nq-empty{padding:2.5rem;text-align:center;color:#64748b}
+@media(max-width:760px){.nq-table{min-width:980px}.nq-matrix{min-width:700px}.nq-drawer-panel{width:100%}}
