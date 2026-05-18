@@ -189,10 +189,11 @@
       const ok=inds.filter(i=>i.status==='Đạt'||i.status==='Hoàn thành').length;
       const bad=inds.filter(i=>i.status==='Chưa đạt'||i.status==='Quá hạn').length;
       const pct=Math.round(ok/total*100);
-      return `<div class="grid grid-cols-[120px_1fr_72px] gap-3 items-center text-sm">
+      return `<div class="grid grid-cols-[110px_1fr_64px_52px] gap-3 items-center text-sm">
         <b class="truncate" title="${esc(p.title)}">${esc(p.code)}</b>
         <div class="h-3 bg-slate-100 rounded-full overflow-hidden"><div class="h-full rounded-full ${bad?'bg-[#FF6B6B]':'bg-[#6BCB77]'}" style="width:${pct}%"></div></div>
         <span class="text-right font-extrabold">${ok}/${total}</span>
+        <button class="nq-mini-link" data-nq-program-edit="${esc(p.id)}">Sửa</button>
       </div>`;
     }).join('');
     return `<div class="nq-card p-4"><h3 class="text-lg font-extrabold mb-3">Tiến độ theo văn bản</h3><div class="grid gap-3">${lines}</div></div>`;
@@ -245,6 +246,119 @@
   function closeForm(){
     const overlay=document.getElementById('nqFormOverlay');
     if(overlay) overlay.classList.remove('open');
+  }
+
+
+  function renderProgramForm(item){
+    const isEdit=!!item;
+    return `<div class="nq-form-panel nq-form-panel-sm">
+      <div class="nq-form-head">
+        <div><p class="text-sm font-extrabold text-[#4D96FF]">${isEdit?'Điều chỉnh văn bản nguồn':'Bổ sung văn bản nguồn'}</p><h2 class="text-xl font-extrabold mt-1">${isEdit?esc(item.code):'Thêm nghị quyết/chương trình/kế hoạch'}</h2><p class="text-sm text-slate-500 mt-1">Văn bản nguồn là hồ sơ gốc để gắn các chỉ tiêu bên dưới.</p></div>
+        <button class="nq-btn nq-btn-ghost" type="button" onclick="window.NQIndicators.closeForm()">Đóng</button>
+      </div>
+      <form id="nqProgramForm" class="nq-form-body">
+        <input type="hidden" id="nqProgramId" value="${esc(item?.id||'')}">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label class="nq-label">Số/ký hiệu văn bản
+            <input id="nqProgramCode" class="nq-field" required placeholder="VD: 09-CTrHĐ/ĐU" value="${esc(item?.code||'')}">
+          </label>
+          <label class="nq-label">Loại văn bản
+            <select id="nqProgramType" class="nq-field">
+              ${optionList(['Nghị quyết','Chương trình hành động','Chương trình kiểm tra, giám sát','Kế hoạch','Văn bản chỉ đạo'], item?.type||'Chương trình hành động')}
+            </select>
+          </label>
+          <label class="nq-label md:col-span-2">Tên văn bản
+            <textarea id="nqProgramTitle" class="nq-field" rows="3" required placeholder="Nhập đầy đủ trích yếu/tên văn bản">${esc(item?.title||'')}</textarea>
+          </label>
+          <label class="nq-label">Ngày ban hành
+            <input id="nqProgramIssuedDate" class="nq-field" type="date" value="${esc(item?.issued_date||'')}">
+          </label>
+          <label class="nq-label">Đơn vị chủ trì theo dõi
+            <input id="nqProgramLeadUnit" class="nq-field" placeholder="VD: UBND phường" value="${esc(item?.lead_unit||'')}">
+          </label>
+          <label class="nq-label">Giai đoạn từ năm
+            <input id="nqProgramFrom" class="nq-field" type="number" value="${esc(item?.period_from||2025)}">
+          </label>
+          <label class="nq-label">Giai đoạn đến năm
+            <input id="nqProgramTo" class="nq-field" type="number" value="${esc(item?.period_to||2030)}">
+          </label>
+          <label class="nq-label">Tên file/link tài liệu
+            <input id="nqProgramFileName" class="nq-field" placeholder="VD: 09-CTrHĐ.pdf hoặc link" value="${esc(item?.file_name||item?.file_url||'')}">
+          </label>
+          <label class="nq-label">Thứ tự hiển thị
+            <input id="nqProgramSortOrder" class="nq-field" type="number" value="${esc(item?.sort_order??0)}">
+          </label>
+          <label class="nq-label md:col-span-2">Tóm tắt nội dung/theo dõi
+            <textarea id="nqProgramSummary" class="nq-field" rows="3" placeholder="Tóm tắt nhóm chỉ tiêu, nội dung theo dõi chính">${esc(item?.summary||'')}</textarea>
+          </label>
+        </div>
+        <div class="nq-form-actions">
+          <button class="nq-btn nq-btn-ghost" type="button" onclick="window.NQIndicators.closeForm()">Hủy</button>
+          <button class="nq-btn nq-btn-primary" type="submit">${isEdit?'Lưu điều chỉnh văn bản':'Lưu văn bản nguồn'}</button>
+        </div>
+      </form>
+    </div>`;
+  }
+
+  function openProgramForm(programId){
+    const item=programId?STATE.programs.find(x=>x.id===programId):null;
+    const overlay=ensureOverlay();
+    overlay.innerHTML=renderProgramForm(item);
+    overlay.classList.add('open');
+    overlay.onclick=e=>{if(e.target.id==='nqFormOverlay') closeForm();};
+    const form=document.getElementById('nqProgramForm');
+    if(form) form.onsubmit=saveProgramFromForm;
+  }
+
+  function collectProgramPayload(){
+    const existingId=document.getElementById('nqProgramId').value.trim();
+    const code=document.getElementById('nqProgramCode').value.trim();
+    const title=document.getElementById('nqProgramTitle').value.trim();
+    if(!code) throw new Error('Chưa nhập số/ký hiệu văn bản.');
+    if(!title) throw new Error('Chưa nhập tên/trích yếu văn bản.');
+    const safeCode=norm(code).replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'program';
+    const payload={
+      id: existingId || `prog-${safeCode}-${Date.now()}`,
+      code,
+      title,
+      type: document.getElementById('nqProgramType').value,
+      issued_date: document.getElementById('nqProgramIssuedDate').value || null,
+      period_from: intOrNull(document.getElementById('nqProgramFrom').value) || 2025,
+      period_to: intOrNull(document.getElementById('nqProgramTo').value) || 2030,
+      lead_unit: document.getElementById('nqProgramLeadUnit').value.trim(),
+      summary: document.getElementById('nqProgramSummary').value.trim(),
+      file_name: document.getElementById('nqProgramFileName').value.trim(),
+      sort_order: intOrNull(document.getElementById('nqProgramSortOrder').value) || 0,
+      is_active:true,
+      data:{source:'manual', updatedFrom:'program_form'}
+    };
+    return {payload,isEdit:!!existingId};
+  }
+
+  async function saveProgramFromForm(e){
+    e.preventDefault();
+    if(STATE.saving) return;
+    const client=getClient();
+    if(!client){alert('Chưa kết nối Supabase.');return;}
+    let payload,isEdit;
+    try{({payload,isEdit}=collectProgramPayload());}
+    catch(err){alert(err.message||err);return;}
+    STATE.saving=true;
+    try{
+      const res=isEdit
+        ? await client.from(TABLES.programs).update(payload).eq('id',payload.id)
+        : await client.from(TABLES.programs).insert(payload);
+      if(res.error) throw res.error;
+      closeForm();
+      STATE.loaded=false;
+      await loadData(true);
+      STATE.filters.program=payload.id;
+      render();
+      alert(isEdit?'Đã lưu điều chỉnh văn bản nguồn.':'Đã bổ sung văn bản nguồn. Anh có thể nhập chỉ tiêu và gắn vào văn bản này.');
+    }catch(err){
+      console.error(err);
+      alert('Không lưu được văn bản nguồn: '+(err.message||err));
+    }finally{STATE.saving=false;}
   }
 
   function renderIndicatorForm(item){
@@ -493,6 +607,7 @@
     if(kw){kw.value=STATE.filters.keyword||''; kw.oninput=debounce(()=>{STATE.filters.keyword=kw.value; render();},220);}
     document.querySelectorAll('[data-nq-detail]').forEach(btn=>btn.onclick=()=>openDetail(btn.dataset.nqDetail));
     document.querySelectorAll('[data-nq-edit]').forEach(btn=>btn.onclick=()=>openIndicatorForm(btn.dataset.nqEdit));
+    document.querySelectorAll('[data-nq-program-edit]').forEach(btn=>btn.onclick=()=>openProgramForm(btn.dataset.nqProgramEdit));
   }
 
   function render(){
@@ -502,7 +617,7 @@
     root.innerHTML=`<div class="nq-shell space-y-5">
       <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-3">
         <div><h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Chỉ tiêu NQ-CTHĐ</h1><p class="text-sm text-slate-500 mt-1">Theo dõi chỉ tiêu nghị quyết, chương trình hành động, kế hoạch giai đoạn 2025-2030.</p></div>
-        <div class="flex gap-2 flex-wrap"><button class="nq-btn nq-btn-ghost" onclick="window.NQIndicators.resetFilters()">Xóa lọc</button><button class="nq-btn nq-btn-primary" onclick="window.NQIndicators.openIndicatorForm()">+ Nhập chỉ tiêu</button></div>
+        <div class="flex gap-2 flex-wrap"><button class="nq-btn nq-btn-ghost" onclick="window.NQIndicators.resetFilters()">Xóa lọc</button><button class="nq-btn nq-btn-ghost" onclick="window.NQIndicators.openProgramForm()">+ Văn bản nguồn</button><button class="nq-btn nq-btn-primary" onclick="window.NQIndicators.openIndicatorForm()">+ Nhập chỉ tiêu</button></div>
       </div>
       ${renderKpis(list)}
       ${renderMatrix()}
@@ -527,6 +642,7 @@
     reload:async()=>{STATE.loaded=false;await mount();},
     resetFilters:()=>{STATE.filters={program:'',group:'',unit:'',year:'',status:'',keyword:''};render();},
     openIndicatorForm,
+    openProgramForm,
     openUpdateForm,
     closeForm
   };
