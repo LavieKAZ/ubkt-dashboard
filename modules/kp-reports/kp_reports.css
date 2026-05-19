@@ -341,3 +341,73 @@ radial-gradient(circle at 100% 0, rgba(37,99,235,.10), transparent 340px),
     width:100%;
   }
 }
+.kp-public-logo-card{
+  position:relative;
+  z-index:1;
+  border-radius:24px;
+  padding:16px;
+  background:linear-gradient(135deg,#fff7e6,#ffffff);
+  border:1px solid rgba(208,50,56,.18);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:170px;
+}
+
+.kp-public-logo{
+  width:150px;
+  height:150px;
+  object-fit:contain;
+  display:block;
+}
+
+.kp-public-v3,
+.kp-public-v3 *,
+.kp-btn,
+.kp-input,
+.kp-select,
+.kp-textarea,
+button,
+input,
+select,
+textarea{
+  font-family:"Be Vietnam Pro",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important;
+  box-sizing:border-box;
+}
+
+.kp-public-v3 .kp-field,
+.kp-public-v3 .kp-input,
+.kp-public-v3 .kp-select,
+.kp-public-v3 .kp-textarea{
+  min-width:0;
+  max-width:100%;
+}
+
+.kp-btn{
+  text-transform:none !important;
+  letter-spacing:0 !important;
+  font-weight:900 !important;
+}
+
+@media(max-width:640px){
+  .kp-public-logo-card{
+    min-height:140px;
+    padding:12px;
+  }
+
+  .kp-public-logo{
+    width:118px;
+    height:118px;
+  }
+
+  .kp-public-hero{
+    overflow:hidden;
+  }
+
+  .kp-public-v3 .kp-form-grid,
+  .kp-public-v3 .kp-number-grid,
+  .kp-public-v3 .kp-text-grid{
+    width:100%;
+    min-width:0;
+  }
+}
