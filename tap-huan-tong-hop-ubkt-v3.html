@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>UBKT - Tổng hợp đăng ký tập huấn KTGS</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./config.js" charset="UTF-8"></script>
+<style>
+:root{
+  --red:#ef4444;--orange:#f97316;--yellow:#facc15;
+  --ink:#1f2937;--body:#64748b;--muted:#94a3b8;--line:#fed7aa;--bg:#fff7ed;--card:rgba(255,255,255,.82);
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  min-height:100vh;
+  font-family:"Be Vietnam Pro",system-ui,sans-serif;
+  color:var(--ink);
+  background:
+    radial-gradient(circle at top left,rgba(239,68,68,.18),transparent 22rem),
+    radial-gradient(circle at top right,rgba(250,204,21,.22),transparent 24rem),
+    linear-gradient(180deg,#fff 0,#fff7ed 48%,#fffbeb 100%);
+}
+button,input,select{font-family:inherit}
+.wrap{width:min(1180px,100%);margin:0 auto;padding:18px}
+.hero{
+  border:1px solid rgba(251,146,60,.28);
+  background:rgba(255,255,255,.72);
+  border-radius:30px;
+  padding:22px;
+  display:flex;gap:14px;align-items:center;justify-content:space-between;
+  box-shadow:0 24px 60px rgba(127,29,29,.09), inset 0 1px 0 rgba(255,255,255,.95);
+  backdrop-filter:blur(18px);
+}
+.hero h1{font-size:clamp(24px,4vw,42px);line-height:1.05;font-weight:950;letter-spacing:-.9px}
+.hero p{margin-top:7px;color:var(--body);font-size:13px;font-weight:650;line-height:1.45}
+.icon{
+  width:56px;height:56px;border-radius:19px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#fee2e2,#fed7aa,#fef3c7);
+  border:1px solid rgba(251,146,60,.32);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9);
+  font-size:26px;flex:0 0 auto;
+}
+.card{
+  margin-top:14px;border:1px solid rgba(251,146,60,.25);border-radius:24px;background:var(--card);
+  box-shadow:0 20px 50px rgba(127,29,29,.07), inset 0 1px 0 rgba(255,255,255,.9);
+  backdrop-filter:blur(18px);overflow:hidden;
+}
+.login{padding:22px;display:grid;gap:12px;max-width:520px}
+.field{width:100%;border:1.5px solid #fed7aa;border-radius:15px;background:#fff;padding:13px 14px;min-height:50px;outline:none;font-size:15px}
+.field:focus{border-color:var(--orange);box-shadow:0 0 0 5px rgba(249,115,22,.14)}
+.btn{border:0;border-radius:16px;min-height:50px;padding:12px 15px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:.22s var(--ease)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 16px 30px rgba(249,115,22,.16)}
+.primary{background:linear-gradient(135deg,var(--red),var(--orange),var(--yellow));color:#fff}
+.soft{background:#fff;border:1.5px solid #fed7aa;color:#9a3412}
+.bar{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #fed7aa;flex-wrap:wrap}
+.controls{display:flex;gap:9px;flex-wrap:wrap}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding:14px}
+.kpi{background:#fff;border:1px solid #ffedd5;border-radius:18px;padding:14px}
+.kpi small{display:block;color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase}
+.kpi b{display:block;font-size:30px;margin-top:6px;line-height:1}
+.list{display:grid;gap:10px;padding:14px}
+.reg{background:#fff;border:1px solid #ffedd5;border-radius:18px;padding:14px;transition:.22s var(--ease)}
+.reg:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(127,29,29,.08)}
+.regTop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.regName{font-weight:950;line-height:1.35}
+.meta{color:var(--body);font-size:13px;margin-top:4px;line-height:1.45}
+.badge{display:inline-flex;border-radius:999px;padding:5px 10px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-size:12px;font-weight:900;white-space:nowrap}
+.parts{margin-top:10px;border-top:1px dashed #fed7aa;padding-top:10px;display:grid;gap:6px}
+.part{display:grid;grid-template-columns:1.1fr 1fr 1fr .85fr;gap:8px;font-size:13px;color:var(--ink)}
+.msg{margin-top:10px;padding:12px 14px;border-radius:15px;font-size:13px;font-weight:800}
+.err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b}
+.ok{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412}
+.hidden{display:none!important}
+@media(max-width:760px){
+  .wrap{padding:10px}.hero{align-items:flex-start}.kpis{grid-template-columns:repeat(2,1fr)}.part{grid-template-columns:1fr}.bar{align-items:stretch}.controls .btn,.controls .field{width:100%}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="hero">
+    <div style="display:flex;gap:14px;align-items:center">
+      <div class="icon">🧾</div>
+      <div>
+        <h1>Tổng hợp đăng ký tập huấn KTGS</h1>
+        <p>Trang riêng cho tài khoản UBKT xem danh sách tổng và xuất file danh sách.</p>
+      </div>
+    </div>
+    <button id="logoutBtn" class="btn soft hidden" onclick="logout()">Đăng xuất</button>
+  </section>
+
+  <section id="loginCard" class="card login">
+    <b>Đăng nhập tài khoản UBKT</b>
+    <input id="email" class="field" type="email" placeholder="Email tài khoản UBKT">
+    <input id="password" class="field" type="password" placeholder="Mật khẩu">
+    <button class="btn primary" onclick="login()">Đăng nhập</button>
+    <div id="loginMsg"></div>
+  </section>
+
+  <section id="appCard" class="card hidden">
+    <div class="bar">
+      <div>
+        <b>Danh sách tổng</b>
+        <div class="meta" id="userInfo">Đã đăng nhập.</div>
+      </div>
+      <div class="controls">
+        <select id="sessionFilter" class="field" style="min-width:260px" onchange="loadData()"></select>
+        <button class="btn soft" onclick="loadData()">Làm mới</button>
+        <button class="btn primary" onclick="exportCsv()">Xuất file danh sách</button>
+      </div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="list" id="list"></div>
+  </section>
+</div>
+
+<script>
+const FALLBACK_URL='https://hbygfheibcrqaqzoaass.supabase.co';
+const FALLBACK_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhieWdmaGVpYmNycWFxem9hYXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDg0MTcsImV4cCI6MjA5NDA4NDQxN30.AM-uMmKKuRIPZLtVyV-N0aj5EXuBIrOoyFL-gotb_Qg';
+const SB_URL=window.UBKT_SUPABASE_URL||window.UBKT_CONFIG?.supabaseUrl||FALLBACK_URL;
+const KEY=window.UBKT_SUPABASE_ANON_KEY||window.UBKT_CONFIG?.supabaseAnonKey||FALLBACK_KEY;
+const sb=window.supabase.createClient(SB_URL,KEY);
+let sessions=[],regs=[],parts=[];
+
+function esc(s){return String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+function fmtDate(s){try{return new Date(s).toLocaleString('vi-VN')}catch(e){return '—'}}
+function splitOrg(name){
+  const n=String(name||'').trim();
+  if(/^chi bộ/i.test(n)) return {unit:'',cell:n};
+  return {unit:n,cell:''};
+}
+function msg(id,html,cls='err'){document.getElementById(id).innerHTML=`<div class="msg ${cls}">${html}</div>`}
+
+async function init(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(session) showApp(session);
+}
+async function login(){
+  loginMsg.innerHTML='';
+  const {data,error}=await sb.auth.signInWithPassword({email:email.value.trim(),password:password.value});
+  if(error){msg('loginMsg','Không đăng nhập được: '+esc(error.message),'err');return}
+  showApp(data.session);
+}
+async function logout(){await sb.auth.signOut();location.reload()}
+async function showApp(session){
+  loginCard.classList.add('hidden');appCard.classList.remove('hidden');logoutBtn.classList.remove('hidden');
+  userInfo.textContent=session.user.email;
+  await loadSessions(); await loadData();
+}
+async function loadSessions(){
+  const {data,error}=await sb.from('ubkt_training_sessions').select('*').order('created_at',{ascending:false});
+  sessions=data||[];
+  sessionFilter.innerHTML='<option value="">Tất cả đợt</option>'+sessions.map(s=>`<option value="${esc(s.id)}">${esc(s.title)}</option>`).join('');
+}
+async function loadData(){
+  list.innerHTML='<div class="meta">Đang tải dữ liệu...</div>';
+  let q=sb.from('ubkt_training_registrations').select('*').order('submitted_at',{ascending:false});
+  if(sessionFilter.value) q=q.eq('session_id',sessionFilter.value);
+  let {data,error}=await q;
+  if(error){list.innerHTML=`<div class="msg err">Không tải được: ${esc(error.message)}</div>`;return}
+  regs=data||[];
+  const ids=regs.map(r=>r.id);
+  if(ids.length){
+    const pr=await sb.from('ubkt_training_participants').select('*').in('registration_id',ids);
+    parts=pr.data||[];
+  } else parts=[];
+  render();
+}
+function render(){
+  const cmap={};parts.forEach(p=>{(cmap[p.registration_id] ||= []).push(p)});
+  const totalParticipants=parts.length || regs.reduce((s,r)=>s+(r.total_count||0),0);
+  const withPhone=parts.filter(p=>p.phone).length;
+  const orgCount=new Set(regs.map(r=>r.org_name)).size;
+  kpis.innerHTML=[
+    ['Đơn vị đăng ký',orgCount],
+    ['Lượt gửi',regs.length],
+    ['Tổng người',totalParticipants],
+    ['Có SĐT',withPhone]
+  ].map(x=>`<div class="kpi"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');
+  if(!regs.length){list.innerHTML='<div class="meta">Chưa có đăng ký.</div>';return}
+  list.innerHTML=regs.map(r=>{
+    const ps=cmap[r.id]||[];
+    return `<div class="reg">
+      <div class="regTop">
+        <div>
+          <div class="regName">${esc(r.org_name)}</div>
+          <div class="meta">Người đăng ký: ${esc(r.contact_name||r.registrant_name||'—')} · SĐT: ${esc(r.contact_phone||r.registrant_phone||'—')}</div>
+          <div class="meta">Gửi lúc: ${fmtDate(r.submitted_at)}</div>
+        </div>
+        <span class="badge">${ps.length || r.total_count || 0} người</span>
+      </div>
+      <div class="parts">${ps.length?ps.map((p,i)=>{const split=splitOrg(r.org_name);return `<div class="part"><span>${i+1}. ${esc(p.full_name)}</span><span>${esc(split.unit)}</span><span>${esc(split.cell)}</span><span>${esc(p.phone||'')}</span></div>`}).join(''):'<div class="meta">Chưa đọc được danh sách chi tiết.</div>'}</div>
+    </div>`;
+  }).join('');
+}
+function exportCsv(){
+  const cmap={};parts.forEach(p=>{(cmap[p.registration_id] ||= []).push(p)});
+  const rows=[['Họ tên','Đơn vị','Chi bộ','Số điện thoại']];
+  regs.forEach(r=>{
+    const ps=cmap[r.id]||[];
+    const split=splitOrg(r.org_name);
+    if(!ps.length){
+      rows.push([
+        r.contact_name||r.registrant_name||'',
+        split.unit,
+        split.cell,
+        r.contact_phone||r.registrant_phone||''
+      ]);
+      return;
+    }
+    ps.forEach(p=>{
+      rows.push([
+        p.full_name||'',
+        split.unit,
+        split.cell,
+        p.phone||''
+      ]);
+    });
+  });
+  const csv=rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=window.URL.createObjectURL(blob);
+  a.download='danh-sach-tap-huan-ktgs.csv';
+  a.click();
+  window.URL.revokeObjectURL(a.href);
+}
+init();
+</script>
+</body>
+</html>
