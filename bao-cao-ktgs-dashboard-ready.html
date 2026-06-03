@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Báo cáo KTGS — Chi bộ Khu phố</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=Be+Vietnam+Pro:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+
+/* ════════════════════════════════
+   DESIGN TOKENS — ubkt-system v1
+   ════════════════════════════════ */
+:root{
+  --pink:#FF0052;--yellow:#FFD400;--green:#00C68D;--blue:#0055DA;
+  --r:#FF0052;--o:#0055DA;--y:#FFD400;--g:#00C68D;--b:#0055DA;
+  --ink:#111827;--body:#374151;--muted:#8a94a6;
+  --line:#e5e7eb;--bg:#f8fafc;--card:#fff;--em:#0055DA;
+
+  --br-50:#ecfdf8;--br-100:#d1faef;--br-600:#00C68D;
+  --br-700:#009e72;--br-800:#007f5c;--br-900:#00634a;--br-950:#053b2d;
+  --n-0:#fff;--n-50:#f9fafb;--n-100:#f3f4f6;--n-200:#e5e7eb;
+  --n-300:#d1d5db;--n-400:#9ca3af;--n-500:#6b7280;--n-600:#4b5563;
+  --n-700:#374151;--n-800:#1f2937;--n-900:#111827;
+  --c-success:#00C68D;--c-success-bg:#ecfdf8;--c-success-bd:#99f6df;
+  --c-warning:#d6a500;--c-warning-bg:#fffbea;--c-warning-bd:#FFE766;
+  --c-danger:#FF0052;--c-danger-bg:#fff0f6;--c-danger-bd:#ffb3cb;
+  --c-info:#0055DA;--c-info-bg:#eef5ff;--c-info-bd:#b8d2ff;
+  --bd:var(--n-200);--bd-strong:var(--n-300);
+  --sh-xs:0 1px 2px rgba(0,0,0,.05);
+  --sh-sm:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
+  --sh-md:0 4px 8px rgba(0,85,218,.08),0 2px 4px rgba(0,0,0,.04);
+  --ease:cubic-bezier(.25,0,0,1);--spring:cubic-bezier(.34,1.56,.64,1);
+  --t-fast:100ms;--t-base:180ms;
+  --r-xs:4px;--r-sm:6px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-2xl:20px;--r-3xl:28px;
+}
+
+/* ── OLD VARS ──
+:root{
+  --r:#ef4444;--o:#f97316;--y:#facc15;--g:#22c55e;--b:#3b82f6;
+  --ink:#111827;--body:#374151;--muted:#9ca3af;
+  --line:#dbe5f4;--bg:#f8fbff;--card:#fff;
+  --em:var(--o);--ease:cubic-bezier(.22,1,.36,1);
+}
+*/
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{
+  min-height:100vh;font-family:"Be Vietnam Pro",sans-serif;
+  color:var(--ink);font-size:15px;
+  background:
+    radial-gradient(ellipse at 0% 0%,rgba(255,0,82,.10) 0,transparent 40%),
+    radial-gradient(ellipse at 100% 0%,rgba(0,85,218,.10) 0,transparent 44%),
+    radial-gradient(ellipse at 100% 100%,rgba(0,198,141,.12) 0,transparent 42%),
+    linear-gradient(160deg,#fff 0%,#f8fafc 58%,#eef5ff 100%);
+}
+button,input,select,textarea{font-family:inherit}
+
+/* WRAP */
+.app{padding:14px;padding-bottom:100px;min-height:100vh}
+.shell{width:min(600px,100%);margin:0 auto;display:flex;flex-direction:column;gap:12px}
+
+/* HERO */
+.hero{
+  border-radius:24px;overflow:hidden;
+  background:
+    radial-gradient(circle at 92% 10%,rgba(255,255,255,.22),transparent 28%),
+    linear-gradient(135deg,#FF0052 0%,#d90046 100%);
+  box-shadow:0 18px 44px rgba(255,0,82,.18), inset 0 1px 0 rgba(255,255,255,.20);
+  padding:22px 20px;position:relative;
+}
+.hero::after{content:"";position:absolute;inset:0;
+  background:url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='20' cy='20' r='1' fill='%23fff' fill-opacity='.06'/%3E%3C/svg%3E");
+}
+.hero-inner{position:relative;z-index:1}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(14px);
+  border-radius:99px;padding:3px 10px;font-size:11px;font-weight:700;
+  color:rgba(255,255,255,.85);letter-spacing:.04em;margin-bottom:10px;
+}
+.hero-dot{width:6px;height:6px;background:#fff;border-radius:50%;animation:pd 2s infinite}
+@keyframes pd{0%,100%{opacity:1}50%{opacity:.4}}
+.hero-h{font-size:clamp(18px,5vw,24px);font-weight:900;color:#fff;line-height:1.25;margin-bottom:4px}
+.hero-s{font-size:12.5px;color:rgba(255,255,255,.68);font-weight:600}
+
+/* PROGRESS */
+.prog-card{
+  background:var(--card);border:1px solid var(--line);border-radius:20px;
+  padding:14px 16px;box-shadow:0 2px 8px rgba(127,29,29,.05);
+}
+.prog-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.prog-name{font-size:13.5px;font-weight:900;color:var(--ink)}
+.prog-frac{font-size:12px;color:var(--muted);font-weight:700}
+.prog-bar{height:5px;background:#eef5ff;border-radius:99px;overflow:hidden;margin-bottom:10px}
+.prog-fill{height:100%;background:linear-gradient(90deg,#FF0052,#FFD400,#00C68D,#0055DA);border-radius:99px;transition:width .4s var(--ease)}
+.steps-row{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.steps-row::-webkit-scrollbar{display:none}
+.step-pill{
+  border:1.5px solid var(--line);background:var(--card);border-radius:99px;
+  padding:6px 12px;font-size:11.5px;font-weight:800;white-space:nowrap;
+  cursor:pointer;color:var(--muted);transition:.15s;flex-shrink:0;
+}
+.step-pill.active{background:#0055DA;color:#fff;border-color:#0055DA}
+.step-pill.done{background:#E6FAF5;border-color:#00C68D;color:#007A5E}
+
+/* MAIN CARD */
+.main-card{
+  background:var(--card);border:1px solid var(--line);border-radius:24px;
+  overflow:hidden;box-shadow:0 4px 16px rgba(127,29,29,.06);
+}
+.card-stripe{height:4px;background:linear-gradient(90deg,#FF0052,#FFD400,#00C68D,#0055DA)}
+.card-body{padding:20px 18px 22px;animation:su .22s var(--ease) both}
+@keyframes su{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* STEP HEADER */
+.sh{font-size:17px;font-weight:950;margin-bottom:3px}
+.sd{font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.5;margin-bottom:18px}
+
+/* FIELDS */
+.fields{display:flex;flex-direction:column;gap:12px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field.full{grid-column:1/-1}
+.fl{font-size:12px;font-weight:800;color:var(--body);display:flex;gap:3px}
+.req{color:var(--r);font-size:11px}
+.inp,.sel,.txta{
+  width:100%;border:1.5px solid #dbe5f4;border-radius:12px;
+  padding:10px 12px;font-size:14px;color:var(--ink);background:#fff;
+  outline:none;transition:border var(--t-fast),box-shadow var(--t-fast);
+  -webkit-appearance:none;
+}
+.sel{background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+  background-size:15px;padding-right:34px}
+.txta{resize:vertical;min-height:72px;line-height:1.5}
+.inp:focus,.sel:focus,.txta:focus{border-color:#0055DA;box-shadow:0 0 0 3px rgba(0,85,218,.10)}
+.inp.num{font-size:22px;font-weight:900;text-align:center;padding:8px;min-height:52px}
+.fhint{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
+
+/* DIVIDER */
+.divider{height:1px;background:linear-gradient(90deg,transparent,#dbe5f4,transparent);margin:16px 0}
+
+/* ─── COUNT SECTION ─── */
+.cs{border:1.5px solid #dbe5f4;border-radius:18px;overflow:hidden;margin-top:14px}
+.cs-head{
+  background:linear-gradient(to right,#f8fbff,#fff);
+  padding:12px 14px;border-bottom:1px solid #dbe5f4;
+}
+.cs-title{font-size:13px;font-weight:800;color:#0055DA}
+.cs-ref{font-size:11px;color:var(--muted);font-weight:600;margin-top:1px}
+
+/* STEPPER */
+.stepper-wrap{padding:14px;background:#fff;border-bottom:1px solid #eef5ff}
+.stepper-label{font-size:12.5px;font-weight:700;color:var(--body);margin-bottom:8px;line-height:1.4}
+.stepper{display:flex;align-items:center;gap:0;width:fit-content}
+.st-btn{
+  width:44px;height:44px;border:2px solid #dbe5f4;background:#fff;
+  color:var(--o);font-size:22px;font-weight:900;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:.15s;flex-shrink:0;
+}
+.st-btn:hover{background:var(--br-50);border-color:#0055DA}
+.st-btn:active{transform:scale(.93)}
+.st-btn.left{border-radius:12px 0 0 12px}
+.st-btn.right{border-radius:0 12px 12px 0}
+.st-num{
+  min-width:64px;height:44px;border-top:2px solid #dbe5f4;border-bottom:2px solid #dbe5f4;
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;font-weight:950;color:var(--o);background:#fffbea;
+  letter-spacing:-.02em;transition:color .2s;
+}
+.st-num.zero{color:var(--n-400)}
+
+/* ZERO STATE */
+.zero-state{
+  padding:20px 16px;display:flex;align-items:center;gap:11px;
+  background:#f0fdf4;
+}
+.zero-icon{
+  width:34px;height:34px;border-radius:10px;flex-shrink:0;
+  background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:17px;
+}
+.zero-text{font-size:12.5px;color:#166534;font-weight:600;line-height:1.5}
+.zero-text em{font-style:italic;opacity:.85}
+
+/* DETAIL CARDS */
+.detail-cards{padding:10px;display:flex;flex-direction:column;gap:8px}
+.dc{
+  border:1.5px solid #dbe5f4;border-radius:14px;overflow:hidden;background:#fff;
+  animation:dci .2s var(--ease) both;
+}
+@keyframes dci{from{opacity:0;transform:scale(.97) translateY(4px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.dc-head{
+  padding:9px 12px;background:linear-gradient(to right,#f8fbff,#fffbea);
+  border-bottom:1px solid #eef5ff;
+  display:flex;align-items:center;gap:8px;
+}
+.dc-num{
+  width:26px;height:26px;border-radius:8px;background:var(--o);color:#fff;
+  font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.dc-title{font-size:13px;font-weight:800;color:var(--ink)}
+.dc-body{padding:12px;display:flex;flex-direction:column;gap:9px}
+.dc-body .row2{gap:8px}
+.dc-body .inp,.dc-body .sel,.dc-body .txta{font-size:13.5px;padding:8px 11px}
+
+/* REGULAR SUP TABLE */
+.sup-table{width:100%;border-collapse:separate;border-spacing:0 6px;padding:10px}
+.sup-row{border-radius:12px;overflow:hidden}
+.sup-topic-cell{
+  background:#f8fbff;border:1px solid #dbe5f4;padding:10px 12px;
+  font-size:12.5px;font-weight:800;color:#0055DA;line-height:1.4;
+  border-radius:12px 12px 0 0;width:100%;display:block;
+  border-bottom:none;
+}
+.sup-fields{
+  background:#fff;border:1px solid #dbe5f4;padding:10px 12px;
+  border-radius:0 0 12px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;
+}
+.sup-block{display:flex;flex-direction:column;gap:4px}
+.sup-block-lbl{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+
+/* ACTIONS */
+.sticky-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:50;
+  padding:10px 14px 16px;
+  background:linear-gradient(to top,#f9fafb 72%,transparent);
+}
+.ab-inner{max-width:600px;margin:0 auto;display:grid;grid-template-columns:1fr 2fr;gap:8px}
+.ab-inner.single{grid-template-columns:1fr}
+.btn{
+  border:none;border-radius:14px;min-height:50px;padding:11px 16px;
+  font-family:inherit;font-size:15px;font-weight:900;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  transition:.15s transform,.15s box-shadow;
+}
+.btn:active{transform:scale(.965)}
+.btn-ghost{background:#fff;border:1.5px solid var(--line);color:var(--body)}
+.btn-main{
+  background:linear-gradient(135deg,#FF0052,#d90046);color:#fff;
+  box-shadow:0 8px 22px rgba(255,0,82,.22);
+}
+.btn-main:hover{box-shadow:0 10px 28px rgba(255,0,82,.30)}
+.btn-sub{
+  background:linear-gradient(135deg,#0055DA,#003f9f);color:#fff;font-size:16px;
+  box-shadow:0 8px 22px rgba(0,85,218,.22);
+}
+.spin{display:none;width:17px;height:17px;border-radius:50%;
+  border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;
+  animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ALERTS */
+.alert{border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;margin-top:8px;line-height:1.45}
+.al-ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534}
+.al-err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b}
+.al-info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
+
+/* AUTOSAVE */
+.autosave-badge{
+  position:fixed;bottom:82px;left:16px;z-index:60;
+  background:rgba(17,24,39,.8);color:#fff;border-radius:99px;
+  padding:5px 12px;font-size:11.5px;font-weight:700;
+  opacity:0;transition:opacity .3s;pointer-events:none;
+}
+.autosave-badge.show{opacity:1}
+
+
+/* Modern interaction tuning */
+.shell{scroll-padding-bottom:120px}
+.prog-card,.main-card{
+  backdrop-filter:blur(18px);
+  background:rgba(255,255,255,.86);
+  box-shadow:0 18px 46px rgba(17,24,39,.07), inset 0 1px 0 rgba(255,255,255,.82);
+}
+.steps-row{
+  mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%);
+  scroll-snap-type:x proximity;
+}
+.step-pill{scroll-snap-align:start}
+.main-card{transition:transform .24s var(--spring),box-shadow .24s var(--ease)}
+.main-card:focus-within{transform:translateY(-1px);box-shadow:0 22px 56px rgba(17,24,39,.10)}
+.field{transition:transform .18s var(--ease)}
+.field:focus-within{transform:translateY(-1px)}
+.inp,.sel,.txta{transition:border var(--t-fast),box-shadow var(--t-fast),transform var(--t-fast),background var(--t-fast)}
+.inp:focus,.sel:focus,.txta:focus{transform:translateY(-1px)}
+.dc,.cs{box-shadow:0 10px 28px rgba(17,24,39,.045)}
+.sticky-bar{
+  backdrop-filter:blur(18px);
+  background:linear-gradient(to top,rgba(248,250,252,.92) 74%,rgba(248,250,252,0));
+}
+.alert{
+  animation:popIn .22s var(--spring) both;
+  box-shadow:0 16px 34px rgba(17,24,39,.08);
+}
+@keyframes popIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(min-width:760px){
+  .shell{width:min(680px,100%)}
+  .hero{padding:26px 24px}
+  .hero-h{font-size:26px}
+}
+@media(max-width:390px){
+  .app{padding-left:10px;padding-right:10px}
+  .hero{border-radius:20px;padding:18px 16px}
+  .hero-h{font-size:18px}
+  .prog-card,.main-card{border-radius:18px}
+  .btn{min-height:48px;font-size:14px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+
+
+/* Strong motion layer */
+.hero{
+  animation:heroRise .68s var(--spring) both, heroBreath 5.4s ease-in-out infinite 1s;
+  transform-origin:center top;
+}
+.hero::before{
+  content:"";
+  position:absolute;
+  inset:-45%;
+  background:conic-gradient(from 90deg,transparent,rgba(255,255,255,.24),transparent 35%,rgba(255,255,255,.16),transparent 72%);
+  animation:heroSweep 6.5s linear infinite;
+  pointer-events:none;
+}
+.hero-inner{animation:heroTextPop .72s var(--spring) both .08s}
+.prog-card{animation:cardPop .54s var(--spring) both .12s}
+.main-card{animation:cardPop .58s var(--spring) both .18s}
+.step-pill{transition:transform .22s var(--spring),background .18s var(--ease),border-color .18s var(--ease),box-shadow .18s var(--ease)}
+.step-pill:hover{transform:translateY(-3px) scale(1.035);box-shadow:0 12px 24px rgba(255,0,82,.14)}
+.step-pill.active{animation:pulseActive 1.8s ease-in-out infinite}
+.btn{transition:transform .18s var(--spring),box-shadow .18s var(--ease),filter .18s var(--ease)}
+.btn:hover{transform:translateY(-4px) scale(1.025);filter:saturate(1.08)}
+.btn:active{transform:scale(.93)}
+.btn-main{animation:primaryBreath 2.4s ease-in-out infinite}
+.btn-sub{animation:secondaryBreath 2.6s ease-in-out infinite}
+.dc{animation:detailPop .36s var(--spring) both}
+.cs{transition:transform .24s var(--spring),box-shadow .24s var(--ease)}
+.cs:hover{transform:translateY(-2px);box-shadow:0 18px 40px rgba(17,24,39,.09)}
+.st-btn{transition:transform .18s var(--spring),background .18s var(--ease),box-shadow .18s var(--ease)}
+.st-btn:hover{transform:scale(1.08);box-shadow:0 10px 20px rgba(0,85,218,.16)}
+.inp:focus,.sel:focus,.txta:focus{transform:translateY(-2px) scale(1.006)}
+@keyframes heroRise{from{opacity:0;transform:translateY(-18px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes heroBreath{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-2px) scale(1.01)}}
+@keyframes heroSweep{to{transform:rotate(360deg)}}
+@keyframes heroTextPop{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes cardPop{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes detailPop{from{opacity:0;transform:translateY(14px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes pulseActive{0%,100%{box-shadow:0 0 0 0 rgba(0,85,218,.22)}50%{box-shadow:0 0 0 6px rgba(0,85,218,.08)}}
+@keyframes primaryBreath{0%,100%{box-shadow:0 8px 22px rgba(255,0,82,.22)}50%{box-shadow:0 14px 32px rgba(255,0,82,.36)}}
+@keyframes secondaryBreath{0%,100%{box-shadow:0 8px 22px rgba(0,85,218,.22)}50%{box-shadow:0 14px 32px rgba(0,85,218,.34)}}
+
+/* PRINT */
+.print-area{display:none;padding:20px}
+.pc-row{display:flex;gap:10px;justify-content:flex-end;margin-bottom:12px;flex-wrap:wrap}
+.print-notice{
+  background:#fffbea;border:1px solid #fde68a;color:#111827;
+  border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;
+  margin-bottom:12px;line-height:1.5;
+}
+.rdoc{font-family:"Times New Roman",Times,serif;color:#000;font-size:14pt;line-height:18pt}
+.rdoc p,.rdoc li{margin:6pt 0}
+.rdoc table{width:100%;border-collapse:collapse}
+.rdoc th,.rdoc td{border:1px solid #000;padding:4pt 5pt;vertical-align:top;line-height:18pt;word-break:break-word}
+.rdoc h1{text-align:center;font-size:14pt;text-transform:uppercase;margin:6pt 0}
+.rdoc h2{font-size:14pt;text-transform:uppercase;margin:8pt 0 4pt;page-break-after:avoid}
+.rdoc h3{font-size:14pt;margin:6pt 0 3pt;page-break-after:avoid}
+.rdoc .center{text-align:center}
+.rdoc .htbl td{border:0;padding:0 4pt}
+.sig-block{display:grid;grid-template-columns:32% 68%;gap:0;margin-top:16pt;page-break-inside:avoid}
+.sig-center{text-align:center;width:100%;min-width:0;max-width:360pt;justify-self:end;padding-left:18pt}
+.sig-name{margin-top:70pt;font-weight:normal;border-top:none;padding-top:0;display:block;width:100%;max-width:360pt;white-space:normal;overflow-wrap:anywhere;word-break:normal}
+/* Report formatting fixes */
+.rdoc .org-line{text-decoration:none;font-weight:normal}
+.rdoc .org-line-bold{font-weight:bold}
+.rdoc .noi-nhan-lbl{text-decoration:underline;font-weight:normal}
+.rdoc .date-line{font-style:italic}
+.rdoc .party-title{text-decoration:underline;font-weight:bold}
+.rdoc .sig-role{font-weight:normal}
+/* Supervision checkbox table */
+.sup-tbl{width:100%;border-collapse:separate;border-spacing:0 6px}
+.sup-tbl td,.sup-tbl th{vertical-align:top;padding:0}
+.sup-tbl th{font-size:10.5px;font-weight:900;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--muted);padding:0 6px 6px}
+.sup-row-wrap{border:1.5px solid #dbe5f4;border-radius:13px;overflow:hidden}
+.sup-row-main{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;background:#f8fbff;
+  cursor:pointer;user-select:none;
+}
+.sup-row-main:hover{background:#eef5ff}
+.sup-chk{
+  width:22px;height:22px;border-radius:7px;border:2px solid #dbe5f4;
+  background:#fff;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:.15s;font-size:13px;font-weight:900;
+}
+.sup-chk.checked{background:var(--o);border-color:var(--o);color:#fff}
+.sup-topic-lbl{flex:1;font-size:12.5px;font-weight:700;color:#1e3a5f;line-height:1.4}
+.sup-topic-ref{font-size:10px;color:var(--muted);font-weight:600}
+.sup-detail{
+  display:none;padding:10px 12px;background:#fff;
+  border-top:1px solid #eef5ff;
+}
+.sup-detail.open{display:block}
+
+
+@media print{
+  .sig-block{grid-template-columns:30% 70%!important;gap:0!important}
+  .sig-center{max-width:none!important;width:100%!important;padding-left:16pt!important}
+  .sig-name{max-width:none!important;width:100%!important;border-top:none!important}
+}
+
+@page{size:A4;margin:20mm 15mm 20mm 25mm}
+@media(max-width:480px){
+  .row2,.row3{grid-template-columns:1fr}
+  .sup-fields{grid-template-columns:1fr}
+  .ab-inner{grid-template-columns:1fr}
+  .dc-body .row2{grid-template-columns:1fr}
+}
+@media print{
+  body{background:#fff}
+  .app,.autosave-badge{display:none!important}
+  .print-area{display:block!important}
+  .pc-row,.print-notice{display:none!important}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+<div class="shell">
+
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-badge"><span class="hero-dot"></span>Đảng ủy phường Tân Mỹ · UBKT</div>
+      <div class="hero-h">Báo cáo Công tác Kiểm tra,<br>Giám sát, Kỷ luật Đảng</div>
+      <div class="hero-s">Căn cứ Quy định 21-QĐ/TW ngày 11/4/2026 · Tự lưu · Xuất PDF</div>
+    </div>
+  </div>
+
+  <div class="prog-card">
+    <div class="prog-row">
+      <span class="prog-name" id="progName">Bước 1 — Thông tin báo cáo</span>
+      <span class="prog-frac" id="progFrac">1 / 8</span>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:12.5%"></div></div>
+    <div class="steps-row" id="stepsRow"></div>
+  </div>
+
+  <div class="main-card" id="mainCard">
+    <div class="card-stripe"></div>
+    <div class="card-body" id="cardBody"></div>
+  </div>
+
+  <div id="alertArea"></div>
+</div>
+</div>
+
+<div class="autosave-badge" id="asBadge">✓ Đã lưu tự động</div>
+
+<div class="sticky-bar">
+  <div class="ab-inner" id="abInner"></div>
+</div>
+
+<div class="print-area" id="printArea">
+  <div class="pc-row">
+    <button class="btn btn-ghost" style="min-height:40px;font-size:13px" onclick="closePrint()">✕ Đóng</button>
+    <button class="btn btn-main" style="min-height:40px;font-size:13px" onclick="window.print()">🖨 In / Lưu PDF</button>
+  </div>
+  <div class="print-notice">
+    📱 <b>iPhone/iPad:</b> nhấn In → kéo xuống chọn Lưu PDF (hoặc Chia sẻ → Lưu vào Tệp).<br>
+    🤖 <b>Android Chrome:</b> nhấn In → máy in "Lưu dưới dạng PDF" → Lưu.
+  </div>
+  <div id="printDoc" class="rdoc"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════
+// ── SUPABASE ──
+const SB='https://hbygfheibcrqaqzoaass.supabase.co';
+const SBKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhieWdmaGVpYmNycWFxem9hYXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDg0MTcsImV4cCI6MjA5NDA4NDQxN30.AM-uMmKKuRIPZLtVyV-N0aj5EXuBIrOoyFL-gotb_Qg';
+const sbH={'Content-Type':'application/json','apikey':SBKEY,'Authorization':'Bearer '+SBKEY};
+const sbQ=(p,o={})=>fetch(`${SB}/rest/v1/${p}`,{headers:sbH,...o}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
+let baseOrgs=[];
+let submittedCode=null; // mã sau khi nộp
+let activePeriod=null;
+
+async function loadBaseOrgs(){
+  const cached=JSON.parse(localStorage.getItem('ubkt_orgs_v2')||'null');
+  if(cached&&Date.now()-cached.ts<86400000){baseOrgs=cached.data;return;}
+  try{
+    const rows=await sbQ('ubkt_base_orgs?select=id,data');
+    baseOrgs=rows.map(r=>({id:r.id,name:r.data?.name||r.id,type:r.data?.type||'',order:Number(r.data?.order??r.data?.sort_order??9999)}))
+               .sort((a,b)=>a.order-b.order || a.name.localeCompare(b.name,'vi',{numeric:true}));
+    localStorage.setItem('ubkt_orgs_v2',JSON.stringify({ts:Date.now(),data:baseOrgs}));
+  }catch(e){console.warn('Load orgs failed',e);}
+}
+
+
+async function loadActivePeriod(){
+  try{
+    const rows=await sbQ('ubkt_ktgs_report_periods?select=*&status=eq.Đang mở&order=opened_at.desc&limit=1');
+    activePeriod=rows&&rows[0]?rows[0]:null;
+    if(activePeriod){
+      fd.periodId=activePeriod.id;
+      fd.periodText=activePeriod.period_text||activePeriod.title||fd.periodText;
+      fd.periodType=activePeriod.period_type||fd.reportType;
+      fd.reportType=activePeriod.period_type||fd.reportType;
+      fd.periodYear=String(activePeriod.period_year||fd.periodYear||new Date().getFullYear());
+      fd.periodSub=String(activePeriod.period_sub||fd.periodSub||'');
+    }
+  }catch(e){console.warn('Load active period failed',e);}
+}
+
+
+const LS = 'ktgs_v3';
+
+const STEP_LABELS = [
+  'Bước 1 — Thông tin báo cáo',
+  'Bước 2 — Tình hình tổ chức Đảng và đảng viên',
+  'Bước 3 — Công tác lãnh đạo, chỉ đạo',
+  'Bước 4 — Kết quả kiểm tra đảng viên',
+  'Bước 5 — Kết quả giám sát đảng viên',
+  'Bước 6 — Phản ánh, kiến nghị, tố cáo, khiếu nại và kỷ luật Đảng',
+  'Bước 7 — Theo dõi thực hiện khắc phục sau kiểm tra, giám sát',
+  'Bước 8 — Đánh giá, kiến nghị và nhiệm vụ kỳ tiếp theo'
+];
+
+const STEP_SHORT = ['1.Thông tin','2.Tổ chức','3.Lãnh đạo','4.Kiểm tra','5.Giám sát','6.Phát sinh','7.Khắc phục','8.Đánh giá'];
+
+const REGULAR_TOPICS = [
+  ['partyLife',   'Việc chấp hành sinh hoạt chi bộ','Điều 9, Điều lệ Đảng'],
+  ['assignment',  'Việc thực hiện nhiệm vụ được phân công','Khoản 2.3.1, Điều 4, QĐ 21'],
+  ['resolution',  'Việc chấp hành nghị quyết, chỉ thị, quy định của Đảng','Điều 2, Điều lệ Đảng'],
+  ['ethics',      'Trách nhiệm nêu gương, phẩm chất đạo đức, lối sống','QĐ 144-QĐ/TW ngày 9/5/2024'],
+  ['people',      'Thực hiện nghĩa vụ đảng viên và quan hệ với Nhân dân nơi cư trú','Điều 2, Điều lệ Đảng; Hướng dẫn 08-HD/TW'],
+  ['forbidden',   'Những điều đảng viên không được làm','QĐ 37-QĐ/TW ngày 25/10/2021']
+];
+
+const DEFAULT_TASKS = '1. Tiếp tục giám sát thường xuyên đối với đảng viên theo 6 nhóm nội dung quy định.\n2. Theo dõi việc thực hiện nhiệm vụ đảng viên được phân công.\n3. Nắm tình hình địa bàn, phản ánh, kiến nghị liên quan đến đảng viên.\n4. Thực hiện kiểm tra, giám sát chuyên đề theo kế hoạch nếu có.\n5. Báo cáo kịp thời nội dung phát sinh về Đảng ủy, UBKT Đảng ủy phường.';
+
+const SUP_SAMPLE = 'Qua theo dõi, giám sát thường xuyên, chi bộ chưa phát hiện trường hợp vi phạm; tiếp tục nhắc nhở đảng viên thực hiện nghiêm túc nhiệm vụ được phân công.';
+
+// Default sentences khi count = 0
+const DEF_SENTENCES = {
+  checked_members:      'Trong kỳ báo cáo, chi bộ chưa tiến hành kiểm tra riêng đối với đảng viên; việc nắm tình hình được thực hiện thông qua sinh hoạt chi bộ định kỳ và theo dõi thực hiện nhiệm vụ được phân công.',
+  violation_checks:     'Trong kỳ báo cáo, chi bộ không phát hiện đảng viên có dấu hiệu vi phạm.',
+  special_supervisions: 'Trong kỳ báo cáo, chi bộ không thực hiện giám sát chuyên đề.',
+  petitions:            'Trong kỳ báo cáo, không phát sinh phản ánh, kiến nghị, tố cáo, khiếu nại.',
+  disciplines:          'Trong kỳ báo cáo, không phát sinh trường hợp xem xét, thi hành kỷ luật đảng viên.',
+  remedies:             'Trong kỳ báo cáo, không có nội dung phải theo dõi khắc phục.'
+};
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+let step = 1;
+
+let fd = {
+  periodId:'', orgId:'', orgName:'Chi bộ Khu phố ……', reportNo:'', reportType:'thang',
+  periodText:'', periodSub:'', periodYear:'', reportDate:'', reportPlace:'Tân Mỹ',
+  pmTotal:0, pmOfficial:0, pmProbationary:0,
+  pmExempt:0, pmTemporary:0, pmAbsent2:0,
+  meetingNotes:'',
+  leadImplementation:'', assignedCount:0, assignedTotal:0,
+  assignmentContent:'', ktgsMeeting:'',
+};
+REGULAR_TOPICS.forEach(([k])=>{
+  fd['sup_'+k+'_result'] = '';
+  fd['sup_'+k+'_reminder'] = '';
+  fd['sup_'+k+'_has_issue'] = false;
+});
+fd.generalResult = ''; fd.limitations = ''; fd.recommendations = '';
+fd.nextTasks = ''; fd.signerRole = 'BÍ THƯ';
+
+let counts = {
+  checked_members:0, violation_checks:0, special_supervisions:0,
+  petitions:0, disciplines:0, remedies:0
+};
+
+const EMPTY_DETAIL = {
+  checked_members:      ()=>({name:'',content:'',result:'',handling:''}),
+  violation_checks:     ()=>({name:'',sign:'',source:'',handling:''}),
+  special_supervisions: ()=>({subject:'',content:'',date:'',result:'',note:''}),
+  petitions:            ()=>({type:'Phản ánh',summary:'',related:'',handling:''}),
+  disciplines:          ()=>({name:'',violation:'',form:'',dossier:''}),
+  remedies:             ()=>({doc:'',content:'',result:'',reason:''})
+};
+
+let details = {
+  checked_members:[], violation_checks:[], special_supervisions:[],
+  petitions:[], disciplines:[], remedies:[]
+};
+
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const val = k => fd[k] ?? '';
+const num = k => { const n=parseInt(fd[k]||0,10); return isFinite(n)?n:0; };
+const txt = (s,def='Không phát sinh.') => esc((s||'').trim()||def).replace(/\n/g,'<br>');
+const fmtDate = v => { if(!v)return '……'; const d=new Date(v+'T00:00:00'); return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`; };
+const ordinal = n => { const s=['nhất','hai','ba','bốn','năm','sáu','bảy','tám','chín','mười']; return n<=10?s[n-1]:n; };
+
+let saveTimer;
+function saveLocal(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    try{ localStorage.setItem(LS,JSON.stringify({fd,counts,details})); }catch(e){}
+    const b=document.getElementById('asBadge');
+    b.classList.add('show');
+    setTimeout(()=>b.classList.remove('show'),1800);
+  },500);
+}
+
+function loadLocal(){
+  try{
+    const s=localStorage.getItem(LS);
+    if(!s) return false;
+    const d=JSON.parse(s);
+    if(d.fd) Object.assign(fd,d.fd);
+    if(d.counts) Object.assign(counts,d.counts);
+    if(d.details) Object.keys(d.details).forEach(k=>{ if(details[k]) details[k]=d.details[k]; });
+    return true;
+  }catch(e){return false;}
+}
+
+function setDefaults(){
+  if(!fd.reportDate) fd.reportDate = new Date().toISOString().split('T')[0];
+  if(!fd.reportType) fd.reportType='thang';
+  if(!fd.periodYear) fd.periodYear=String(new Date().getFullYear());
+  if(!fd.periodSub) fd.periodSub=String(new Date().getMonth()+1);
+  if(!fd.periodText) buildPeriodText();
+  if(!fd.nextTasks) fd.nextTasks = DEFAULT_TASKS;
+  // sup has_issue defaults already false
+}
+
+function showAlert(html,t='ok'){
+  const el=document.getElementById('alertArea');
+  el.innerHTML=`<div class="alert al-${t}">${html}</div>`;
+  setTimeout(()=>el.innerHTML='',5000);
+}
+
+// ═══════════════════════════════════════════
+//  STEPPER LOGIC
+// ═══════════════════════════════════════════
+function incCount(key){
+  counts[key]++;
+  while(details[key].length < counts[key]) details[key].push(EMPTY_DETAIL[key]());
+  saveLocal(); render();
+}
+
+function decCount(key){
+  if(counts[key]<=0) return;
+  const idx = counts[key]-1;
+  const d = details[key][idx]||{};
+  const hasData = Object.values(d).some(v=>String(v||'').trim());
+  if(hasData){
+    if(!confirm('Nội dung đã nhập ở thẻ này sẽ bị ẩn (không bị xóa). Nếu tăng lại số lượng, nội dung sẽ hiện lại. Tiếp tục?')) return;
+  }
+  counts[key]--;
+  saveLocal(); render();
+}
+
+function syncFd(k,v){ fd[k]=v; saveLocal(); }
+function syncDetail(key,idx,field,v){
+  if(!details[key][idx]) details[key][idx]=EMPTY_DETAIL[key]();
+  details[key][idx][field]=v;
+  saveLocal();
+}
+
+// ═══════════════════════════════════════════
+//  NAV
+// ═══════════════════════════════════════════
+function goStep(n){ step=n; render(); clearAlert2(); window.scrollTo({top:0,behavior:'smooth'}); }
+function clearAlert2(){ document.getElementById('alertArea').innerHTML=''; }
+
+function nextStep(){
+  if(step===1){
+    if(!(fd.orgId||'').trim()){
+      showAlert('Vui lòng <b>chọn cơ sở Đảng</b> từ danh sách.','err'); return;
+    }
+    if(!fd.periodText||fd.periodText.includes('undefined')) buildPeriodText();
+  }
+  if(step<8) goStep(step+1);
+}
+function prevStep(){ if(step>1) goStep(step-1); }
+
+// ═══════════════════════════════════════════
+//  RENDER HELPERS
+// ═══════════════════════════════════════════
+function field(id,label,type='text',extra='',hint=''){
+  const isNum=type==='number';
+  return `<label class="field">
+    <span class="fl">${label}</span>
+    <input id="${id}" class="inp${isNum?' num':''}" type="${type}"
+      ${isNum?'min="0" inputmode="numeric"':''}
+      value="${esc(fd[id]??'')}" ${extra}
+      oninput="syncFd('${id}',this.value)">
+    ${hint?`<div class="fhint">${hint}</div>`:''}
+  </label>`;
+}
+function fsel(id,label,opts){
+  return `<label class="field">
+    <span class="fl">${label}</span>
+    <select id="${id}" class="sel" onchange="syncFd('${id}',this.value)">
+      ${opts.map(o=>`<option value="${esc(o.v??o)}" ${(fd[id]===String(o.v??o))?'selected':''}>${esc(o.l??o)}</option>`).join('')}
+    </select>
+  </label>`;
+}
+function ftxt(id,label,rows=3,ph=''){
+  return `<label class="field full">
+    <span class="fl">${label}</span>
+    <textarea id="${id}" class="txta" rows="${rows}" placeholder="${esc(ph)}"
+      oninput="syncFd('${id}',this.value)">${esc(fd[id]??'')}</textarea>
+  </label>`;
+}
+function fnum(id,label){
+  return `<label class="field">
+    <span class="fl">${label}</span>
+    <input id="${id}" class="inp num" type="number" min="0" inputmode="numeric"
+      value="${esc(fd[id]??'0')}" oninput="syncFd('${id}',this.value)">
+  </label>`;
+}
+
+// ─── COUNT SECTION ─────────────────────────
+function countSection(key, countLabel, csTitle, csRef, cardTitleFn, fieldsHtmlFn, defSentence){
+  const cnt = counts[key];
+  let body = '';
+
+  if(cnt===0){
+    body = `<div class="zero-state">
+      <div class="zero-icon">✅</div>
+      <div class="zero-text">Không phát sinh — báo cáo sẽ tự ghi:<br>
+        <em>"${esc(defSentence)}"</em>
+      </div>
+    </div>`;
+  } else {
+    let cards = '';
+    for(let i=0;i<cnt;i++){
+      const d = details[key][i] || EMPTY_DETAIL[key]();
+      cards += `<div class="dc" style="animation-delay:${i*50}ms">
+        <div class="dc-head">
+          <div class="dc-num">${i+1}</div>
+          <div class="dc-title">${esc(cardTitleFn(i+1))}</div>
+        </div>
+        <div class="dc-body">${fieldsHtmlFn(key,i,d)}</div>
+      </div>`;
+    }
+    body = `<div class="detail-cards">${cards}</div>`;
+  }
+
+  return `<div class="cs">
+    <div class="cs-head">
+      <div class="cs-title">${csTitle}</div>
+      <div class="cs-ref">${csRef}</div>
+    </div>
+    <div class="stepper-wrap">
+      <div class="stepper-label">${countLabel}</div>
+      <div class="stepper">
+        <button class="st-btn left" onclick="decCount('${key}')">−</button>
+        <div class="st-num${cnt===0?' zero':''}">${cnt}</div>
+        <button class="st-btn right" onclick="incCount('${key}')">+</button>
+      </div>
+    </div>
+    ${body}
+  </div>`;
+}
+
+// ─── FIELD RENDERERS FOR EACH DETAIL TYPE ──
+function fChecked(key,i,d){
+  return `<div class="fields">
+    <div class="row2">
+      <label class="field full">
+        <span class="fl">Họ và tên đảng viên <span class="req">*</span></span>
+        <input class="inp" type="text" placeholder="Nhập đầy đủ họ tên"
+          value="${esc(d.name)}" oninput="syncDetail('${key}',${i},'name',this.value)">
+      </label>
+    </div>
+    <label class="field full">
+      <span class="fl">Nội dung được kiểm tra</span>
+      <textarea class="txta" rows="2" placeholder="Kiểm tra việc chấp hành nhiệm vụ..."
+        oninput="syncDetail('${key}',${i},'content',this.value)">${esc(d.content)}</textarea>
+    </label>
+    <div class="row2">
+      <label class="field">
+        <span class="fl">Kết quả kiểm tra</span>
+        <textarea class="txta" rows="2" placeholder="Kết quả..."
+          oninput="syncDetail('${key}',${i},'result',this.value)">${esc(d.result)}</textarea>
+      </label>
+      <label class="field">
+        <span class="fl">Nhận xét, hướng nhắc nhở</span>
+        <textarea class="txta" rows="2" placeholder="Nhận xét..."
+          oninput="syncDetail('${key}',${i},'handling',this.value)">${esc(d.handling)}</textarea>
+      </label>
+    </div>
+  </div>`;
+}
+
+function fViolation(key,i,d){
+  return `<div class="fields">
+    <label class="field full">
+      <span class="fl">Họ và tên đảng viên <span class="req">*</span></span>
+      <input class="inp" type="text" placeholder="Nhập đầy đủ họ tên"
+        value="${esc(d.name)}" oninput="syncDetail('${key}',${i},'name',this.value)">
+    </label>
+    <label class="field full">
+      <span class="fl">Dấu hiệu vi phạm (nội dung, biểu hiện)</span>
+      <textarea class="txta" rows="2" placeholder="Mô tả dấu hiệu vi phạm..."
+        oninput="syncDetail('${key}',${i},'sign',this.value)">${esc(d.sign)}</textarea>
+    </label>
+    <div class="row2">
+      <label class="field">
+        <span class="fl">Nguồn thông tin phát hiện</span>
+        <input class="inp" type="text" placeholder="Qua sinh hoạt / phản ánh..."
+          value="${esc(d.source)}" oninput="syncDetail('${key}',${i},'source',this.value)">
+      </label>
+      <label class="field">
+        <span class="fl">Kết quả kiểm tra và hướng xử lý</span>
+        <input class="inp" type="text" placeholder="Nhắc nhở / chuyển UBKT..."
+          value="${esc(d.handling)}" oninput="syncDetail('${key}',${i},'handling',this.value)">
+      </label>
+    </div>
+  </div>`;
+}
+
+function fSpecial(key,i,d){
+  return `<div class="fields">
+    <div class="row2">
+      <label class="field">
+        <span class="fl">Đối tượng giám sát</span>
+        <input class="inp" type="text" placeholder="Tổ chức/cá nhân được giám sát"
+          value="${esc(d.subject)}" oninput="syncDetail('${key}',${i},'subject',this.value)">
+      </label>
+      <label class="field">
+        <span class="fl">Thời gian tiến hành</span>
+        <input class="inp" type="text" placeholder="Tháng/năm..."
+          value="${esc(d.date)}" oninput="syncDetail('${key}',${i},'date',this.value)">
+      </label>
+    </div>
+    <label class="field full">
+      <span class="fl">Nội dung giám sát</span>
+      <textarea class="txta" rows="2" placeholder="Nội dung chuyên đề được giám sát..."
+        oninput="syncDetail('${key}',${i},'content',this.value)">${esc(d.content)}</textarea>
+    </label>
+    <div class="row2">
+      <label class="field">
+        <span class="fl">Kết quả giám sát</span>
+        <textarea class="txta" rows="2" oninput="syncDetail('${key}',${i},'result',this.value)">${esc(d.result)}</textarea>
+      </label>
+      <label class="field">
+        <span class="fl">Kiến nghị, nhắc nhở (nếu có)</span>
+        <textarea class="txta" rows="2" oninput="syncDetail('${key}',${i},'note',this.value)">${esc(d.note)}</textarea>
+      </label>
+    </div>
+  </div>`;
+}
+
+function fPetition(key,i,d){
+  const types=['Phản ánh','Kiến nghị','Tố cáo','Khiếu nại'];
+  return `<div class="fields">
+    <div class="row2">
+      <label class="field">
+        <span class="fl">Loại việc</span>
+        <select class="sel" onchange="syncDetail('${key}',${i},'type',this.value)">
+          ${types.map(t=>`<option ${d.type===t?'selected':''}>${esc(t)}</option>`).join('')}
+        </select>
+      </label>
+      <label class="field">
+        <span class="fl">Tổ chức, cá nhân liên quan</span>
+        <input class="inp" type="text" value="${esc(d.related)}"
+          oninput="syncDetail('${key}',${i},'related',this.value)">
+      </label>
+    </div>
+    <label class="field full">
+      <span class="fl">Nội dung tóm tắt</span>
+      <textarea class="txta" rows="2" oninput="syncDetail('${key}',${i},'summary',this.value)">${esc(d.summary)}</textarea>
+    </label>
+    <label class="field full">
+      <span class="fl">Hướng xử lý, chuyển đơn</span>
+      <input class="inp" type="text" placeholder="Giải thích / chuyển UBKT phường..."
+        value="${esc(d.handling)}" oninput="syncDetail('${key}',${i},'handling',this.value)">
+    </label>
+  </div>`;
+}
+
+function fDiscipline(key,i,d){
+  const forms=['Khiển trách','Cảnh cáo','Cách chức','Khai trừ','Đề nghị xem xét'];
+  return `<div class="fields">
+    <div class="row2">
+      <label class="field">
+        <span class="fl">Họ và tên đảng viên <span class="req">*</span></span>
+        <input class="inp" type="text" value="${esc(d.name)}"
+          oninput="syncDetail('${key}',${i},'name',this.value)">
+      </label>
+      <label class="field">
+        <span class="fl">Hình thức đề nghị/thi hành</span>
+        <select class="sel" onchange="syncDetail('${key}',${i},'form',this.value)">
+          <option value="">— Chọn —</option>
+          ${forms.map(f=>`<option ${d.form===f?'selected':''}>${esc(f)}</option>`).join('')}
+        </select>
+      </label>
+    </div>
+    <label class="field full">
+      <span class="fl">Nội dung vi phạm</span>
+      <textarea class="txta" rows="2" oninput="syncDetail('${key}',${i},'violation',this.value)">${esc(d.violation)}</textarea>
+    </label>
+    <label class="field full">
+      <span class="fl">Tình trạng hồ sơ, thủ tục</span>
+      <input class="inp" type="text" placeholder="Đang xử lý / đã hoàn chỉnh..."
+        value="${esc(d.dossier)}" oninput="syncDetail('${key}',${i},'dossier',this.value)">
+    </label>
+  </div>`;
+}
+
+function fRemedy(key,i,d){
+  return `<div class="fields">
+    <label class="field full">
+      <span class="fl">Văn bản/kết luận/biên bản liên quan</span>
+      <input class="inp" type="text" placeholder="Số kết luận, biên bản..."
+        value="${esc(d.doc)}" oninput="syncDetail('${key}',${i},'doc',this.value)">
+    </label>
+    <label class="field full">
+      <span class="fl">Nội dung phải khắc phục, sửa chữa</span>
+      <textarea class="txta" rows="2" oninput="syncDetail('${key}',${i},'content',this.value)">${esc(d.content)}</textarea>
+    </label>
+    <div class="row2">
+      <label class="field">
+        <span class="fl">Kết quả thực hiện</span>
+        <textarea class="txta" rows="2" oninput="syncDetail('${key}',${i},'result',this.value)">${esc(d.result)}</textarea>
+      </label>
+      <label class="field">
+        <span class="fl">Lý do chưa hoàn thành (nếu có)</span>
+        <textarea class="txta" rows="2" oninput="syncDetail('${key}',${i},'reason',this.value)">${esc(d.reason)}</textarea>
+      </label>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+//  STEP RENDERERS
+// ═══════════════════════════════════════════
+function updatePeriodType(){
+  const t=fd.reportType;
+  const yr=new Date().getFullYear();
+  // Build secondary selector content based on type
+  const sel2=document.getElementById('periodSub');
+  if(!sel2) return;
+  if(t==='thang'){
+    sel2.innerHTML=[1,2,3,4,5,6,7,8,9,10,11,12].map(m=>
+      `<option value="${m}">Tháng ${m}</option>`).join('');
+  } else if(t==='quy'){
+    sel2.innerHTML=['I','II','III','IV'].map((q,i)=>
+      `<option value="${i+1}">Quý ${q}</option>`).join('');
+  } else if(t==='6thang'){
+    sel2.innerHTML=`<option value="1">06 tháng đầu năm</option>
+      <option value="2">06 tháng cuối năm</option>`;
+  } else {
+    sel2.innerHTML=`<option value="${yr}">${yr}</option>
+      <option value="${yr-1}">${yr-1}</option>`;
+  }
+  // Set sub value from saved
+  if(fd.periodSub) sel2.value=fd.periodSub;
+  buildPeriodText();
+}
+
+function buildPeriodText(){
+  const t=fd.reportType;
+  const sub=fd.periodSub;
+  const yr=fd.periodYear||new Date().getFullYear();
+  let txt='';
+  if(t==='thang') txt=sub?`tháng ${sub} năm ${yr}`:`tháng ${new Date().getMonth()+1} năm ${yr}`;
+  else if(t==='quy'){
+    const map=['I','II','III','IV'];
+    txt=`quý ${map[sub-1]||sub} năm ${yr}`;
+  }
+  else if(t==='6thang') txt=sub==='2'?`06 tháng cuối năm ${yr}`:`06 tháng đầu năm ${yr}`;
+  else txt=`năm ${yr}`;
+  fd.periodText=txt;
+  const pt=document.getElementById('periodPreview');
+  if(pt) pt.textContent=txt;
+  saveLocal();
+}
+
+function renderS1(){
+  const curYear = new Date().getFullYear();
+  const yearOpts = [curYear,curYear-1,curYear+1].map(y=>
+    `<option value="${y}" ${fd.periodYear==y?'selected':''}>${y}</option>`).join('');
+
+  let subOpts='';
+  if(fd.reportType==='thang'){
+    subOpts=[1,2,3,4,5,6,7,8,9,10,11,12].map(m=>
+      `<option value="${m}" ${fd.periodSub==m?'selected':''}>Tháng ${m}</option>`).join('');
+  } else if(fd.reportType==='quy'){
+    subOpts=['I','II','III','IV'].map((q,i)=>
+      `<option value="${i+1}" ${fd.periodSub==(i+1)?'selected':''}>Quý ${q}</option>`).join('');
+  } else if(fd.reportType==='6thang'){
+    subOpts=`<option value="1" ${fd.periodSub==='1'?'selected':''}>06 tháng đầu năm</option>
+      <option value="2" ${fd.periodSub==='2'?'selected':''}>06 tháng cuối năm</option>`;
+  } else {
+    subOpts='';
+  }
+
+  // Org options
+  const byType={};
+  baseOrgs.forEach(o=>{const t=o.type||'Khác';if(!byType[t])byType[t]=[];byType[t].push(o);});
+  const tOrder=['Đảng bộ','Chi bộ'];
+  const types=[...tOrder.filter(t=>byType[t]),...Object.keys(byType).filter(t=>!tOrder.includes(t))];
+  const orgOpts=types.map(t=>`<optgroup label="${esc(t)}">${byType[t].map(o=>`<option value="${esc(o.id)}" ${fd.orgId===o.id?'selected':''}>${esc(o.name)}</option>`).join('')}</optgroup>`).join('');
+
+  return `<div class="sh">Thông tin báo cáo</div>
+<div class="sd">Thông tin xuất hiện ở phần đầu văn bản và tiêu đề báo cáo.</div>
+${activePeriod?`<div class="alert al-info" style="margin:0 0 12px">Kỳ đang mở: <b>${esc(activePeriod.title||activePeriod.period_text)}</b></div>`:''}
+<div class="fields">
+  <label class="field full">
+    <span class="fl">Cơ sở Đảng <span class="req">*</span></span>
+    <select class="sel" id="selOrg" onchange="syncFd('orgId',this.value);syncFd('orgName',this.options[this.selectedIndex].text)">
+      <option value="">— Chọn cơ sở Đảng —</option>${orgOpts}
+    </select>
+    <div class="fhint">Chọn đúng cơ sở Đảng của bạn — dùng để UBKT theo dõi ai đã nộp</div>
+  </label>
+  <label class="field full">
+    <span class="fl">Số ký hiệu văn bản</span>
+    <input id="reportNo" class="inp" type="text" placeholder="Ví dụ: 05-BC/CBKP4"
+      value="${esc(fd.reportNo??'')}" oninput="syncFd('reportNo',this.value)">
+    <div class="fhint">Cách ghi: [số thứ tự]-BC/[viết tắt chi bộ] · Ví dụ: 05-BC/CBKP4 là báo cáo số 05 của Chi bộ Khu phố 4</div>
+  </label>
+  <div class="divider"></div>
+  <div style="background:#f8fbff;border:1.5px solid #dbe5f4;border-radius:16px;padding:14px">
+    <div class="fl" style="margin-bottom:10px">Kỳ báo cáo</div>
+    <div class="row2" style="gap:8px">
+      <label class="field">
+        <span class="fl" style="font-weight:600;font-size:11px">Loại</span>
+        <select class="sel" onchange="syncFd('reportType',this.value);fd.periodSub='';updatePeriodType()">
+          <option value="thang" ${(fd.reportType||'thang')==='thang'?'selected':''}>Báo cáo tháng</option>
+          <option value="quy" ${fd.reportType==='quy'?'selected':''}>Báo cáo quý</option>
+          <option value="6thang" ${fd.reportType==='6thang'?'selected':''}>Báo cáo 06 tháng</option>
+          <option value="nam" ${fd.reportType==='nam'?'selected':''}>Báo cáo năm</option>
+        </select>
+      </label>
+      ${fd.reportType!=='nam'?`<label class="field">
+        <span class="fl" style="font-weight:600;font-size:11px">Kỳ</span>
+        <select class="sel" id="periodSub"
+          onchange="syncFd('periodSub',this.value);buildPeriodText()">${subOpts}</select>
+      </label>`:'<div></div>'}
+    </div>
+    <label class="field" style="margin-top:8px">
+      <span class="fl" style="font-weight:600;font-size:11px">Năm</span>
+      <select class="sel" onchange="syncFd('periodYear',this.value);buildPeriodText()">
+        ${yearOpts}
+      </select>
+    </label>
+    <div style="margin-top:10px;background:#fff;border:1px solid #dbe5f4;border-radius:10px;
+      padding:8px 12px;font-size:13px;font-weight:700;color:#0055DA">
+      📄 Kỳ báo cáo: <span id="periodPreview">${esc(fd.periodText||'…')}</span>
+    </div>
+  </div>
+  <div class="row2">
+    ${field('reportDate','Ngày báo cáo','date','')}
+    ${field('reportPlace','Địa danh','text','')}
+  </div>
+</div>`;
+}
+
+function renderS2(){
+  return `<div class="sh">Tình hình tổ chức Đảng và đảng viên</div>
+<div class="sd">Số liệu đảng viên trong kỳ báo cáo. Căn cứ danh sách đảng viên hiện có của chi bộ.</div>
+<div class="fields">
+  <div class="row3">
+    ${fnum('pmTotal','Tổng số đảng viên')}
+    ${fnum('pmOfficial','Đảng viên chính thức')}
+    ${fnum('pmProbationary','Đảng viên dự bị')}
+    ${fnum('pmExempt','Miễn sinh hoạt')}
+    ${fnum('pmTemporary','Sinh hoạt tạm thời')}
+    ${fnum('pmAbsent2','Vắng ≥ 02 kỳ sinh hoạt')}
+  </div>
+  ${ftxt('meetingNotes','Nội dung sinh hoạt đáng chú ý trong kỳ (nếu có)',2,'Bỏ trống nếu không có nội dung đặc biệt.')}
+</div>`;
+}
+
+function renderS3(){
+  return `<div class="sh">Công tác lãnh đạo, chỉ đạo</div>
+<div class="sd">Tóm tắt việc lãnh đạo, chỉ đạo của chi bộ trong kỳ.</div>
+<div class="fields">
+  ${ftxt('leadImplementation','Việc triển khai nghị quyết, chỉ thị, quy định, kết luận, kế hoạch của cấp trên trong kỳ',3,'Nêu những văn bản chủ yếu đã triển khai...')}
+  <div class="row2">
+    ${fnum('assignedCount','Số ĐV được phân công nhiệm vụ')}
+    ${fnum('assignedTotal','Tổng ĐV (để hiển thị .../...)')}
+  </div>
+  ${ftxt('assignmentContent','Nội dung phân công nhiệm vụ chủ yếu',2)}
+  ${ftxt('ktgsMeeting','Việc đưa nội dung kiểm tra, giám sát vào sinh hoạt chi bộ trong kỳ',2)}
+</div>`;
+}
+
+function renderS4(){
+  return `<div class="sh">Kết quả kiểm tra đảng viên</div>
+<div class="sd">Căn cứ khoản 2, Điều 4, Quy định 21-QĐ/TW ngày 11/4/2026.</div>
+
+${countSection(
+  'checked_members',
+  'Số đảng viên được kiểm tra việc chấp hành nhiệm vụ đảng viên, nhiệm vụ do chi bộ phân công trong kỳ',
+  'Kiểm tra việc chấp hành nhiệm vụ đảng viên, nhiệm vụ do chi bộ phân công',
+  'Căn cứ điểm a, khoản 2.3, Điều 4, Quy định 21-QĐ/TW',
+  n => `Đảng viên được kiểm tra thứ ${ordinal(n)}`,
+  fChecked,
+  DEF_SENTENCES.checked_members
+)}
+
+${countSection(
+  'violation_checks',
+  'Số đảng viên có dấu hiệu vi phạm được kiểm tra trong kỳ',
+  'Kiểm tra đảng viên khi có dấu hiệu vi phạm',
+  'Căn cứ điểm b, khoản 2.3, Điều 4, Quy định 21-QĐ/TW',
+  n => `Trường hợp kiểm tra dấu hiệu vi phạm thứ ${ordinal(n)}`,
+  fViolation,
+  DEF_SENTENCES.violation_checks
+)}`;
+}
+
+function toggleSup(k){
+  fd['sup_'+k+'_has_issue'] = !fd['sup_'+k+'_has_issue'];
+  saveLocal();
+  // Toggle UI without full re-render
+  const chk=document.getElementById('supchk_'+k);
+  const det=document.getElementById('supdet_'+k);
+  if(chk) chk.classList.toggle('checked', fd['sup_'+k+'_has_issue']);
+  if(det) det.classList.toggle('open', fd['sup_'+k+'_has_issue']);
+}
+
+function renderS5(){
+  const rows = REGULAR_TOPICS.map(([k,label,ref])=>{
+    const hasIssue = !!fd['sup_'+k+'_has_issue'];
+    return `<div class="sup-row-wrap" style="margin-bottom:6px">
+      <div class="sup-row-main" onclick="toggleSup('${k}')">
+        <div class="sup-chk ${hasIssue?'checked':''}" id="supchk_${k}">${hasIssue?'✓':''}</div>
+        <div class="sup-topic-lbl">
+          ${esc(label)}
+          <div class="sup-topic-ref">${esc(ref)}</div>
+        </div>
+      </div>
+      <div class="sup-detail ${hasIssue?'open':''}" id="supdet_${k}">
+        <label class="field full" style="margin-bottom:0">
+          <span class="fl">Nội dung trường hợp cần nhắc nhở, xử lý</span>
+          <textarea class="txta" rows="2" style="font-size:13px"
+            placeholder="Mô tả cụ thể trường hợp, hướng nhắc nhở..."
+            oninput="syncFd('sup_${k}_reminder',this.value)">${esc(fd['sup_'+k+'_reminder']??'')}</textarea>
+        </label>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="sh">Kết quả giám sát đảng viên</div>
+<div class="sd">Căn cứ khoản 3, Điều 4, Quy định 21-QĐ/TW ngày 11/4/2026.</div>
+
+<div class="cs" style="margin-top:0">
+  <div class="cs-head">
+    <div class="cs-title">Giám sát thường xuyên đối với đảng viên</div>
+    <div class="cs-ref">Căn cứ điểm a, khoản 3.3, Điều 4, QĐ 21-QĐ/TW · Tick ✓ nếu có trường hợp cần nhắc nhở</div>
+  </div>
+  <div style="padding:10px">${rows}</div>
+</div>
+
+${countSection(
+  'special_supervisions',
+  'Số cuộc giám sát chuyên đề thực hiện trong kỳ',
+  'Giám sát chuyên đề',
+  'Căn cứ điểm b, khoản 3.3, Điều 4, Quy định 21-QĐ/TW',
+  n => `Cuộc giám sát chuyên đề thứ ${ordinal(n)}`,
+  fSpecial,
+  DEF_SENTENCES.special_supervisions
+)}`;
+}
+
+function renderS6(){
+  return `<div class="sh">Phản ánh, kiến nghị, tố cáo, khiếu nại và kỷ luật Đảng</div>
+<div class="sd">Căn cứ Điều 36, 37, 38 Điều lệ Đảng; Quy định 21-QĐ/TW; Quy định 69-QĐ/TW.</div>
+
+${countSection(
+  'petitions',
+  'Số vụ việc phản ánh, kiến nghị, tố cáo, khiếu nại phát sinh trong kỳ',
+  'Phản ánh, kiến nghị, tố cáo, khiếu nại',
+  'Căn cứ Điều 36, 37, 38 Điều lệ Đảng; khoản 4, Điều 4, Quy định 21-QĐ/TW',
+  n => `Vụ việc thứ ${ordinal(n)}`,
+  fPetition,
+  DEF_SENTENCES.petitions
+)}
+
+${countSection(
+  'disciplines',
+  'Số trường hợp xem xét, đề nghị hoặc thi hành kỷ luật đảng viên trong kỳ',
+  'Thi hành kỷ luật Đảng',
+  'Căn cứ Chương VII Điều lệ Đảng; Quy định 69-QĐ/TW ngày 6/7/2022',
+  n => `Trường hợp kỷ luật thứ ${ordinal(n)}`,
+  fDiscipline,
+  DEF_SENTENCES.disciplines
+)}`;
+}
+
+function renderS7(){
+  return `<div class="sh">Theo dõi thực hiện khắc phục sau kiểm tra, giám sát</div>
+<div class="sd">Căn cứ khoản 2.4, Điều 4, Quy định 21-QĐ/TW ngày 11/4/2026.</div>
+
+${countSection(
+  'remedies',
+  'Số nội dung phải theo dõi, đôn đốc thực hiện khắc phục trong kỳ',
+  'Theo dõi, đôn đốc thực hiện khắc phục sau kiểm tra, giám sát',
+  'Căn cứ khoản 2.4, Điều 4, Quy định 21-QĐ/TW',
+  n => `Nội dung khắc phục thứ ${ordinal(n)}`,
+  fRemedy,
+  DEF_SENTENCES.remedies
+)}`;
+}
+
+function renderS8(){
+  return `<div class="sh">Đánh giá, kiến nghị và nhiệm vụ kỳ tiếp theo</div>
+<div class="sd">Bắt buộc nhập chức danh và họ tên người ký để xuất đúng thể thức văn bản.</div>
+<div class="fields">
+  ${ftxt('generalResult','Đánh giá kết quả công tác kiểm tra, giám sát trong kỳ',3,'Nêu những kết quả chính...')}
+  ${ftxt('limitations','Hạn chế, tồn tại, khó khăn',2,'Nêu hạn chế nếu có...')}
+  ${ftxt('recommendations','Kiến nghị UBKT Đảng ủy phường hướng dẫn, giải quyết (nếu có)',2,'Bỏ trống nếu không có kiến nghị.')}
+  ${ftxt('nextTasks','Nhiệm vụ trọng tâm kỳ tiếp theo',5)}
+  <div class="divider"></div>
+  <div class="row2">
+    ${fsel('signerRole','Chức danh người ký',[{v:'BÍ THƯ',l:'Bí thư'},{v:'PHÓ BÍ THƯ',l:'Phó Bí thư'}])}
+  </div>
+  <div class="fhint" style="margin-top:-6px">Khi xuất báo cáo, phần họ tên người ký để trống để tự ghi sau khi in.</div>
+  <div class="divider"></div>
+  ${submittedCode
+    ? `<div style="background:#E6FAF5;border:1.5px solid #00C68D;border-radius:16px;padding:16px;text-align:center">
+        <div style="font-size:24px;margin-bottom:6px">✅</div>
+        <div style="font-weight:900;color:#007A5E;font-size:15px;margin-bottom:4px">Đã nộp báo cáo lên UBKT</div>
+        <div style="color:#007A5E;font-size:13px;font-weight:600;margin-bottom:10px">Mã xác nhận: <b style="font-size:18px;letter-spacing:.08em">${submittedCode}</b></div>
+        <div style="font-size:12px;color:#4ade80;font-weight:600">Lưu mã này để đối chiếu với UBKT khi cần.</div>
+      </div>`
+    : `<button id="btnSubmitUBKT" class="btn btn-main" style="width:100%;font-size:16px;gap:9px" onclick="submitToUBKT()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+        Nộp báo cáo lên UBKT
+        <span class="spin" id="subUBKTSpin"></span>
+      </button>`
+  }
+</div>`;
+}
+
+
+function genCode(){return(Math.random().toString(36).slice(2,6)+'-'+Date.now().toString(36).slice(-4)).toUpperCase();}
+
+async function submitToUBKT(){
+  if(!(fd.orgId||'').trim()){showAlert('Vui lòng <b>chọn cơ sở Đảng</b> từ danh sách.','err');return;}
+
+  // Kiểm tra đã nộp kỳ này chưa
+  const dupKey=`ktgs_submitted_${fd.orgId}_${fd.periodText}`;
+  const existCode=localStorage.getItem(dupKey);
+  if(existCode&&!confirm(`Chi bộ đã nộp kỳ này với mã ${existCode}. Nộp lại sẽ tạo bản mới. Tiếp tục?`)) return;
+
+  const btn=document.getElementById('btnSubmitUBKT');
+  const spin=document.getElementById('subUBKTSpin');
+  if(btn){btn.style.opacity='.7';btn.style.pointerEvents='none';}
+  if(spin) spin.style.display='inline-block';
+
+  try{
+    const code=genCode();
+    const payload={
+      period_id:fd.periodId||activePeriod?.id||null,
+      period_status:activePeriod?.status||'Đang mở',
+      org_id:fd.orgId, org_name:fd.orgName,
+      period_type:fd.reportType, period_text:fd.periodText,
+      period_year:fd.periodYear?parseInt(fd.periodYear):new Date().getFullYear(),
+      period_sub:fd.periodSub, report_no:fd.reportNo,
+      report_date:fd.reportDate||null, report_place:fd.reportPlace,
+      signer_name:'', signer_role:fd.signerRole,
+      cnt_checked_members:counts.checked_members,
+      cnt_violation_checks:counts.violation_checks,
+      cnt_special_supervisions:counts.special_supervisions,
+      cnt_petitions:counts.petitions,
+      cnt_disciplines:counts.disciplines,
+      cnt_remedies:counts.remedies,
+      fd:fd, counts:counts, details:details,
+      confirm_code:code
+    };
+    const res=await fetch(`${SB}/rest/v1/ubkt_ktgs_reports`,{
+      method:'POST',
+      headers:{...sbH,'Prefer':'return=representation'},
+      body:JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error(await res.text());
+    localStorage.setItem(dupKey,code);
+    submittedCode=code;
+    render(); // re-render step 8 to show success
+    showAlert(`✅ Đã nộp báo cáo thành công! Mã xác nhận: <b>${code}</b>`,'ok');
+  }catch(e){
+    showAlert('❌ Nộp thất bại: '+e.message,'err');
+    if(btn){btn.style.opacity='';btn.style.pointerEvents='';}
+    if(spin) spin.style.display='none';
+  }
+}
+
+// ═══════════════════════════════════════════
+//  MAIN RENDER
+// ═══════════════════════════════════════════
+const STEP_FNS = [renderS1,renderS2,renderS3,renderS4,renderS5,renderS6,renderS7,renderS8];
+
+function render(){
+  // Progress
+  document.getElementById('progName').textContent = STEP_LABELS[step-1];
+  document.getElementById('progFrac').textContent = `${step} / 8`;
+  document.getElementById('progFill').style.width = `${(step/8)*100}%`;
+
+  // Step pills
+  document.getElementById('stepsRow').innerHTML = STEP_SHORT.map((s,i)=>`
+    <button class="step-pill ${i+1===step?'active':i+1<step?'done':''}"
+      onclick="goStep(${i+1})">${s}</button>`).join('');
+
+  // Content
+  const cb = document.getElementById('cardBody');
+  cb.style.animation='none'; cb.offsetHeight; cb.style.animation='';
+  cb.innerHTML = STEP_FNS[step-1]();
+
+  // Footer
+  const ab = document.getElementById('abInner');
+  if(step===8){
+    ab.className='ab-inner';
+    ab.innerHTML=`<button class="btn btn-ghost" onclick="prevStep()">← Quay lại</button>
+      <button class="btn btn-sub" id="btnOut" onclick="openPrint()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Xuất báo cáo PDF
+        <span class="spin" id="subSpin"></span>
+      </button>`;
+  } else if(step===1){
+    ab.className='ab-inner single';
+    ab.innerHTML=`<button class="btn btn-main" onclick="nextStep()">
+      Tiếp theo <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>`;
+  } else {
+    ab.className='ab-inner';
+    ab.innerHTML=`<button class="btn btn-ghost" onclick="prevStep()">← Quay lại</button>
+      <button class="btn btn-main" onclick="nextStep()">
+        Tiếp theo <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>`;
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ═══════════════════════════════════════════
+//  REPORT GENERATION
+// ═══════════════════════════════════════════
+function reportHtml(){
+  const dateParts = v => {
+    if(!v) return ['……','……','2026'];
+    const d=new Date(v+'T00:00:00');
+    return [d.getDate(),d.getMonth()+1,d.getFullYear()];
+  };
+  const [day,mon,yr] = dateParts(fd.reportDate);
+  const role = fd.signerRole || 'BÍ THƯ';
+  const signer = '';
+
+  // Build tables for each count section
+  function buildTable(key, heads, cols){
+    const cnt = counts[key];
+    if(cnt===0) return `<p>${esc(DEF_SENTENCES[key])}</p>`;
+    const rows = [];
+    for(let i=0;i<cnt;i++){
+      const d=details[key][i]||EMPTY_DETAIL[key]();
+      rows.push(`<tr><td class="center">${i+1}</td>${cols.map(c=>`<td>${txt(d[c],'')}</td>`).join('')}</tr>`);
+    }
+    return `<table><thead><tr><th style="width:30pt">STT</th>${heads.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead>
+      <tbody>${rows.join('')}</tbody></table>`;
+  }
+
+  const supTable = `<table><thead><tr>
+    <th style="width:20pt">STT</th>
+    <th>Nội dung giám sát</th>
+    <th>Kết quả giám sát</th>
+    <th>Trường hợp cần nhắc nhở</th>
+  </tr></thead><tbody>
+  ${REGULAR_TOPICS.map(([k,label],i)=>{
+    const hasIssue=!!fd['sup_'+k+'_has_issue'];
+    return `<tr>
+    <td class="center">${i+1}</td>
+    <td>${esc(label)}</td>
+    <td>${hasIssue?'Có phát sinh trường hợp cần nhắc nhở.':'Qua theo dõi, giám sát thường xuyên, chi bộ chưa phát hiện trường hợp vi phạm; tiếp tục nhắc nhở đảng viên thực hiện nhiệm vụ được phân công.'}</td>
+    <td>${hasIssue?txt(fd['sup_'+k+'_reminder'],'Xem nội dung nhắc nhở kèm theo.'):'Không có.'}</td>
+  </tr>`;}).join('')}
+  </tbody></table>`;
+
+  return `<div class="rdoc">
+    <table class="htbl"><tr>
+      <td class="center" style="width:46%">
+        <span class="org-line">ĐẢNG ỦY PHƯỜNG TÂN MỸ</span><br>
+        <span class="org-line org-line-bold">${esc((fd.orgName||'CHI BỘ KHU PHỐ ……').toUpperCase())}</span><br>*<br>
+        Số: ${esc(fd.reportNo||'……-BC/CBKP……')}
+      </td>
+      <td class="center">
+        <span class="party-title">ĐẢNG CỘNG SẢN VIỆT NAM</span><br><br>
+        <span class="date-line">${esc(fd.reportPlace||'Tân Mỹ')}, ngày ${day} tháng ${mon} năm ${yr}</span>
+      </td>
+    </tr></table>
+
+    <h1>BÁO CÁO</h1>
+    <p class="center"><b>Công tác kiểm tra, giám sát, kỷ luật Đảng ${esc(fd.periodText||((fd.reportType||'tháng')+' …… năm 2026'))}</b></p>
+    <p>Thực hiện chế độ báo cáo công tác kiểm tra, giám sát, kỷ luật Đảng theo quy định; ${esc(fd.orgName||'Chi bộ Khu phố ……')} báo cáo kết quả thực hiện ${esc(fd.periodText||'kỳ báo cáo')} như sau:</p>
+
+    <h2>I. TÌNH HÌNH TỔ CHỨC ĐẢNG VÀ ĐẢNG VIÊN</h2>
+    <p>1. Tổng số đảng viên: ${num('pmTotal')} đồng chí. Trong đó: chính thức ${num('pmOfficial')}; dự bị ${num('pmProbationary')}; miễn sinh hoạt ${num('pmExempt')}; sinh hoạt tạm thời ${num('pmTemporary')}; vắng sinh hoạt từ 02 kỳ trở lên ${num('pmAbsent2')} đồng chí.</p>
+    ${(fd.meetingNotes||'').trim()?`<p>Nội dung đáng chú ý: ${txt(fd.meetingNotes)}</p>`:''}
+
+    <h2>II. CÔNG TÁC LÃNH ĐẠO, CHỈ ĐẠO</h2>
+    <p>1. Việc triển khai nghị quyết, chỉ thị, quy định, kết luận, kế hoạch của cấp trên:<br>${txt(fd.leadImplementation)}</p>
+    <p>2. Việc phân công nhiệm vụ đảng viên: ${num('assignedCount')}/${num('assignedTotal')} đồng chí được phân công.<br>${txt(fd.assignmentContent)}</p>
+    <p>3. Việc đưa nội dung kiểm tra, giám sát vào sinh hoạt chi bộ:<br>${txt(fd.ktgsMeeting)}</p>
+
+    <h2>III. KẾT QUẢ KIỂM TRA ĐẢNG VIÊN</h2>
+    <p><i>Căn cứ khoản 2, Điều 4, Quy định số 21-QĐ/TW ngày 11 tháng 4 năm 2026.</i></p>
+    <h3>1. Kiểm tra việc chấp hành nhiệm vụ đảng viên, nhiệm vụ do chi bộ phân công</h3>
+    ${buildTable('checked_members',
+      ['Họ và tên đảng viên','Nội dung được kiểm tra','Kết quả kiểm tra','Nhận xét, hướng nhắc nhở'],
+      ['name','content','result','handling'])}
+    <p>Tổng số đảng viên được kiểm tra/theo dõi trong kỳ: ${counts.checked_members} đồng chí.</p>
+
+    <h3>2. Kiểm tra đảng viên khi có dấu hiệu vi phạm</h3>
+    ${buildTable('violation_checks',
+      ['Họ và tên đảng viên','Dấu hiệu vi phạm','Nguồn thông tin phát hiện','Kết quả kiểm tra và hướng xử lý'],
+      ['name','sign','source','handling'])}
+
+    <h2>IV. KẾT QUẢ GIÁM SÁT ĐẢNG VIÊN</h2>
+    <p><i>Căn cứ khoản 3, Điều 4, Quy định số 21-QĐ/TW ngày 11 tháng 4 năm 2026.</i></p>
+    <h3>1. Giám sát thường xuyên đối với đảng viên</h3>
+    ${supTable}
+    <h3>2. Giám sát chuyên đề</h3>
+    ${buildTable('special_supervisions',
+      ['Đối tượng giám sát','Nội dung giám sát','Thời gian','Kết quả','Kiến nghị, nhắc nhở'],
+      ['subject','content','date','result','note'])}
+
+    <h2>V. PHẢN ÁNH, KIẾN NGHỊ, TỐ CÁO, KHIẾU NẠI (NẾU CÓ)</h2>
+    ${buildTable('petitions',
+      ['Loại việc','Nội dung tóm tắt','Tổ chức/cá nhân liên quan','Hướng xử lý, chuyển đơn'],
+      ['type','summary','related','handling'])}
+
+    <h2>VI. THI HÀNH KỶ LUẬT ĐẢNG (NẾU CÓ)</h2>
+    ${buildTable('disciplines',
+      ['Họ và tên đảng viên','Nội dung vi phạm','Hình thức đề nghị/thi hành','Tình trạng hồ sơ'],
+      ['name','violation','form','dossier'])}
+
+    <h2>VII. THEO DÕI THỰC HIỆN KHẮC PHỤC SAU KIỂM TRA, GIÁM SÁT (NẾU CÓ)</h2>
+    ${buildTable('remedies',
+      ['Văn bản/kết luận liên quan','Nội dung phải khắc phục','Kết quả thực hiện','Lý do chưa hoàn thành'],
+      ['doc','content','result','reason'])}
+
+    <h2>VIII. ĐÁNH GIÁ, KIẾN NGHỊ</h2>
+    <p>1. Kết quả:<br>${txt(fd.generalResult)}</p>
+    <p>2. Hạn chế, tồn tại:<br>${txt(fd.limitations)}</p>
+    <p>3. Kiến nghị UBKT Đảng ủy phường hướng dẫn, giải quyết:<br>${txt(fd.recommendations)}</p>
+
+    <h2>IX. NHIỆM VỤ TRỌNG TÂM KỲ TIẾP THEO</h2>
+    <p>${txt(fd.nextTasks||DEFAULT_TASKS)}</p>
+    <p>Trên đây là báo cáo công tác kiểm tra, giám sát, kỷ luật Đảng ${esc(fd.periodText||'kỳ báo cáo')} của ${esc(fd.orgName||'Chi bộ Khu phố ……')}.</p>
+
+    <div class="sig-block">
+      <div>
+        <p><span class="noi-nhan-lbl">Nơi nhận:</span><br>
+        - Ủy ban Kiểm tra Đảng ủy phường;<br>
+        - Đảng ủy viên phụ trách chi bộ;<br>
+        - Lưu: Chi bộ.</p>
+      </div>
+      <div class="sig-center">
+        <p><b>T/M CHI BỘ</b><br><span class="sig-role">${esc(role)}</span></p>
+        <p class="sig-name">&nbsp;</p>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+//  PRINT / RESET
+// ═══════════════════════════════════════════
+function openPrint(){
+  if(!(fd.orgId||'').trim()){
+    goStep(1);
+    showAlert('Vui lòng <b>chọn cơ sở Đảng</b> trước khi xuất báo cáo.','err');return;
+  }
+  if(!fd.periodText||fd.periodText.includes('undefined')) buildPeriodText();
+  document.getElementById('printDoc').innerHTML = reportHtml();
+  const pa=document.getElementById('printArea');
+  pa.style.display='block';
+  pa.scrollIntoView({behavior:'smooth'});
+}
+function closePrint(){
+  document.getElementById('printArea').style.display='none';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function resetForm(){
+  if(!confirm('Xóa toàn bộ nội dung và bắt đầu lại?')) return;
+  Object.keys(fd).forEach(k=>fd[k]='');
+  Object.keys(counts).forEach(k=>counts[k]=0);
+  Object.keys(details).forEach(k=>details[k]=[]);
+  try{localStorage.removeItem(LS);}catch(e){}
+  setDefaults(); step=1; render();
+  showAlert('Đã xóa. Sẵn sàng nhập mới.','ok');
+}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+(function init(){
+  const had = loadLocal();
+  setDefaults();
+  Promise.all([loadBaseOrgs(),loadActivePeriod()]).then(()=>render());
+  // render once immediately for faster feel
+  render();
+  if(had) setTimeout(()=>showAlert('Đã khôi phục dữ liệu từ lần nhập trước. <a href="#" onclick="resetForm();return false" style="color:#1d4ed8;font-weight:800">Nhập mới?</a>','info'),200);
+})();
+</script>
+</body>
+</html>
