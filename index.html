@@ -7503,16 +7503,17 @@ window.KPReports = (function(){
     const title = (document.getElementById('kpPTitle').value.trim()) || `Báo cáo KTGS ${text}`;
     if(!confirm('Mở kỳ mới? Kỳ đang mở sẽ được đóng lại tự động.')) return;
     try{
-      // Đóng kỳ đang mở
-      await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods?status=eq.Đang mở`,{
+      // Đóng tất cả kỳ đang mở
+      const patchClose = await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods?status=eq.%C4%90ang%20m%E1%BB%9F`,{
         method:'PATCH', headers:{..._H,'Prefer':'return=minimal'},
         body: JSON.stringify({status:'Đã đóng', closed_at: new Date().toISOString()})
       });
       // Tạo kỳ mới
-      await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods`,{
-        method:'POST', headers:_H,
+      const postNew = await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods`,{
+        method:'POST', headers:{..._H,'Prefer':'return=representation'},
         body: JSON.stringify({title, period_type:type, period_sub:sub, period_year:year, period_text:text, status:'Đang mở', data:{module:'ktgs'}})
       });
+      if(!postNew.ok) throw new Error('HTTP '+postNew.status);
       _sel = null;
       await _load();
     }catch(e){ alert('Lỗi mở kỳ: '+e.message); }
@@ -7520,7 +7521,7 @@ window.KPReports = (function(){
 
   async function closePeriod(id){
     if(!confirm('Đóng kỳ báo cáo này?')) return;
-    await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods?id=eq.${id}`,{
+    const _r = await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods?id=eq.${id}`,{
       method:'PATCH', headers:{..._H,'Prefer':'return=minimal'},
       body: JSON.stringify({status:'Đã đóng', closed_at: new Date().toISOString()})
     });
@@ -7529,11 +7530,11 @@ window.KPReports = (function(){
 
   async function openExisting(id){
     if(!confirm('Mở lại kỳ này? Kỳ đang mở sẽ được đóng lại.')) return;
-    await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods?status=eq.Đang mở`,{
+    await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods?status=eq.%C4%90ang%20m%E1%BB%9F`,{
       method:'PATCH', headers:{..._H,'Prefer':'return=minimal'},
       body: JSON.stringify({status:'Đã đóng', closed_at: new Date().toISOString()})
     });
-    await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods?id=eq.${id}`,{
+    const _cr = await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods?id=eq.${id}`,{
       method:'PATCH', headers:{..._H,'Prefer':'return=minimal'},
       body: JSON.stringify({status:'Đang mở', closed_at: null, opened_at: new Date().toISOString()})
     });
