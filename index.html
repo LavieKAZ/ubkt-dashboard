@@ -7389,196 +7389,200 @@ setTimeout(initLiquidScrollIndicators, 300);
 <link rel="stylesheet" href="./modules/kp-reports/kp_reports.css">
 <script src="./modules/kp-reports/kp_reports.js" charset="UTF-8">
 
+
 // ╔══════════════════════════════════════════════════════════
-// ║  window.KPReports — Module tổng hợp báo cáo KTGS
+// ║  window.KPReports v2 — Tổng hợp báo cáo KTGS
 // ╚══════════════════════════════════════════════════════════
 window.KPReports = (function(){
-  const _SB  = 'https://hbygfheibcrqaqzoaass.supabase.co';
-  const _KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhieWdmaGVpYmNycWFxem9hYXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDg0MTcsImV4cCI6MjA5NDA4NDQxN30.AM-uMmKKuRIPZLtVyV-N0aj5EXuBIrOoyFL-gotb_Qg';
-  const _H   = {'Content-Type':'application/json','apikey':_KEY,'Authorization':'Bearer '+_KEY};
-  const api  = (path, opts={}) => fetch(`${_SB}/rest/v1/${path}`,{headers:_H,...opts}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
+  var _U = 'https://hbygfheibcrqaqzoaass.supabase.co/rest/v1';
+  var _K = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhieWdmaGVpYmNycWFxem9hYXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDg0MTcsImV4cCI6MjA5NDA4NDQxN30.AM-uMmKKuRIPZLtVyV-N0aj5EXuBIrOoyFL-gotb_Qg';
+  var _H = {'Content-Type':'application/json','apikey':_K,'Authorization':'Bearer '+_K};
 
-  let _periods = [], _orgs = [], _reports = [];
-  let _sel = null; // kỳ đang chọn
-
-  const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const pLabel = (type, sub, yr) => {
-    if(type==='6thang') return sub==='2' ? `06 tháng cuối năm ${yr}` : `06 tháng đầu năm ${yr}`;
-    if(type==='thang')  return `tháng ${sub} năm ${yr}`;
-    if(type==='quy')    return `quý ${sub} năm ${yr}`;
-    return `năm ${yr}`;
-  };
-
-  async function _load(){
-    try{
-      const [p, o, r] = await Promise.all([
-        api('ubkt_ktgs_report_periods?order=opened_at.desc'),
-        api('ubkt_base_orgs?select=id,data&order=data->order.asc'),
-        api('ubkt_ktgs_reports?order=submitted_at.desc')
-      ]);
-      _periods = p||[];
-      _orgs = (o||[])
-        .map(x=>({id:x.id, name:x.data?.name||x.id, type:x.data?.type||'', order:Number(x.data?.order??9999)}))
-        .sort((a,b)=>a.order-b.order || a.name.localeCompare(b.name,'vi',{numeric:true}));
-      _reports = r||[];
-      if(!_sel) _sel = _periods.find(x=>x.status==='Đang mở') || _periods[0] || null;
-      _renderPeriods();
-      renderList();
-    }catch(e){ console.error('KPReports._load error',e); }
+  function _get(tbl, qs){
+    return fetch(_U+'/'+tbl+(qs?'?'+qs:''),{headers:_H}).then(function(r){
+      if(!r.ok) throw new Error('GET '+tbl+' HTTP '+r.status);
+      return r.json();
+    });
+  }
+  function _post(tbl, body){
+    return fetch(_U+'/'+tbl,{method:'POST',headers:Object.assign({},_H,{'Prefer':'return=representation'}),body:JSON.stringify(body)}).then(function(r){
+      return r.text().then(function(t){
+        if(!r.ok) throw new Error('POST '+tbl+' HTTP '+r.status+': '+t);
+        return JSON.parse(t);
+      });
+    });
+  }
+  function _patch(tbl, qs, body){
+    return fetch(_U+'/'+tbl+'?'+qs,{method:'PATCH',headers:Object.assign({},_H,{'Prefer':'return=minimal'}),body:JSON.stringify(body)}).then(function(r){
+      return r.text().then(function(t){
+        if(!r.ok) throw new Error('PATCH '+tbl+' HTTP '+r.status+': '+t.slice(0,120));
+        return true;
+      });
+    });
   }
 
-  function renderList(){
-    const q = (document.getElementById('kpQ')?.value||'').toLowerCase();
-    const st = document.getElementById('kpSt')?.value||'all';
-    const rs = _sel
-      ? _reports.filter(r => r.period_id===_sel.id || (!r.period_id && r.period_text===_sel.period_text))
-      : _reports;
-    const byOrg = {};
-    rs.forEach(r=>{ if(!byOrg[r.org_id]) byOrg[r.org_id]=r; });
+  var _P=[], _O=[], _R=[], _sel=null;
 
-    // KPIs
-    const sub = new Set(rs.map(r=>r.org_id)).size;
-    const mis = Math.max(_orgs.length - sub, 0);
-    const tKT = rs.reduce((s,r)=>s+Number(r.cnt_checked_members||0), 0);
-    const tVP = rs.filter(r=>(r.cnt_violation_checks||0)>0).length;
-    const kpiEl = document.getElementById('kpKpis');
-    if(kpiEl) kpiEl.innerHTML = [
-      ['Đã nộp', sub, '#007f5c'],
-      ['Chưa nộp', mis, '#b0003a'],
-      ['KT đảng viên', tKT, '#0044BB'],
-      ['Dấu hiệu VP', tVP, '#886400']
-    ].map(k=>`<div class="kp-kpi"><small>${k[0]}</small><b style="color:${k[2]}">${k[1]}</b></div>`).join('');
+  function _esc(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function _pl(type,sub,yr){
+    if(type==='6thang') return sub==='2'?'06 tháng cuối năm '+yr:'06 tháng đầu năm '+yr;
+    if(type==='thang')  return 'tháng '+sub+' năm '+yr;
+    if(type==='quy')    return 'quý '+sub+' năm '+yr;
+    return 'năm '+yr;
+  }
+  function _toast(msg, ok){
+    if(ok===undefined) ok=true;
+    var t=document.getElementById('_kpToast');
+    if(!t){
+      t=document.createElement('div'); t.id='_kpToast';
+      t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;padding:10px 20px;border-radius:99px;font-weight:800;font-size:13px;transition:opacity .3s;box-shadow:0 4px 20px rgba(0,0,0,.2);pointer-events:none;font-family:inherit';
+      document.body.appendChild(t);
+    }
+    t.textContent=msg;
+    t.style.background=ok?'#111827':'#dc2626';
+    t.style.color='#fff';
+    t.style.opacity='1';
+    clearTimeout(t._to);
+    t._to=setTimeout(function(){t.style.opacity='0';},3000);
+  }
 
-    const list = _orgs.filter(o=>{
-      const hit = !q || o.name.toLowerCase().includes(q);
-      const ok  = st==='all' || (st==='ok'&&byOrg[o.id]) || (st==='miss'&&!byOrg[o.id]);
-      return hit && ok;
+  function _load(){
+    Promise.all([
+      _get('ubkt_ktgs_report_periods','order=opened_at.desc'),
+      _get('ubkt_base_orgs','select=id,data&order=data->order.asc'),
+      _get('ubkt_ktgs_reports','order=submitted_at.desc')
+    ]).then(function(res){
+      _P=res[0]||[];
+      _O=(res[1]||[]).map(function(x){
+        return {id:x.id,name:(x.data&&x.data.name)||x.id,type:(x.data&&x.data.type)||'',order:Number((x.data&&x.data.order)||9999)};
+      }).sort(function(a,b){ return a.order-b.order||a.name.localeCompare(b.name,'vi',{numeric:true}); });
+      _R=res[2]||[];
+      if(!_sel) _sel=_P.find(function(x){return x.status==='Đang mở';})||_P[0]||null;
+      _renderPeriods();
+      _renderList();
+    }).catch(function(e){ _toast('Lỗi tải dữ liệu: '+e.message, false); console.error('[KPReports]',e); });
+  }
+
+  function _renderList(){
+    var q=(document.getElementById('kpQ')&&document.getElementById('kpQ').value||'').toLowerCase();
+    var st=(document.getElementById('kpSt')&&document.getElementById('kpSt').value)||'all';
+    var rs=_sel?_R.filter(function(r){return r.period_id===_sel.id||(!r.period_id&&r.period_text===_sel.period_text);}):_R;
+    var byOrg={};
+    rs.forEach(function(r){ if(!byOrg[r.org_id]) byOrg[r.org_id]=r; });
+    var sub=new Set(rs.map(function(r){return r.org_id;})).size;
+    var mis=Math.max(_O.length-sub,0);
+    var tKT=rs.reduce(function(s,r){return s+Number(r.cnt_checked_members||0);},0);
+    var tVP=rs.filter(function(r){return (r.cnt_violation_checks||0)>0;}).length;
+    var ke=document.getElementById('kpKpis');
+    if(ke) ke.innerHTML=[['Đã nộp',sub,'#007f5c'],['Chưa nộp',mis,'#b0003a'],['KT đảng viên',tKT,'#0044BB'],['Dấu hiệu VP',tVP,'#886400']].map(function(k){return '<div class="kp-kpi"><small>'+k[0]+'</small><b style="color:'+k[2]+'">'+k[1]+'</b></div>';}).join('');
+    var list=_O.filter(function(o){
+      var hit=!q||o.name.toLowerCase().indexOf(q)>=0;
+      var ok=st==='all'||(st==='ok'&&byOrg[o.id])||(st==='miss'&&!byOrg[o.id]);
+      return hit&&ok;
     });
-
-    const el = document.getElementById('kpOrgList');
+    var el=document.getElementById('kpOrgList');
     if(!el) return;
-    if(!list.length){ el.innerHTML='<div class="kp-empty">Không có kết quả.</div>'; return; }
-    el.innerHTML = list.map((o,i)=>{
-      const r = byOrg[o.id];
-      const pills = [];
-      if(r?.cnt_violation_checks>0) pills.push(`⚠ ${r.cnt_violation_checks} dấu hiệu VP`);
-      if(r?.cnt_disciplines>0) pills.push(`⚖ ${r.cnt_disciplines} kỷ luật`);
-      return `<div class="kp-item" style="animation-delay:${Math.min(i,15)*18}ms">
-        <div>
-          <h3>${esc(o.name)}</h3>
-          <div class="m">${r
-            ? `Nộp ${new Date(r.submitted_at).toLocaleDateString('vi-VN')} · Mã: ${esc(r.confirm_code||'—')}`
-            : 'Chưa có báo cáo trong kỳ này'}</div>
-          ${pills.length ? `<div class="alert-pills">${pills.join(' · ')}</div>` : ''}
-        </div>
-        <span class="${r?'ok':'miss'}">${r?'✓ Đã nộp':'Chưa nộp'}</span>
-      </div>`;
+    if(!list.length){el.innerHTML='<div class="kp-empty">Không có kết quả.</div>';return;}
+    el.innerHTML=list.map(function(o,i){
+      var r=byOrg[o.id];
+      var h='<div class="kp-item" style="animation-delay:'+Math.min(i,15)*18+'ms">';
+      h+='<div><h3>'+_esc(o.name)+'</h3>';
+      h+='<div class="m">'+(r?'Nộp '+new Date(r.submitted_at).toLocaleDateString('vi-VN')+' · Mã: '+_esc(r.confirm_code||'—'):'Chưa có báo cáo')+'</div>';
+      if(r&&r.cnt_violation_checks>0){h+='<div class="alert-pills">Vi phạm: '+r.cnt_violation_checks+'</div>';}
+      if(r&&r.cnt_disciplines>0){h+='<div class="alert-pills">Kỷ luật: '+r.cnt_disciplines+'</div>';}
+      h+='</div>';
+      h+='<span class="'+(r?'ok':'miss')+'">'+(r?'&#10003; Đã nộp':'Chưa nộp')+'</span>';
+      h+='</div>';
+      return h;
     }).join('');
   }
 
+
   function _renderPeriods(){
-    const el = document.getElementById('kpPeriodList');
+    var el=document.getElementById('kpPeriodList');
     if(!el) return;
-    if(!_periods.length){ el.innerHTML='<div class="kp-empty">Chưa có kỳ nào.</div>'; return; }
-    el.innerHTML = _periods.map(p=>`
-      <div class="kp-period ${_sel&&_sel.id===p.id?'active':''}" onclick="KPReports.selectPeriod('${p.id}')">
-        <div class="kp-period-top">
-          <div class="kp-period-name">${esc(p.title)}</div>
-          <span class="${p.status==='Đang mở'?'kp-badge-open':'kp-badge-closed'}">${p.status}</span>
-        </div>
-        <div class="kp-period-meta">${esc(p.period_text||'')} · ${p.opened_at?new Date(p.opened_at).toLocaleDateString('vi-VN'):''}</div>
-        <div class="kp-period-acts">
-          ${p.status==='Đang mở'
-            ?`<button class="kbtn kb-blue" onclick="event.stopPropagation();KPReports.closePeriod('${p.id}')">Đóng kỳ</button>`
-            :`<button class="kbtn kb-green" onclick="event.stopPropagation();KPReports.openExisting('${p.id}')">Mở lại</button>`}
-        </div>
-      </div>`).join('');
+    if(!_P.length){el.innerHTML='<div class="kp-empty">Chưa có kỳ nào.</div>';return;}
+    el.innerHTML=_P.map(function(p){
+      var isOpen=p.status==='Đang mở';
+      var isActive=_sel&&_sel.id===p.id;
+      var pid=_esc(p.id);
+      var h='<div class="kp-period'+(isActive?' active':'');
+      h+='" data-pid="'+pid+'" onclick="KPReports.selectPeriod(this.dataset.pid)">';
+      h+='<div class="kp-period-top">';
+      h+='<div class="kp-period-name">'+_esc(p.title)+'</div>';
+      h+='<span class="'+(isOpen?'kp-badge-open':'kp-badge-closed')+'">'+_esc(p.status)+'</span>';
+      h+='</div>';
+      h+='<div class="kp-period-meta">'+_esc(p.period_text||'')+' · '+(p.opened_at?new Date(p.opened_at).toLocaleDateString('vi-VN'):'')+'</div>';
+      h+='<div class="kp-period-acts">';
+      if(isOpen){
+        h+='<button class="kbtn kb-blue" data-pid="'+pid+'" onclick="event.stopPropagation();KPReports.closePeriod(this.dataset.pid)">Đóng kỳ</button>';
+      }else{
+        h+='<button class="kbtn kb-green" data-pid="'+pid+'" onclick="event.stopPropagation();KPReports.openExisting(this.dataset.pid)">Mở lại</button>';
+      }
+      h+='</div></div>';
+      return h;
+    }).join('');
   }
 
-  async function openPeriod(){
-    const type  = document.getElementById('kpPType').value;
-    const sub   = document.getElementById('kpPSub').value.trim();
-    const year  = Number(document.getElementById('kpPYear').value)||2026;
-    const text  = pLabel(type, sub, year);
-    const title = (document.getElementById('kpPTitle').value.trim()) || `Báo cáo KTGS ${text}`;
-    if(!confirm('Mở kỳ mới? Kỳ đang mở sẽ được đóng lại tự động.')) return;
-    try{
-      // Đóng tất cả kỳ đang mở
-      const patchClose = await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods?status=eq.%C4%90ang%20m%E1%BB%9F`,{
-        method:'PATCH', headers:{..._H,'Prefer':'return=minimal'},
-        body: JSON.stringify({status:'Đã đóng', closed_at: new Date().toISOString()})
-      });
-      // Tạo kỳ mới
-      const postNew = await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods`,{
-        method:'POST', headers:{..._H,'Prefer':'return=representation'},
-        body: JSON.stringify({title, period_type:type, period_sub:sub, period_year:year, period_text:text, status:'Đang mở', data:{module:'ktgs'}})
-      });
-      if(!postNew.ok) throw new Error('HTTP '+postNew.status);
-      _sel = null;
-      await _load();
-    }catch(e){ alert('Lỗi mở kỳ: '+e.message); }
+
+  function openPeriod(){
+    var type =(document.getElementById('kpPType')&&document.getElementById('kpPType').value)||'6thang';
+    var sub  =(document.getElementById('kpPSub')&&document.getElementById('kpPSub').value.trim())||'1';
+    var year =Number((document.getElementById('kpPYear')&&document.getElementById('kpPYear').value))||2026;
+    var title=(document.getElementById('kpPTitle')&&document.getElementById('kpPTitle').value.trim())||('Báo cáo KTGS '+_pl(type,sub,year));
+    var text =_pl(type,sub,year);
+    _toast('Đang mở kỳ mới...');
+    _patch('ubkt_ktgs_report_periods','status=eq.%C4%90ang%20m%E1%BB%9F',{status:'Đã đóng',closed_at:new Date().toISOString()}).then(function(){
+      return _post('ubkt_ktgs_report_periods',{title:title,period_type:type,period_sub:sub,period_year:year,period_text:text,status:'Đang mở',data:{module:'ktgs'}});
+    }).then(function(){
+      _sel=null;
+      _load();
+      _toast('✅ Đã mở kỳ: '+text);
+    }).catch(function(e){ _toast('❌ '+e.message, false); console.error('[KPReports openPeriod]',e); });
   }
 
-  async function closePeriod(id){
-    if(!confirm('Đóng kỳ báo cáo này?')) return;
-    const _r = await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods?id=eq.${id}`,{
-      method:'PATCH', headers:{..._H,'Prefer':'return=minimal'},
-      body: JSON.stringify({status:'Đã đóng', closed_at: new Date().toISOString()})
-    });
-    await _load();
+  function closePeriod(id){
+    _patch('ubkt_ktgs_report_periods','id=eq.'+id,{status:'Đã đóng',closed_at:new Date().toISOString()}).then(function(){
+      _load(); _toast('Đã đóng kỳ báo cáo');
+    }).catch(function(e){ _toast('❌ '+e.message, false); });
   }
 
-  async function openExisting(id){
-    if(!confirm('Mở lại kỳ này? Kỳ đang mở sẽ được đóng lại.')) return;
-    await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods?status=eq.%C4%90ang%20m%E1%BB%9F`,{
-      method:'PATCH', headers:{..._H,'Prefer':'return=minimal'},
-      body: JSON.stringify({status:'Đã đóng', closed_at: new Date().toISOString()})
-    });
-    const _cr = await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods?id=eq.${id}`,{
-      method:'PATCH', headers:{..._H,'Prefer':'return=minimal'},
-      body: JSON.stringify({status:'Đang mở', closed_at: null, opened_at: new Date().toISOString()})
-    });
-    _sel = _periods.find(p=>p.id===id) || null;
-    await _load();
+  function openExisting(id){
+    _patch('ubkt_ktgs_report_periods','status=eq.%C4%90ang%20m%E1%BB%9F',{status:'Đã đóng',closed_at:new Date().toISOString()}).then(function(){
+      return _patch('ubkt_ktgs_report_periods','id=eq.'+id,{status:'Đang mở',closed_at:null,opened_at:new Date().toISOString()});
+    }).then(function(){
+      _sel=_P.find(function(p){return p.id===id;})||null;
+      _load(); _toast('Đã mở lại kỳ');
+    }).catch(function(e){ _toast('❌ '+e.message, false); });
   }
 
   function selectPeriod(id){
-    _sel = _periods.find(p=>p.id===id) || null;
-    _renderPeriods();
-    renderList();
+    _sel=_P.find(function(p){return p.id===id;})||null;
+    _renderPeriods(); _renderList();
   }
 
   function exportCsv(){
-    const rs = _sel
-      ? _reports.filter(r=>r.period_id===_sel.id || r.period_text===_sel?.period_text)
-      : _reports;
-    const byOrg = {};
-    rs.forEach(r=>{ if(!byOrg[r.org_id]) byOrg[r.org_id]=r; });
-    const rows = [['Cơ sở Đảng','Loại','Trạng thái','Kỳ báo cáo','Nộp lúc','Mã XN',
-      'KT nhiệm vụ','Dấu hiệu VP','GS chuyên đề','Phản ánh/KN','Kỷ luật','Khắc phục']];
-    _orgs.forEach(o=>{
-      const r = byOrg[o.id];
-      rows.push([o.name, o.type, r?'Đã nộp':'Chưa nộp', _sel?.period_text||'',
-        r?.submitted_at ? new Date(r.submitted_at).toLocaleString('vi-VN') : '',
-        r?.confirm_code||'', r?.cnt_checked_members||0, r?.cnt_violation_checks||0,
-        r?.cnt_special_supervisions||0, r?.cnt_petitions||0, r?.cnt_disciplines||0, r?.cnt_remedies||0]);
-    });
-    const csv = rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
-    a.download = `tong-hop-bao-cao-ktgs-${_sel?.period_text||'all'}.csv`.replace(/\s+/g,'-');
+    var rs=_sel?_R.filter(function(r){return r.period_id===_sel.id||r.period_text===(_sel&&_sel.period_text);}):_R;
+    var byOrg={};rs.forEach(function(r){if(!byOrg[r.org_id])byOrg[r.org_id]=r;});
+    var rows=[['Cơ sở Đảng','Loại','Trạng thái','Kỳ báo cáo','Nộp lúc','Mã XN','KT nhiệm vụ','Dấu hiệu VP','GS chuyên đề','Phản ánh/KN','Kỷ luật','Khắc phục']];
+    _O.forEach(function(o){var r=byOrg[o.id];rows.push([o.name,o.type,r?'Đã nộp':'Chưa nộp',(_sel&&_sel.period_text)||'',r?new Date(r.submitted_at).toLocaleString('vi-VN'):'',r&&r.confirm_code||'',r&&r.cnt_checked_members||0,r&&r.cnt_violation_checks||0,r&&r.cnt_special_supervisions||0,r&&r.cnt_petitions||0,r&&r.cnt_disciplines||0,r&&r.cnt_remedies||0]);});
+    var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+    a.download='tong-hop-ktgs-'+(_sel&&_sel.period_text||'all').replace(/\s+/g,'-')+'.csv';
     a.click();
+    _toast('Đã xuất CSV');
   }
 
   return {
     mount: function(){ _load(); },
     reload: function(){ _load(); },
-    renderList,
-    openPeriod,
-    closePeriod,
-    openExisting,
-    selectPeriod,
-    exportCsv
+    renderList: _renderList,
+    openPeriod: openPeriod,
+    closePeriod: closePeriod,
+    openExisting: openExisting,
+    selectPeriod: selectPeriod,
+    exportCsv: exportCsv
   };
 })();
 
