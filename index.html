@@ -2181,7 +2181,147 @@ body{
   <div id="nqIndicatorsRoot"></div>
 </section>
           <section id="page-kpReports" class="page hidden space-y-5">
-  <div id="kpReportsRoot"></div>
+
+<!-- ╔══════════════════════════════════════════════════════╗
+     ║   MODULE: KPReports — Tổng hợp báo cáo KTGS       ║
+     ╚══════════════════════════════════════════════════════╝ -->
+<style>
+#page-kpReports .kh{border-radius:20px;background:linear-gradient(135deg,#FF0052,#d90046);
+  padding:20px 22px;color:#fff;box-shadow:0 12px 30px rgba(255,0,82,.18);
+  position:relative;overflow:hidden}
+#page-kpReports .kh::before{content:"";position:absolute;inset:-50%;
+  background:conic-gradient(from 90deg,transparent,rgba(255,255,255,.18),transparent 35%,rgba(255,255,255,.10),transparent 70%);
+  animation:kpSpin 7s linear infinite;pointer-events:none}
+#page-kpReports .kh>*{position:relative;z-index:1}
+#page-kpReports .kh h2{font-size:clamp(18px,3vw,24px);font-weight:950;margin-bottom:3px}
+#page-kpReports .kh p{font-size:12px;color:rgba(255,255,255,.78);font-weight:600}
+@keyframes kpSpin{to{transform:rotate(360deg)}}
+
+#page-kpReports .kp-layout{display:grid;grid-template-columns:1fr 320px;gap:14px;align-items:start}
+#page-kpReports .kp-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+#page-kpReports .kp-kpi{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:12px 14px}
+#page-kpReports .kp-kpi small{display:block;color:#8a94a6;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+#page-kpReports .kp-kpi b{display:block;font-size:26px;font-weight:950;margin-top:5px;line-height:1}
+#page-kpReports .kp-card{background:#fff;border:1px solid #e5e7eb;border-radius:20px;overflow:hidden;margin-bottom:12px;box-shadow:0 2px 8px rgba(17,24,39,.04)}
+#page-kpReports .kp-stripe{height:4px;background:linear-gradient(90deg,#FF0052,#FFD400,#00C68D,#0055DA)}
+#page-kpReports .kp-cb{padding:16px}
+#page-kpReports .kp-h{font-size:14px;font-weight:900;margin-bottom:3px}
+#page-kpReports .kp-s{font-size:12px;color:#8a94a6;font-weight:600;line-height:1.45;margin-bottom:12px}
+#page-kpReports .kp-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+#page-kpReports .kp-input{flex:1;min-width:160px;height:36px;border:1.5px solid #dbe5f4;border-radius:12px;padding:0 12px;background:#fff;outline:none;font-size:13px;font-family:inherit}
+#page-kpReports .kp-sel{height:36px;border:1.5px solid #dbe5f4;border-radius:12px;padding:0 30px 0 12px;background:#fff;outline:none;font-size:12.5px;-webkit-appearance:none;font-family:inherit}
+#page-kpReports .kp-list{display:flex;flex-direction:column;gap:7px}
+#page-kpReports .kp-item{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:11px 13px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;animation:kpIn .2s ease both}
+@keyframes kpIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+#page-kpReports .kp-item h3{font-size:13px;font-weight:800;line-height:1.3}
+#page-kpReports .kp-item .m{font-size:11px;color:#8a94a6;font-weight:600;margin-top:3px;line-height:1.4}
+#page-kpReports .kp-item .alert-pills{font-size:11px;color:#FF0052;font-weight:700;margin-top:3px}
+#page-kpReports .ok{background:#ecfdf8;color:#007f5c;border:1px solid #99f6df;border-radius:99px;padding:3px 9px;font-size:11px;font-weight:800;white-space:nowrap;flex-shrink:0}
+#page-kpReports .miss{background:#fff0f6;color:#b0003a;border:1px solid #ffb3cb;border-radius:99px;padding:3px 9px;font-size:11px;font-weight:800;white-space:nowrap;flex-shrink:0}
+#page-kpReports .kp-field{display:flex;flex-direction:column;gap:5px;margin-bottom:9px}
+#page-kpReports .kp-lbl{font-size:11.5px;font-weight:800;color:#374151}
+#page-kpReports .kp-inp{height:36px;border:1.5px solid #dbe5f4;border-radius:12px;padding:0 11px;background:#fff;outline:none;font-size:13px;font-weight:600;width:100%;font-family:inherit}
+#page-kpReports .kp-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#page-kpReports .kp-period{border:1.5px solid #e5e7eb;border-radius:14px;padding:11px 12px;background:#fff;margin-bottom:7px;cursor:pointer;transition:.15s}
+#page-kpReports .kp-period.active{border-color:#00C68D;background:#ecfdf8;box-shadow:0 0 0 3px rgba(0,198,141,.10)}
+#page-kpReports .kp-period:hover:not(.active){border-color:#0055DA}
+#page-kpReports .kp-period-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+#page-kpReports .kp-period-name{font-size:13px;font-weight:800}
+#page-kpReports .kp-period-meta{font-size:11px;color:#8a94a6;font-weight:600;margin-top:2px}
+#page-kpReports .kp-period-acts{display:flex;gap:6px;margin-top:8px}
+#page-kpReports .kbtn{border:none;border-radius:10px;padding:5px 11px;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:.15s;font-family:inherit}
+#page-kpReports .kbtn:hover{transform:translateY(-1px)}
+#page-kpReports .kb-main{background:linear-gradient(135deg,#FF0052,#d90046);color:#fff}
+#page-kpReports .kb-blue{background:linear-gradient(135deg,#0055DA,#003f9f);color:#fff}
+#page-kpReports .kb-green{background:#00C68D;color:#fff}
+#page-kpReports .kb-ghost{background:#fff;border:1.5px solid #e5e7eb;color:#374151}
+#page-kpReports .kp-empty{text-align:center;padding:28px;color:#8a94a6;font-size:13px;font-weight:600}
+#page-kpReports .kp-badge-open{background:#ecfdf8;color:#007f5c;border:1px solid #99f6df;border-radius:99px;padding:2px 8px;font-size:10.5px;font-weight:800}
+#page-kpReports .kp-badge-closed{background:#f3f4f6;color:#4b5563;border:1px solid #e5e7eb;border-radius:99px;padding:2px 8px;font-size:10.5px;font-weight:800}
+@media(max-width:900px){#page-kpReports .kp-layout{grid-template-columns:1fr}}
+@media(max-width:600px){#page-kpReports .kp-kpis{grid-template-columns:1fr 1fr}}
+</style>
+
+<!-- HERO -->
+<div class="kh">
+  <h2>Báo cáo Kiểm tra, Giám sát, Kỷ luật Đảng</h2>
+  <p>Theo dõi nộp báo cáo · Quản lý kỳ · Xuất file tổng hợp · Căn cứ Quy định 21-QĐ/TW</p>
+</div>
+
+<!-- LAYOUT -->
+<div class="kp-layout">
+  <!-- LEFT: Danh sách cơ sở -->
+  <div>
+    <div class="kp-kpis" id="kpKpis">
+      <div class="kp-kpi"><small>Đã nộp</small><b style="color:#007f5c">—</b></div>
+      <div class="kp-kpi"><small>Chưa nộp</small><b style="color:#b0003a">—</b></div>
+      <div class="kp-kpi"><small>KT đảng viên</small><b style="color:#0044BB">—</b></div>
+      <div class="kp-kpi"><small>Dấu hiệu VP</small><b style="color:#886400">—</b></div>
+    </div>
+    <div class="kp-card">
+      <div class="kp-stripe"></div>
+      <div class="kp-cb">
+        <div class="kp-h">Danh sách cơ sở Đảng</div>
+        <div class="kp-s">Trạng thái theo kỳ đang chọn. Bấm kỳ bên phải để xem kỳ khác.</div>
+        <div class="kp-toolbar">
+          <input id="kpQ" class="kp-input" placeholder="Tìm tên chi bộ, cơ sở..." oninput="if(window.KPReports)KPReports.renderList()">
+          <select id="kpSt" class="kp-sel" onchange="if(window.KPReports)KPReports.renderList()">
+            <option value="all">Tất cả</option>
+            <option value="ok">Đã nộp</option>
+            <option value="miss">Chưa nộp</option>
+          </select>
+          <button class="kbtn kb-blue" onclick="if(window.KPReports)KPReports.exportCsv()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Xuất CSV
+          </button>
+        </div>
+        <div id="kpOrgList" class="kp-list"><div class="kp-empty">Đang tải...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Quản lý kỳ -->
+  <aside>
+    <div class="kp-card">
+      <div class="kp-stripe"></div>
+      <div class="kp-cb">
+        <div class="kp-h">Mở kỳ báo cáo mới</div>
+        <div class="kp-s">Kỳ đang mở hiển thị trên form báo cáo của chi bộ.</div>
+        <div class="kp-field"><span class="kp-lbl">Tên kỳ</span>
+          <input id="kpPTitle" class="kp-inp" value="Báo cáo KTGS 6 tháng đầu năm 2026">
+        </div>
+        <div class="kp-row2">
+          <div class="kp-field"><span class="kp-lbl">Loại</span>
+            <select id="kpPType" class="kp-inp" style="padding-right:24px;-webkit-appearance:none">
+              <option value="thang">Tháng</option><option value="quy">Quý</option>
+              <option value="6thang" selected>06 tháng</option><option value="nam">Năm</option>
+            </select>
+          </div>
+          <div class="kp-field"><span class="kp-lbl">Kỳ</span>
+            <input id="kpPSub" class="kp-inp" value="1">
+          </div>
+        </div>
+        <div class="kp-field"><span class="kp-lbl">Năm</span>
+          <input id="kpPYear" class="kp-inp" type="number" value="2026">
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="kbtn kb-main" onclick="if(window.KPReports)KPReports.openPeriod()">Mở kỳ mới</button>
+          <button class="kbtn kb-ghost" onclick="if(window.KPReports)KPReports.reload()">↺ Tải lại</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="kp-card">
+      <div class="kp-stripe"></div>
+      <div class="kp-cb">
+        <div class="kp-h">Danh sách kỳ báo cáo</div>
+        <div class="kp-s">Bấm chọn kỳ để xem tổng hợp chi tiết.</div>
+        <div id="kpPeriodList"><div class="kp-empty">Đang tải...</div></div>
+      </div>
+    </div>
+  </aside>
+</div>
+
 </section>
 
 
@@ -3400,10 +3540,12 @@ body{
       try{
         if(useSupabaseAuth){
           setLoginMessage("Đang xác thực với cơ sở dữ liệu...");
-          await signInWithSupabase(u,p);
-          const supaKey = u.toLowerCase().split("@")[0];
-          const mappedUser = LOCAL_USERS.find(x=>x.username.toLowerCase()===supaKey);
-          currentUser = mappedUser ? {...mappedUser, username:u, password:""} : {username:u,name:u,role:"Tài khoản Supabase",permissions:["tasks","baseorgs","dossiers"]};
+          // Map username → email nếu chưa phải email
+          const emailToUse = u.includes('@') ? u : (u==='admin' ? 'admin@tanmy.vn' : u+'@tanmy.vn');
+          await signInWithSupabase(emailToUse, p);
+          const supaKey = emailToUse.toLowerCase().split('@')[0];
+          const mappedUser = LOCAL_USERS.find(x=>x.username.toLowerCase()===supaKey||x.username.toLowerCase()===u.toLowerCase());
+          currentUser = mappedUser ? {...mappedUser, username:u, password:""} : {username:u,name:u,role:"Tài khoản Supabase",permissions:["all"]};
         }else{
           const localUser=LOCAL_USERS.find(x=>x.username===u && x.password===p);
           if(!localUser){
@@ -7245,6 +7387,200 @@ setTimeout(initLiquidScrollIndicators, 300);
   </div>
 <script src="./modules/indicators/indicators.js" charset="UTF-8"></script>
 <link rel="stylesheet" href="./modules/kp-reports/kp_reports.css">
-<script src="./modules/kp-reports/kp_reports.js" charset="UTF-8"></script>
+<script src="./modules/kp-reports/kp_reports.js" charset="UTF-8">
+
+// ╔══════════════════════════════════════════════════════════
+// ║  window.KPReports — Module tổng hợp báo cáo KTGS
+// ╚══════════════════════════════════════════════════════════
+window.KPReports = (function(){
+  const _SB  = 'https://hbygfheibcrqaqzoaass.supabase.co';
+  const _KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhieWdmaGVpYmNycWFxem9hYXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDg0MTcsImV4cCI6MjA5NDA4NDQxN30.AM-uMmKKuRIPZLtVyV-N0aj5EXuBIrOoyFL-gotb_Qg';
+  const _H   = {'Content-Type':'application/json','apikey':_KEY,'Authorization':'Bearer '+_KEY};
+  const api  = (path, opts={}) => fetch(`${_SB}/rest/v1/${path}`,{headers:_H,...opts}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
+
+  let _periods = [], _orgs = [], _reports = [];
+  let _sel = null; // kỳ đang chọn
+
+  const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const pLabel = (type, sub, yr) => {
+    if(type==='6thang') return sub==='2' ? `06 tháng cuối năm ${yr}` : `06 tháng đầu năm ${yr}`;
+    if(type==='thang')  return `tháng ${sub} năm ${yr}`;
+    if(type==='quy')    return `quý ${sub} năm ${yr}`;
+    return `năm ${yr}`;
+  };
+
+  async function _load(){
+    try{
+      const [p, o, r] = await Promise.all([
+        api('ubkt_ktgs_report_periods?order=opened_at.desc'),
+        api('ubkt_base_orgs?select=id,data&order=data->order.asc'),
+        api('ubkt_ktgs_reports?order=submitted_at.desc')
+      ]);
+      _periods = p||[];
+      _orgs = (o||[])
+        .map(x=>({id:x.id, name:x.data?.name||x.id, type:x.data?.type||'', order:Number(x.data?.order??9999)}))
+        .sort((a,b)=>a.order-b.order || a.name.localeCompare(b.name,'vi',{numeric:true}));
+      _reports = r||[];
+      if(!_sel) _sel = _periods.find(x=>x.status==='Đang mở') || _periods[0] || null;
+      _renderPeriods();
+      renderList();
+    }catch(e){ console.error('KPReports._load error',e); }
+  }
+
+  function renderList(){
+    const q = (document.getElementById('kpQ')?.value||'').toLowerCase();
+    const st = document.getElementById('kpSt')?.value||'all';
+    const rs = _sel
+      ? _reports.filter(r => r.period_id===_sel.id || (!r.period_id && r.period_text===_sel.period_text))
+      : _reports;
+    const byOrg = {};
+    rs.forEach(r=>{ if(!byOrg[r.org_id]) byOrg[r.org_id]=r; });
+
+    // KPIs
+    const sub = new Set(rs.map(r=>r.org_id)).size;
+    const mis = Math.max(_orgs.length - sub, 0);
+    const tKT = rs.reduce((s,r)=>s+Number(r.cnt_checked_members||0), 0);
+    const tVP = rs.filter(r=>(r.cnt_violation_checks||0)>0).length;
+    const kpiEl = document.getElementById('kpKpis');
+    if(kpiEl) kpiEl.innerHTML = [
+      ['Đã nộp', sub, '#007f5c'],
+      ['Chưa nộp', mis, '#b0003a'],
+      ['KT đảng viên', tKT, '#0044BB'],
+      ['Dấu hiệu VP', tVP, '#886400']
+    ].map(k=>`<div class="kp-kpi"><small>${k[0]}</small><b style="color:${k[2]}">${k[1]}</b></div>`).join('');
+
+    const list = _orgs.filter(o=>{
+      const hit = !q || o.name.toLowerCase().includes(q);
+      const ok  = st==='all' || (st==='ok'&&byOrg[o.id]) || (st==='miss'&&!byOrg[o.id]);
+      return hit && ok;
+    });
+
+    const el = document.getElementById('kpOrgList');
+    if(!el) return;
+    if(!list.length){ el.innerHTML='<div class="kp-empty">Không có kết quả.</div>'; return; }
+    el.innerHTML = list.map((o,i)=>{
+      const r = byOrg[o.id];
+      const pills = [];
+      if(r?.cnt_violation_checks>0) pills.push(`⚠ ${r.cnt_violation_checks} dấu hiệu VP`);
+      if(r?.cnt_disciplines>0) pills.push(`⚖ ${r.cnt_disciplines} kỷ luật`);
+      return `<div class="kp-item" style="animation-delay:${Math.min(i,15)*18}ms">
+        <div>
+          <h3>${esc(o.name)}</h3>
+          <div class="m">${r
+            ? `Nộp ${new Date(r.submitted_at).toLocaleDateString('vi-VN')} · Mã: ${esc(r.confirm_code||'—')}`
+            : 'Chưa có báo cáo trong kỳ này'}</div>
+          ${pills.length ? `<div class="alert-pills">${pills.join(' · ')}</div>` : ''}
+        </div>
+        <span class="${r?'ok':'miss'}">${r?'✓ Đã nộp':'Chưa nộp'}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function _renderPeriods(){
+    const el = document.getElementById('kpPeriodList');
+    if(!el) return;
+    if(!_periods.length){ el.innerHTML='<div class="kp-empty">Chưa có kỳ nào.</div>'; return; }
+    el.innerHTML = _periods.map(p=>`
+      <div class="kp-period ${_sel&&_sel.id===p.id?'active':''}" onclick="KPReports.selectPeriod('${p.id}')">
+        <div class="kp-period-top">
+          <div class="kp-period-name">${esc(p.title)}</div>
+          <span class="${p.status==='Đang mở'?'kp-badge-open':'kp-badge-closed'}">${p.status}</span>
+        </div>
+        <div class="kp-period-meta">${esc(p.period_text||'')} · ${p.opened_at?new Date(p.opened_at).toLocaleDateString('vi-VN'):''}</div>
+        <div class="kp-period-acts">
+          ${p.status==='Đang mở'
+            ?`<button class="kbtn kb-blue" onclick="event.stopPropagation();KPReports.closePeriod('${p.id}')">Đóng kỳ</button>`
+            :`<button class="kbtn kb-green" onclick="event.stopPropagation();KPReports.openExisting('${p.id}')">Mở lại</button>`}
+        </div>
+      </div>`).join('');
+  }
+
+  async function openPeriod(){
+    const type  = document.getElementById('kpPType').value;
+    const sub   = document.getElementById('kpPSub').value.trim();
+    const year  = Number(document.getElementById('kpPYear').value)||2026;
+    const text  = pLabel(type, sub, year);
+    const title = (document.getElementById('kpPTitle').value.trim()) || `Báo cáo KTGS ${text}`;
+    if(!confirm('Mở kỳ mới? Kỳ đang mở sẽ được đóng lại tự động.')) return;
+    try{
+      // Đóng kỳ đang mở
+      await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods?status=eq.Đang mở`,{
+        method:'PATCH', headers:{..._H,'Prefer':'return=minimal'},
+        body: JSON.stringify({status:'Đã đóng', closed_at: new Date().toISOString()})
+      });
+      // Tạo kỳ mới
+      await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods`,{
+        method:'POST', headers:_H,
+        body: JSON.stringify({title, period_type:type, period_sub:sub, period_year:year, period_text:text, status:'Đang mở', data:{module:'ktgs'}})
+      });
+      _sel = null;
+      await _load();
+    }catch(e){ alert('Lỗi mở kỳ: '+e.message); }
+  }
+
+  async function closePeriod(id){
+    if(!confirm('Đóng kỳ báo cáo này?')) return;
+    await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods?id=eq.${id}`,{
+      method:'PATCH', headers:{..._H,'Prefer':'return=minimal'},
+      body: JSON.stringify({status:'Đã đóng', closed_at: new Date().toISOString()})
+    });
+    await _load();
+  }
+
+  async function openExisting(id){
+    if(!confirm('Mở lại kỳ này? Kỳ đang mở sẽ được đóng lại.')) return;
+    await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods?status=eq.Đang mở`,{
+      method:'PATCH', headers:{..._H,'Prefer':'return=minimal'},
+      body: JSON.stringify({status:'Đã đóng', closed_at: new Date().toISOString()})
+    });
+    await fetch(`${_SB}/rest/v1/ubkt_ktgs_report_periods?id=eq.${id}`,{
+      method:'PATCH', headers:{..._H,'Prefer':'return=minimal'},
+      body: JSON.stringify({status:'Đang mở', closed_at: null, opened_at: new Date().toISOString()})
+    });
+    _sel = _periods.find(p=>p.id===id) || null;
+    await _load();
+  }
+
+  function selectPeriod(id){
+    _sel = _periods.find(p=>p.id===id) || null;
+    _renderPeriods();
+    renderList();
+  }
+
+  function exportCsv(){
+    const rs = _sel
+      ? _reports.filter(r=>r.period_id===_sel.id || r.period_text===_sel?.period_text)
+      : _reports;
+    const byOrg = {};
+    rs.forEach(r=>{ if(!byOrg[r.org_id]) byOrg[r.org_id]=r; });
+    const rows = [['Cơ sở Đảng','Loại','Trạng thái','Kỳ báo cáo','Nộp lúc','Mã XN',
+      'KT nhiệm vụ','Dấu hiệu VP','GS chuyên đề','Phản ánh/KN','Kỷ luật','Khắc phục']];
+    _orgs.forEach(o=>{
+      const r = byOrg[o.id];
+      rows.push([o.name, o.type, r?'Đã nộp':'Chưa nộp', _sel?.period_text||'',
+        r?.submitted_at ? new Date(r.submitted_at).toLocaleString('vi-VN') : '',
+        r?.confirm_code||'', r?.cnt_checked_members||0, r?.cnt_violation_checks||0,
+        r?.cnt_special_supervisions||0, r?.cnt_petitions||0, r?.cnt_disciplines||0, r?.cnt_remedies||0]);
+    });
+    const csv = rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+    a.download = `tong-hop-bao-cao-ktgs-${_sel?.period_text||'all'}.csv`.replace(/\s+/g,'-');
+    a.click();
+  }
+
+  return {
+    mount: function(){ _load(); },
+    reload: function(){ _load(); },
+    renderList,
+    openPeriod,
+    closePeriod,
+    openExisting,
+    selectPeriod,
+    exportCsv
+  };
+})();
+
+</script>
 </body>
 </html>
