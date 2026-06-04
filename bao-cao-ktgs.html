@@ -103,6 +103,7 @@ button,input,select,textarea{font-family:inherit}
 }
 .step-pill.active{background:#0055DA;color:#fff;border-color:#0055DA}
 .step-pill.done{background:#E6FAF5;border-color:#00C68D;color:#007A5E}
+.step-pill.locked,.step-pill[disabled]{opacity:.4;cursor:not-allowed;pointer-events:none}
 
 /* MAIN CARD */
 .main-card{
@@ -438,7 +439,7 @@ button,input,select,textarea{font-family:inherit}
     <div class="hero-inner">
       <div class="hero-badge"><span class="hero-dot"></span>Đảng ủy phường Tân Mỹ · UBKT</div>
       <div class="hero-h">Báo cáo Công tác Kiểm tra,<br>Giám sát, Kỷ luật Đảng</div>
-      <div class="hero-s">Căn cứ Quy định 21-QĐ/TW ngày 11/4/2026 · Tự lưu · Xuất PDF</div>
+      <div class="hero-s">Căn cứ Quy định 21-QĐ/TW ngày 11/4/2026 · Tự lưu tự động</div>
     </div>
   </div>
 
@@ -489,6 +490,7 @@ const sbH={'Content-Type':'application/json','apikey':SBKEY,'Authorization':'Bea
 const sbQ=(p,o={})=>fetch(`${SB}/rest/v1/${p}`,{headers:sbH,...o}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
 let baseOrgs=[];
 let submittedCode=null; // mã sau khi nộp
+let maxStep=1; // step cao nhất đã được validate qua
 
 async function loadBaseOrgs(){
   const cached=JSON.parse(localStorage.getItem('ubkt_orgs_v2')||'null');
@@ -546,9 +548,11 @@ const DEF_SENTENCES = {
 let step = 1;
 
 let fd = {
-  orgId:'', orgName:'Chi bộ Khu phố ……',
+  orgId:'', orgName:'Chi bộ Khu phố ……', orgType:'',
   contactName:'', contactRole:'Bí thư', contactPhone:'',
   activePeriodTitle:'', activePeriodText:'',
+  // Đảng bộ extra
+  dbUBKTCount:0, dbChairman:'', dbViceChairman:'', dbProfLevel:'', dbPolitLevel:'', dbAgeRange:'',
   pmTotal:0, pmOfficial:0, pmProbationary:0,
   pmExempt:0, pmTemporary:0, pmAbsent2:0,
   meetingNotes:'',
@@ -650,6 +654,11 @@ function decCount(key){
 }
 
 function syncFd(k,v){ fd[k]=v; saveLocal(); }
+function syncOrgType(id){
+  const org=baseOrgs.find(o=>o.id===id);
+  fd.orgType=org?org.type:'';
+  saveLocal();
+}
 function syncDetail(key,idx,field,v){
   if(!details[key][idx]) details[key][idx]=EMPTY_DETAIL[key]();
   details[key][idx][field]=v;
@@ -700,7 +709,10 @@ function nextStep(){
       }
     }
   }
-  if(step<8) goStep(step+1);
+  if(step<8){
+    maxStep=Math.max(maxStep,step+1);
+    goStep(step+1);
+  }
 }
 function prevStep(){ if(step>1) goStep(step-1); }
 
@@ -1019,7 +1031,7 @@ function renderS1(){
   ${periodBanner}
   <label class="field full">
     <span class="fl">Cơ sở Đảng <span class="req">*</span></span>
-    <select class="sel" id="selOrg" onchange="syncFd('orgId',this.value);syncFd('orgName',this.options[this.selectedIndex].text)">
+    <select class="sel" id="selOrg" onchange="syncFd('orgId',this.value);syncFd('orgName',this.options[this.selectedIndex].text);syncOrgType(this.value);renderNoScroll()">
       <option value="">— Chọn cơ sở Đảng —</option>${orgOpts}
     </select>
     <div class="fhint">Chọn đúng cơ sở Đảng của bạn — dùng để UBKT theo dõi ai đã nộp</div>
@@ -1045,12 +1057,29 @@ function renderS1(){
         value="${esc(fd.contactPhone||'')}" oninput="syncFd('contactPhone',this.value)">
     </label>
   </div>
-  <div style="background:#FFF0F6;border:1.5px solid #FF0052;border-radius:14px;padding:12px 14px;margin-top:4px">
-    <div style="font-size:12.5px;font-weight:800;color:#CC003E;margin-bottom:4px">⚠️ Lưu ý quan trọng</div>
-    <div style="font-size:12px;color:#7A001F;font-weight:600;line-height:1.6">
-      Nội dung báo cáo được lưu trữ kèm <b>mã xác nhận, thời gian gửi và số điện thoại người lập báo cáo</b>.
-      Mọi thông tin đã gửi đều được UBKT Đảng ủy phường lưu hồ sơ và có thể đối chiếu bất kỳ lúc nào.
-      <b>Người lập báo cáo chịu trách nhiệm trước Đảng về tính trung thực của nội dung.</b>
+  ${(function(){
+    if(fd.orgType!=='Đảng bộ') return '';
+    var opts_prof = ['Trung cấp','Cao đẳng','Đại học','Thạc sĩ','Tiến sĩ'].map(function(v){return '<option value="'+v+'"'+(fd.dbProfLevel===v?' selected':'')+'>'+v+'</option>';}).join('');
+    var opts_polit = ['Sơ cấp','Trung cấp','Cao cấp','Cử nhân chính trị'].map(function(v){return '<option value="'+v+'"'+(fd.dbPolitLevel===v?' selected':'')+'>'+v+'</option>';}).join('');
+    return '<div style="background:#EEF4FF;border:1.5px solid #0055DA;border-radius:16px;overflow:hidden;margin-bottom:10px">'
+      +'<div style="background:#dbeafe;padding:9px 14px;font-size:12px;font-weight:900;color:#0044BB;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #bfdbfe">🏛 Thông tin Ủy ban Kiểm tra — Đảng bộ</div>'
+      +'<div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">'
+      +'<div class="row2">'
+      +'<label class="field"><span class="fl">Số lượng Ủy viên UBKT</span><input class="inp num" type="number" min="0" inputmode="numeric" value="'+Number(fd.dbUBKTCount||0)+'" oninput="syncFd(\'dbUBKTCount\',this.value)"></label>'
+      +'<label class="field"><span class="fl">Độ tuổi bình quân</span><input class="inp" type="text" placeholder="Ví dụ: 45 tuổi" value="'+esc(fd.dbAgeRange||'')+'" oninput="syncFd(\'dbAgeRange\',this.value)"></label>'
+      +'</div>'
+      +'<label class="field full"><span class="fl">Họ và tên Chủ nhiệm UBKT</span><input class="inp" type="text" placeholder="Nhập đầy đủ họ và tên" value="'+esc(fd.dbChairman||'')+'" oninput="syncFd(\'dbChairman\',this.value)"></label>'
+      +'<label class="field full"><span class="fl">Họ và tên Phó Chủ nhiệm UBKT</span><input class="inp" type="text" placeholder="Bỏ trống nếu không có" value="'+esc(fd.dbViceChairman||'')+'" oninput="syncFd(\'dbViceChairman\',this.value)"></label>'
+      +'<div class="row2">'
+      +'<label class="field"><span class="fl">Trình độ chuyên môn</span><select class="sel" onchange="syncFd(\'dbProfLevel\',this.value)"><option value="">— Chọn —</option>'+opts_prof+'</select></label>'
+      +'<label class="field"><span class="fl">Trình độ lý luận chính trị</span><select class="sel" onchange="syncFd(\'dbPolitLevel\',this.value)"><option value="">— Chọn —</option>'+opts_polit+'</select></label>'
+      +'</div>'
+      +'</div></div>';
+  })()}
+    <div style="background:#FFF0F6;border:1.5px solid #FF0052;border-radius:14px;padding:12px 14px;margin-top:4px">
+    <div style="font-size:12.5px;font-weight:800;color:#CC003E;margin-bottom:5px">⚠️ Lưu ý quan trọng</div>
+    <div style="font-size:12px;color:#7A001F;font-weight:600;line-height:1.65">
+      Mỗi lần gửi được lưu kèm <b>mã xác nhận</b>, <b>thời gian gửi</b> và <b>số điện thoại</b> người lập báo cáo. UBKT Đảng ủy phường có thể tra cứu và đối chiếu nội dung bất kỳ lúc nào. Vui lòng kiểm tra kỹ trước khi gửi.
     </div>
   </div>
 </div>`;
@@ -1066,7 +1095,7 @@ function renderS2(){
     ${fnum('pmProbationary','Đảng viên dự bị')}
     ${fnum('pmExempt','Miễn sinh hoạt')}
     ${fnum('pmTemporary','Sinh hoạt tạm thời')}
-    ${fnum('pmAbsent2','Vắng ≥ 02 kỳ sinh hoạt')}
+    ${fnum('pmAbsent2','Vắng sinh hoạt từ 02 kỳ trở lên')}
   </div>
   ${ftxt('meetingNotes','Nội dung sinh hoạt đáng chú ý trong kỳ (nếu có)',2,'Bỏ trống nếu không có nội dung đặc biệt.')}
 </div>`;
@@ -1078,8 +1107,8 @@ function renderS3(){
 <div class="fields">
   ${ftxt('leadImplementation','Việc triển khai nghị quyết, chỉ thị, quy định, kết luận, kế hoạch của cấp trên trong kỳ',3,'Nêu những văn bản chủ yếu đã triển khai...')}
   <div class="row2">
-    ${fnum('assignedCount','Số ĐV được phân công nhiệm vụ')}
-    ${fnum('assignedTotal','Tổng ĐV (để hiển thị .../...)')}
+    ${fnum('assignedCount','Số đảng viên được phân công nhiệm vụ')}
+    ${fnum('assignedTotal','Tổng số đảng viên trong chi bộ')}
   </div>
   ${ftxt('assignmentContent','Nội dung phân công nhiệm vụ chủ yếu',2)}
   ${ftxt('ktgsMeeting','Việc đưa nội dung kiểm tra, giám sát vào sinh hoạt chi bộ trong kỳ',2)}
@@ -1219,7 +1248,7 @@ function renderS8(){
   addRow('Tổng số đảng viên', `${fd.pmTotal||0} (CT: ${fd.pmOfficial||0} · DB: ${fd.pmProbationary||0} · Miễn SH: ${fd.pmExempt||0})`, '');
 
   // Kiểm tra
-  addRow('Kiểm tra nhiệm vụ ĐV', counts.checked_members?`${counts.checked_members} trường hợp`:'Không phát sinh', counts.checked_members?'#0055DA':'#8a94a6');
+  addRow('Kiểm tra nhiệm vụ đảng viên', counts.checked_members?`${counts.checked_members} trường hợp`:'Không phát sinh', counts.checked_members?'#0055DA':'#8a94a6');
   addRow('Kiểm tra dấu hiệu vi phạm', counts.violation_checks?`${counts.violation_checks} trường hợp`:'Không phát sinh', counts.violation_checks?'#FFD400':'#8a94a6');
 
   // Giám sát
@@ -1251,21 +1280,17 @@ function renderS8(){
     </table>
   </div>
 
-  <div style="background:#FFF0F6;border:1.5px solid #FF0052;border-radius:14px;padding:13px 14px">
-    <div style="font-size:12.5px;font-weight:900;color:#CC003E;margin-bottom:6px">⚠️ Cam kết trước khi gửi</div>
-    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
-      <input type="checkbox" id="confirmChk" onchange="syncFd('confirmed',this.checked)"
-        style="width:18px;height:18px;margin-top:2px;accent-color:#FF0052;flex-shrink:0"
-        ${fd.confirmed?'checked':''}>
-      <span style="font-size:12.5px;color:#7A001F;font-weight:700;line-height:1.55">
-        Tôi xác nhận đã kiểm tra thông tin. <b>Tôi chịu trách nhiệm trước Đảng về tính trung thực của nội dung báo cáo này.</b>
-        Thông tin được lưu kèm mã xác nhận, thời gian gửi và số điện thoại người lập báo cáo.
-      </span>
-    </label>
-  </div>
+  <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;background:#FFF0F6;border:1.5px solid #FF0052;border-radius:14px;padding:13px 14px">
+    <input type="checkbox" id="confirmChk" onchange="syncFd('confirmed',this.checked)"
+      style="width:20px;height:20px;margin-top:1px;accent-color:#FF0052;flex-shrink:0"
+      ${fd.confirmed?'checked':''}>
+    <span style="font-size:13px;color:#7A001F;font-weight:700;line-height:1.55">
+      Tôi xác nhận đã kiểm tra thông tin và chịu trách nhiệm về nội dung báo cáo này.
+    </span>
+  </label>
 
   <button id="btnSubmitUBKT" class="btn btn-main"
-    style="width:100%;font-size:16px;gap:9px;background:linear-gradient(135deg,#FF0052,#d90046);opacity:${fd.confirmed?1:.45};pointer-events:${fd.confirmed?'auto':'none'}"
+    style="width:100%;font-size:16px;gap:9px;background:linear-gradient(135deg,#FF0052,#d90046);${fd.confirmed?'':'opacity:.4;pointer-events:none'}"
     onclick="submitToUBKT()">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
     Gửi báo cáo lên UBKT
@@ -1395,9 +1420,12 @@ function render(){
   document.getElementById('progFill').style.width = `${(step/8)*100}%`;
 
   // Step pills
-  document.getElementById('stepsRow').innerHTML = STEP_SHORT.map((s,i)=>`
-    <button class="step-pill ${i+1===step?'active':i+1<step?'done':''}"
-      onclick="goStep(${i+1})">${s}</button>`).join('');
+  document.getElementById('stepsRow').innerHTML = STEP_SHORT.map((s,i)=>{
+    const n=i+1, isCurrent=n===step, isDone=n<step, isLocked=n>maxStep;
+    return `<button class="step-pill ${isCurrent?'active':isDone?'done':isLocked?'locked':''}"
+      ${isLocked?'disabled title="Hoàn thành bước trước để mở khoá"':''}
+      onclick="${!isLocked?'goStep('+n+')':''}">${s}</button>`;
+  }).join('');
 
   // Content
   const cb = document.getElementById('cardBody');
@@ -1577,6 +1605,7 @@ function resetForm(){
   if(!confirm('Xóa toàn bộ nội dung và bắt đầu lại?')) return;
   Object.keys(fd).forEach(k=>fd[k]='');
   Object.keys(counts).forEach(k=>counts[k]=0);
+  maxStep=1;
   Object.keys(details).forEach(k=>details[k]=[]);
   try{localStorage.removeItem(LS);}catch(e){}
   setDefaults(); step=1; render();
