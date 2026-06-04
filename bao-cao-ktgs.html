@@ -493,14 +493,34 @@ let submittedCode=null; // mã sau khi nộp
 let maxStep=1; // step cao nhất đã được validate qua
 
 async function loadBaseOrgs(){
+  // Load orgs (có cache 24h)
   const cached=JSON.parse(localStorage.getItem('ubkt_orgs_v2')||'null');
-  if(cached&&Date.now()-cached.ts<86400000){baseOrgs=cached.data;return;}
+  if(cached&&Date.now()-cached.ts<86400000){
+    baseOrgs=cached.data;
+  } else {
+    try{
+      const rows=await sbQ('ubkt_base_orgs?select=id,data');
+      baseOrgs=rows.map(r=>({id:r.id,name:r.data?.name||r.id,type:r.data?.type||'',order:Number(r.data?.order??r.data?.sort_order??9999)}))
+                 .sort((a,b)=>a.order-b.order || a.name.localeCompare(b.name,'vi',{numeric:true}));
+      localStorage.setItem('ubkt_orgs_v2',JSON.stringify({ts:Date.now(),data:baseOrgs}));
+    }catch(e){console.warn('Load orgs failed',e);}
+  }
+
+  // Load kỳ đang mở — LUÔN lấy mới từ Supabase, không cache
   try{
-    const rows=await sbQ('ubkt_base_orgs?select=id,data');
-    baseOrgs=rows.map(r=>({id:r.id,name:r.data?.name||r.id,type:r.data?.type||'',order:Number(r.data?.order??r.data?.sort_order??9999)}))
-               .sort((a,b)=>a.order-b.order || a.name.localeCompare(b.name,'vi',{numeric:true}));
-    localStorage.setItem('ubkt_orgs_v2',JSON.stringify({ts:Date.now(),data:baseOrgs}));
-  }catch(e){console.warn('Load orgs failed',e);}
+    const periods=await sbQ('ubkt_ktgs_report_periods?status=eq.'+encodeURIComponent('Đang mở')+'&order=opened_at.desc&limit=1');
+    if(periods&&periods.length){
+      fd.activePeriodTitle = periods[0].title||'';
+      fd.activePeriodText  = periods[0].period_text||'';
+      fd.periodText        = periods[0].period_text||'';
+      fd.periodId          = periods[0].id||'';
+    } else {
+      fd.activePeriodTitle = '';
+      fd.activePeriodText  = '';
+      fd.periodText        = '';
+      fd.periodId          = '';
+    }
+  }catch(e){ console.warn('Load period failed',e); }
 }
 
 
