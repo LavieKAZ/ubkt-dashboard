@@ -589,30 +589,24 @@ function renderPTDL(rs){
 }
 
 function renderNS(byOrg){
-  const dbReports=Object.values(byOrg).filter(r=>r.org_type==='Đảng bộ'&&r.nhansu&&r.nhansu.length);
+  const dbReports=Object.values(byOrg).filter(function(r){return r.org_type==='Đảng bộ'&&r.ns_cn_hoten;});
   const el=document.getElementById('nsContent');
   if(!dbReports.length){el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px;font-size:13px">Chưa có Đảng bộ nào nộp dữ liệu nhân sự UBKT.</div>';return;}
-  el.innerHTML=dbReports.map(r=>`
-    <div style="margin-bottom:18px">
-      <div style="font-size:13px;font-weight:900;margin-bottom:8px;color:var(--ink)">${esc(r.org_name)} <span style="font-size:11px;font-weight:600;color:var(--sub)">· ${esc(r.period_text||'—')}</span></div>
-      <table class="ns-tbl">
-        <thead><tr><th>Chức vụ</th><th>Họ tên</th><th>Tuổi</th><th>Chuyên môn</th><th>LLCT</th><th>Ngạch, bậc</th></tr></thead>
-        <tbody>
-          ${r.nhansu.map(p=>{
-            const cv=p.chucvu==='Chủ nhiệm'?'cn':p.chucvu==='Phó Chủ nhiệm'?'pct':'uv';
-            const short=p.chucvu==='Chủ nhiệm'?'CN':p.chucvu==='Phó Chủ nhiệm'?'PCT':'UV';
-            return`<tr>
-              <td><span class="ns-cv ${cv}">${short}</span></td>
-              <td><b>${esc(p.hoten||'—')}</b></td>
-              <td>${esc(p.dotuoi||'—')}</td>
-              <td>${esc(p.trinhdo_cm||'—')}</td>
-              <td>${esc(p.trinhdo_llct||'—')}</td>
-              <td style="color:var(--muted)">${esc(p.ngach_bac||'—')}</td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>`).join('');
+  el.innerHTML=dbReports.map(function(r){
+    var rows='';
+    if(r.ns_cn_hoten) rows+='<tr><td><span class="ns-cv cn">CN</span></td><td><b>'+esc(r.ns_cn_hoten)+'</b></td><td>'+esc(r.ns_cn_dotuoi||'—')+'</td><td>'+esc(r.ns_cn_cm||'—')+'</td><td>'+esc(r.ns_cn_llct||'—')+'</td><td style="color:var(--muted)">'+esc(r.ns_cn_ngach||'—')+'</td></tr>';
+    if(r.ns_pct_hoten) rows+='<tr><td><span class="ns-cv pct">PCT</span></td><td><b>'+esc(r.ns_pct_hoten)+'</b></td><td>'+esc(r.ns_pct_dotuoi||'—')+'</td><td>'+esc(r.ns_pct_cm||'—')+'</td><td>'+esc(r.ns_pct_llct||'—')+'</td><td style="color:var(--muted)">'+esc(r.ns_pct_ngach||'—')+'</td></tr>';
+    if(r.ns_uv_tong>0) rows+='<tr><td><span class="ns-cv uv">UV</span></td><td colspan="2">Tổng: <b>'+r.ns_uv_tong+'</b> · CT: <b>'+( r.ns_uv_ct||0)+'</b> · KN: <b>'+( r.ns_uv_kn||0)+'</b></td><td colspan="3" style="color:var(--muted);font-size:11px">—</td></tr>';
+    var ctHtml='';
+    if(r.ct_ubkt_co||r.ct_btv_co){
+      ctHtml='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;font-size:12px">';
+      if(r.ct_ubkt_co) ctHtml+='<div style="background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.15);border-radius:8px;padding:7px 10px"><div style="font-weight:800;color:#7C3AED">UBKT: Chương trình KTGS</div><div>KH: <b>'+r.ct_ubkt_so_cuoc+'</b> cuộc · Đã TH: <b>'+r.ct_ubkt_thuc_hien+'</b></div>'+(r.ct_ubkt_ghi_chu?'<div style="color:var(--sub);font-size:11px">'+esc(r.ct_ubkt_ghi_chu)+'</div>':'')+'</div>';
+      if(r.ct_btv_co)  ctHtml+='<div style="background:rgba(0,85,218,.06);border:1px solid rgba(0,85,218,.15);border-radius:8px;padding:7px 10px"><div style="font-weight:800;color:#0055DA">BTV: Chương trình GS</div><div>KH: <b>'+r.ct_btv_so_cuoc+'</b> cuộc · Đã TH: <b>'+r.ct_btv_thuc_hien+'</b></div>'+(r.ct_btv_ghi_chu?'<div style="color:var(--sub);font-size:11px">'+esc(r.ct_btv_ghi_chu)+'</div>':'')+'</div>';
+      ctHtml+='</div>';
+    }
+    return '<div style="margin-bottom:20px"><div style="font-size:13px;font-weight:900;margin-bottom:8px">'+esc(r.org_name)+' <span style="font-size:11px;font-weight:600;color:var(--sub)">· '+esc(r.period_text||'—')+'</span></div>'+
+      '<table class="ns-tbl"><thead><tr><th>Chức vụ</th><th>Họ tên</th><th>Tuổi</th><th>Chuyên môn</th><th>LLCT</th><th>Ngạch, bậc</th></tr></thead><tbody>'+rows+'</tbody></table>'+ctHtml+'</div>';
+  }).join('');
 }
 
 /* ── DETAIL MODAL ── */
@@ -666,17 +660,27 @@ function openDetail(id){
         <div class="ms-item"><div class="ms-key">Khắc phục</div><div class="ms-val">${ic(r.g_so_nd||0)} · xong ${ic(r.g_hoan_thanh||0)}</div></div>
       </div>
     </div>
-    ${r.nhansu&&r.nhansu.length?`<div class="m-sec">
+    ${r.ns_cn_hoten?`<div class="m-sec">
       <div class="ms-title">👥 Nhân sự UBKT</div>
       <table class="ns-tbl">
         <thead><tr><th>Chức vụ</th><th>Họ tên</th><th>Tuổi</th><th>Chuyên môn</th><th>LLCT</th></tr></thead>
         <tbody>
-          ${r.nhansu.map(p=>{const cv=p.chucvu==='Chủ nhiệm'?'cn':p.chucvu==='Phó Chủ nhiệm'?'pct':'uv';
-            const sh=p.chucvu==='Chủ nhiệm'?'CN':p.chucvu==='Phó Chủ nhiệm'?'PCT':'UV';
-            return`<tr><td><span class="ns-cv ${cv}">${sh}</span></td><td><b>${esc(p.hoten||'—')}</b></td>
-            <td>${esc(p.dotuoi||'—')}</td><td>${esc(p.trinhdo_cm||'—')}</td><td>${esc(p.trinhdo_llct||'—')}</td></tr>`;}).join('')}
+          ${r.ns_cn_hoten?`<tr><td><span class="ns-cv cn">CN</span></td><td><b>${esc(r.ns_cn_hoten)}</b></td>
+            <td>${esc(r.ns_cn_dotuoi||'—')}</td><td>${esc(r.ns_cn_cm||'—')}</td><td>${esc(r.ns_cn_llct||'—')}</td></tr>`:''}
+          ${r.ns_pct_hoten?`<tr><td><span class="ns-cv pct">PCT</span></td><td><b>${esc(r.ns_pct_hoten)}</b></td>
+            <td>${esc(r.ns_pct_dotuoi||'—')}</td><td>${esc(r.ns_pct_cm||'—')}</td><td>${esc(r.ns_pct_llct||'—')}</td></tr>`:''}
+          ${r.ns_uv_tong>0?`<tr><td><span class="ns-cv uv">UV</span></td>
+            <td colspan="4">Tổng: <b>${r.ns_uv_tong}</b> · Chuyên trách: <b>${r.ns_uv_ct||0}</b> · Kiêm nhiệm: <b>${r.ns_uv_kn||0}</b></td></tr>`:''}
         </tbody>
       </table>
+      ${(r.ct_ubkt_co||r.ct_btv_co)?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;font-size:12px">
+        ${r.ct_ubkt_co?`<div style="background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.15);border-radius:8px;padding:7px 10px">
+          <div style="font-weight:800;color:#7C3AED">UBKT: Chương trình KTGS</div>
+          <div>Kế hoạch: <b>${r.ct_ubkt_so_cuoc}</b> · Đã TH: <b>${r.ct_ubkt_thuc_hien}</b></div></div>`:''}
+        ${r.ct_btv_co?`<div style="background:rgba(0,85,218,.06);border:1px solid rgba(0,85,218,.15);border-radius:8px;padding:7px 10px">
+          <div style="font-weight:800;color:#0055DA">BTV: Chương trình GS</div>
+          <div>Kế hoạch: <b>${r.ct_btv_so_cuoc}</b> · Đã TH: <b>${r.ct_btv_thuc_hien}</b></div></div>`:''}
+      </div>`:''}
     </div>`:''}`;
   document.getElementById('modalBg').classList.remove('hidden');
   document.body.style.overflow='hidden';
