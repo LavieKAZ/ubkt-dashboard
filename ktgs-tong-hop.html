@@ -6,7 +6,6 @@
 <title>UBKT · Tổng hợp báo cáo PTDL</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --red:#FF0052;--blue:#0055DA;--teal:#00C68D;--gold:#FFD400;
@@ -269,13 +268,16 @@ button,input,select{font-family:var(--font)}
     <div class="auth-icon">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
     </div>
-    <div class="auth-h">Đăng nhập UBKT</div>
-    <div class="auth-s">Trang dành riêng Ủy ban Kiểm tra</div>
+    <div class="auth-h">UBKT Đảng ủy phường Tân Mỹ</div>
+    <div class="auth-s">Trang tổng hợp dành riêng Ủy ban Kiểm tra</div>
     <div style="display:flex;flex-direction:column;gap:10px">
-      <input id="aEmail" class="inp-auth" type="email" placeholder="Email tài khoản UBKT">
+      <input id="aUser" class="inp-auth" type="text" placeholder="Tên đăng nhập" value="admin" onkeydown="if(event.key==='Enter')doLogin()">
       <input id="aPass" class="inp-auth" type="password" placeholder="Mật khẩu" onkeydown="if(event.key==='Enter')doLogin()">
       <button class="btn btn-red btn-xl" style="width:100%;border-radius:var(--r-xl)" onclick="doLogin()" id="btnLogin">Đăng nhập</button>
       <div id="aMsg"></div>
+    </div>
+    <div style="margin-top:12px;font-size:11.5px;color:var(--muted);text-align:center;font-weight:600">
+      Dùng tài khoản giống với hệ thống dashboard UBKT
     </div>
   </div>
 </div>
@@ -365,31 +367,66 @@ button,input,select{font-family:var(--font)}
 <script>
 const SB='https://hbygfheibcrqaqzoaass.supabase.co';
 const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhieWdmaGVpYmNycWFxem9hYXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDg0MTcsImV4cCI6MjA5NDA4NDQxN30.AM-uMmKKuRIPZLtVyV-N0aj5EXuBIrOoyFL-gotb_Qg';
-const sb=window.supabase.createClient(SB,KEY);
-function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+// REST API helper (không cần supabase-js SDK)
+const _H={'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY};
+const sbGet=(tbl,qs)=>fetch(SB+'/rest/v1/'+tbl+(qs?'?'+qs:''),{headers:_H}).then(r=>r.json());
+const sbFrom=(tbl)=>({
+  select:function(cols){this._sel=cols;this._eq=[];this._ord=null;return this;},
+  eq:function(k,v){this._eq.push(k+'=eq.'+encodeURIComponent(v));return this;},
+  order:function(col,opts){this._ord=col+(opts&&!opts.ascending?'.desc':'.asc');return this;},
+  then:function(cb){
+    const qs=[this._sel?'select='+encodeURIComponent(this._sel):''].concat(this._eq).filter(Boolean);
+    if(this._ord) qs.push('order='+this._ord);
+    return fetch(SB+'/rest/v1/'+tbl+'?'+qs.join('&'),{headers:_H}).then(r=>r.json()).then(data=>cb({data})).catch(e=>cb({data:null,error:e}));
+  }
+});
+const sb={from:sbFrom,auth:{getSession:()=>Promise.resolve({data:{session:null}}),signOut:()=>Promise.resolve()}};
+
+function esc(s){return String(s??'').replace(/[&<>"]/g,function(x){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[x];});}
 const fmtDt=s=>{try{return new Date(s).toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});}catch{return'—';}};
 const fmtDate=s=>{if(!s)return'—';const d=new Date(s+'T00:00:00');return`${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;};
 const sv=(...ks)=>r=>ks.reduce((s,k)=>s+Number(r[k]||0),0);
 
 let orgs=[],reports=[],curYear=new Date().getFullYear(),activeKpi=null,curTab='org';
 
-/* ── AUTH ── */
-async function init(){const{data:{session}}=await sb.auth.getSession();if(session)showApp(session);}
-async function doLogin(){
-  const btn=document.getElementById('btnLogin');
-  btn.textContent='Đang đăng nhập…';btn.classList.add('btn-dis');
-  const{data,error}=await sb.auth.signInWithPassword({
-    email:document.getElementById('aEmail').value.trim(),
-    password:document.getElementById('aPass').value
-  });
-  if(error){document.getElementById('aMsg').innerHTML=`<div class="alert-err">❌ ${esc(error.message)}</div>`;btn.textContent='Đăng nhập';btn.classList.remove('btn-dis');return;}
-  showApp(data.session);
+/* ── LOCAL AUTH ── */
+const LOCAL_USERS=[
+  {u:'admin',p:'123456',name:'Quản trị UBKT'},
+  {u:'ubkt',p:'ubkt2026',name:'UBKT Tân Mỹ'},
+];
+const LS_AUTH='ubkt_tong_hop_auth';
+
+function init(){
+  const saved=sessionStorage.getItem(LS_AUTH);
+  if(saved){try{const d=JSON.parse(saved);showApp(d);}catch(e){showLoginPage();}}
+  else showLoginPage();
 }
-async function doLogout(){await sb.auth.signOut();location.reload();}
+function showLoginPage(){
+  document.getElementById('authPage').classList.remove('hidden');
+  document.getElementById('appMain').classList.add('hidden');
+  // Auto focus password nếu user đã điền
+  setTimeout(()=>{const u=document.getElementById('aUser');if(u&&!u.value)u.focus();
+    else{const p=document.getElementById('aPass');if(p)p.focus();}},100);
+}
+function doLogin(){
+  const btn=document.getElementById('btnLogin');
+  const u=document.getElementById('aUser').value.trim().toLowerCase();
+  const p=document.getElementById('aPass').value;
+  const match=LOCAL_USERS.find(x=>x.u===u&&x.p===p);
+  if(!match){
+    document.getElementById('aMsg').innerHTML='<div class="alert-err">❌ Sai tên đăng nhập hoặc mật khẩu.</div>';
+    btn.textContent='Đăng nhập';btn.classList.remove('btn-dis');
+    document.getElementById('aPass').value='';
+    return;
+  }
+  sessionStorage.setItem(LS_AUTH,JSON.stringify({name:match.name,u:match.u}));
+  showApp({name:match.name,u:match.u});
+}
+function doLogout(){sessionStorage.removeItem(LS_AUTH);location.reload();}
 async function showApp(s){
   document.getElementById('authPage').classList.add('hidden');
   document.getElementById('appMain').classList.remove('hidden');
-  document.getElementById('uEmail').textContent=s.user.email;
+  document.getElementById('uEmail').textContent=s.name||s.u;
   document.getElementById('btnOut').classList.remove('hidden');
   const yr=new Date().getFullYear();
   document.getElementById('fYear').innerHTML=[yr+1,yr,yr-1].map(y=>`<option value="${y}"${y===yr?' selected':''}>${y}</option>`).join('');
@@ -399,13 +436,13 @@ async function showApp(s){
 
 /* ── DATA ── */
 async function loadOrgs(){
-  const{data}=await sb.from('ubkt_base_orgs').select('id,data').order('data->order');
+  const data=await sbGet('ubkt_base_orgs','select=id,data&order=data->order.asc');
   orgs=(data||[]).map(r=>({id:r.id,name:r.data?.name||r.id,type:r.data?.type||'',order:Number(r.data?.order??9999)})).sort((a,b)=>a.order-b.order||a.name.localeCompare(b.name,'vi',{numeric:true}));
 }
 async function loadData(){
   const yr=parseInt(document.getElementById('fYear').value)||curYear;
   curYear=yr;
-  const{data}=await sb.from('ubkt_ptdl_monthly').select('*').eq('year',yr).order('submitted_at',{ascending:false});
+  const data=await sbGet('ubkt_ptdl_monthly','year=eq.'+yr+'&order=submitted_at.desc');
   reports=data||[];
   const prs=[...new Set(reports.map(r=>r.period_text).filter(Boolean))];
   const cp=document.getElementById('fPeriod').value;
