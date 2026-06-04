@@ -569,6 +569,8 @@ let fd = {
   h_tc_gq:0, h_kn_gq:0, h_kn_doi_hts:0,
   i_so_cuoc:0, i_co_vp:0,
   j_vb_ban_hanh:0, j_dv_du_kt:0,
+  // Phụ lục nhân sự
+  ns_count:1,
 };
 
 function esc(s){var m={'&':'&amp;','<':'&lt;','>':'&gt;'};return String(s??'').replace(/[&<>]/g,function(x){return m[x]||x;});}
@@ -576,13 +578,15 @@ const _esc=esc;
 const isDB = () => fd.orgType === 'Đảng bộ';
 const nv   = k => Number(fd[k]||0);
 const fmtNow = () => new Date().toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-const STEP_LABELS = ['Thông tin','A—KT Điều 30','B—KT Dấu hiệu','C&D—Giám sát','E&F—Phát sinh','G—Khắc phục','Xác nhận & Gửi'];
+const STEP_LABELS = ['Thông tin','A—KT Điều 30','B—KT Dấu hiệu','C&D—Giám sát','E&F—Phát sinh','G—Khắc phục','Phụ lục Nhân sự','Xác nhận & Gửi'];
+const TOTAL_STEPS = () => isDB() ? 8 : 7;
+const STEP_IDX_CONFIRM = () => isDB() ? 8 : 7; // bước cuối
 
 let saveTimer;
 function saveLocal(){
   clearTimeout(saveTimer);
   saveTimer=setTimeout(()=>{
-    try{localStorage.setItem(LS,JSON.stringify({fd,step,maxStep}));}catch(e){}
+    try{localStorage.setItem(LS,JSON.stringify({fd,step,maxStep,nhansu}));}catch(e){}
     const el=document.getElementById('asBadge');
     el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1600);
   },600);
@@ -593,6 +597,7 @@ function loadLocal(){
     if(!d) return false;
     if(d.fd) Object.assign(fd,d.fd);
     if(d.maxStep) maxStep=d.maxStep;
+    if(d.nhansu) nhansu=d.nhansu;
     return true;
   }catch(e){return false;}
 }
@@ -824,6 +829,123 @@ ${section('dark','G','Theo dõi thực hiện khắc phục','Sau kiểm tra và
 )}`;
 }
 
+function ensureNhansu(){
+  // Đảm bảo mảng nhân sự đủ số lượng
+  const cnt = Math.max(1, fd.ns_count||1);
+  while(nhansu.length < cnt){
+    const i = nhansu.length;
+    const chucvu = i===0?'Chủ nhiệm':i===1?'Phó Chủ nhiệm':'Ủy viên';
+    nhansu.push({chucvu, hoten:'', dotuoi:'', trinhdo_cm:'', trinhdo_llct:'', ngach_bac:''});
+  }
+}
+function syncNS(i,field,val){
+  if(!nhansu[i]) return;
+  nhansu[i][field]=val;
+  // Sync chức vụ tự động cho 2 người đầu
+  if(field==='chucvu' && i<2){
+    const el=document.getElementById('nsn_cv_'+i);
+    if(el) el.value=val;
+  }
+  saveLocal();
+}
+function addNhanSu(){
+  fd.ns_count = (fd.ns_count||1)+1;
+  const chucvu = nhansu.length===0?'Chủ nhiệm':nhansu.length===1?'Phó Chủ nhiệm':'Ủy viên';
+  nhansu.push({chucvu, hoten:'', dotuoi:'', trinhdo_cm:'', trinhdo_llct:'', ngach_bac:''});
+  saveLocal();
+  renderNoScroll();
+}
+function removeNhanSu(i){
+  if(nhansu.length<=1) return;
+  nhansu.splice(i,1);
+  fd.ns_count=nhansu.length;
+  saveLocal();
+  renderNoScroll();
+}
+function renderNoScroll(){
+  const cb=document.getElementById('cardBody');
+  if(!cb) return;
+  cb.style.animation='none'; cb.offsetHeight; cb.style.animation='';
+  cb.innerHTML=(STEP_FNS[step]||renderS1)();
+}
+
+function renderNhanSu(){
+  if(!isDB()) return renderS7(); // Chi bộ bỏ qua
+  ensureNhansu();
+
+  const DOTUOI=[{v:'',l:'— Chọn —'},'Dưới 35','35-40','41-45','46-50','51-55','56-60','Trên 60'].map(x=>typeof x==='string'?{v:x,l:x}:x);
+  const LLCT=[{v:'',l:'— Chọn —'},'Chưa qua đào tạo','Sơ cấp','Trung cấp','Cao cấp','Cử nhân chính trị'].map(x=>typeof x==='string'?{v:x,l:x}:x);
+  const CV=['Chủ nhiệm','Phó Chủ nhiệm','Ủy viên'];
+
+  const cards = nhansu.map((p,i)=>{
+    const isRequired = i===0;
+    const badge = i===0?'CN':i===1?'PCT':'UV';
+    return `<div class="dc" style="animation-delay:${i*40}ms">
+      <div class="dc-head">
+        <div class="dc-num" style="background:${i===0?'#FF0052':i===1?'#0055DA':'#00C68D'}">${badge}</div>
+        <div class="dc-title">${p.chucvu||'Ủy viên UBKT'}</div>
+        ${i>0?`<button type="button" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;padding:0 4px;line-height:1" onclick="removeNhanSu(${i})">✕</button>`:''}
+      </div>
+      <div class="dc-body">
+        <div class="row2">
+          <label class="field">
+            <span class="fl">Chức vụ trong UBKT ${isRequired?'<span class="req">*</span>':''}</span>
+            <select class="sel" id="nsn_cv_${i}" onchange="syncNS(${i},'chucvu',this.value)">
+              ${CV.map(v=>`<option value="${v}" ${p.chucvu===v?'selected':''}>${v}</option>`).join('')}
+            </select>
+          </label>
+          <label class="field">
+            <span class="fl">Họ và tên ${isRequired?'<span class="req">*</span>':''}</span>
+            <input class="inp" type="text" placeholder="Nhập đầy đủ họ tên"
+              value="${esc(p.hoten)}" oninput="syncNS(${i},'hoten',this.value)"
+              style="font-size:13.5px;padding:9px 11px">
+          </label>
+        </div>
+        <div class="row2">
+          <label class="field">
+            <span class="fl">Độ tuổi</span>
+            <select class="sel" onchange="syncNS(${i},'dotuoi',this.value)">
+              ${DOTUOI.map(o=>`<option value="${o.v}" ${p.dotuoi===o.v?'selected':''}>${o.l}</option>`).join('')}
+            </select>
+          </label>
+          <label class="field">
+            <span class="fl">Trình độ lý luận chính trị</span>
+            <select class="sel" onchange="syncNS(${i},'trinhdo_llct',this.value)">
+              ${LLCT.map(o=>`<option value="${o.v}" ${p.trinhdo_llct===o.v?'selected':''}>${o.l}</option>`).join('')}
+            </select>
+          </label>
+        </div>
+        <label class="field full">
+          <span class="fl">Trình độ chuyên môn</span>
+          <input class="inp" type="text" placeholder="Ví dụ: Thạc sĩ Luật, Cử nhân Kinh tế..."
+            value="${esc(p.trinhdo_cm)}" oninput="syncNS(${i},'trinhdo_cm',this.value)"
+            style="font-size:13.5px;padding:9px 11px">
+        </label>
+        <label class="field full">
+          <span class="fl">Ngạch, bậc công chức (nếu có)</span>
+          <input class="inp" type="text" placeholder="Ví dụ: Chuyên viên bậc 3, CVCC..."
+            value="${esc(p.ngach_bac)}" oninput="syncNS(${i},'ngach_bac',this.value)"
+            style="font-size:13.5px;padding:9px 11px">
+        </label>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="sh">Phụ lục — Nhân sự Ủy ban Kiểm tra</div>
+<div class="sd">Thông tin nhân sự UBKT của Đảng bộ. <b>Bắt buộc nhập Chủ nhiệm</b> trước khi tiếp tục.</div>
+<div class="fields">
+  <div style="background:var(--c-info-bg);border:1.5px solid var(--c-info-bd);border-radius:14px;padding:11px 14px;font-size:12.5px;font-weight:700;color:#1e40af;line-height:1.6">
+    📋 Nhập thông tin từng Ủy viên UBKT. Bấm <b>"+ Thêm ủy viên"</b> để thêm hàng. Bấm <b>✕</b> để xóa.
+  </div>
+  <div id="nsCards">${cards}</div>
+  <button type="button" class="btn btn-ghost" style="width:100%;border-style:dashed;border-color:var(--c-info-bd);color:var(--blue)" onclick="addNhanSu()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Thêm ủy viên UBKT
+  </button>
+</div>`;
+}
+
+
 function renderS7(){
   if(submittedCode) return renderSuccess();
   const isDb=isDB();
@@ -929,24 +1051,37 @@ function nextStep(){
     if(!fd.contactName.trim()){showAlert('Vui lòng nhập <b>họ tên người lập báo cáo</b>.'); return;}
     if(!activePeriod){showAlert('Chưa có kỳ báo cáo đang mở. Liên hệ UBKT phường.'); return;}
   }
-  if(step<7){ maxStep=Math.max(maxStep,step+1); goStep(step+1); }
+  const total = TOTAL_STEPS();
+  // Validate nhân sự (bước 7 với Đảng bộ)
+  if(step===7 && isDB()){
+    const cn = nhansu.find(p=>p.chucvu==='Chủ nhiệm');
+    if(!cn||!cn.hoten.trim()){
+      showAlert('Vui lòng nhập <b>họ tên Chủ nhiệm UBKT</b> ở phụ lục nhân sự.'); return;
+    }
+  }
+  if(step<total){ maxStep=Math.max(maxStep,step+1); goStep(step+1); }
 }
 function prevStep(){ if(step>1) goStep(step-1); }
 function goStep(n){ step=n; render(); window.scrollTo({top:0,behavior:'smooth'}); }
 function clearAlert(){ document.getElementById('alertArea').innerHTML=''; }
 
 // ── MAIN RENDER ────────────────────────────────────────
-const STEP_FNS=[null,renderS1,renderS2,renderS3,renderS4,renderS5,renderS6,renderS7];
+const STEP_FNS=[null,renderS1,renderS2,renderS3,renderS4,renderS5,renderS6,renderNhanSu,renderS7];
 
 function render(){
   document.getElementById('progName').textContent=STEP_LABELS[step-1];
-  document.getElementById('progFrac').textContent=step+' / 7';
-  document.getElementById('progFill').style.width=(step/7*100)+'%';
+  document.getElementById('progFrac').textContent=step+' / '+TOTAL_STEPS();
+  document.getElementById('progFill').style.width=(step/TOTAL_STEPS()*100)+'%';
   document.getElementById('stepsRow').innerHTML=STEP_LABELS.map((s,i)=>{
-    const n=i+1,cur=n===step,done=n<step,locked=n>maxStep;
+    const n=i+1;
+    // Skip nhân sự step (index 6, bước 7) nếu là chi bộ
+    if(!isDB() && i===6) return '';
+    // Tính step thực tế khi không phải Đảng bộ (bỏ bước 7)
+    const realN = (!isDB() && i===7) ? 7 : n;
+    const cur=realN===step, done=realN<step, locked=realN>maxStep;
     return `<button class="step-pill ${cur?'active':done?'done':locked?'locked':''}"
-      ${locked?'disabled':''} onclick="${!locked?'goStep('+n+')':''}">
-      ${n}.${s.split('—')[0].trim()}
+      ${locked?'disabled':''} onclick="${!locked?'goStep('+realN+')':''}">
+      ${realN}.${s.split('—')[0].trim()}
     </button>`;
   }).join('');
   const cb=document.getElementById('cardBody');
@@ -956,7 +1091,8 @@ function render(){
 }
 function renderNav(){
   const ab=document.getElementById('abInner');
-  if(step===7){
+  const confirmStep=STEP_IDX_CONFIRM();
+  if(step===confirmStep){
     if(submittedCode){
       ab.className='ab-inner single';
       ab.innerHTML=`<button class="btn btn-ghost" onclick="resetForm()">↩ Báo cáo mới</button>`;
@@ -1008,6 +1144,7 @@ async function submitForm(){
       h_tc_gq:nv('h_tc_gq'), h_kn_gq:nv('h_kn_gq'), h_kn_doi_hts:nv('h_kn_doi_hts'),
       i_so_cuoc:nv('i_so_cuoc'), i_co_vp:nv('i_co_vp'),
       j_vb_ban_hanh:nv('j_vb_ban_hanh'), j_dv_du_kt:nv('j_dv_du_kt'),
+      nhansu:nhansu, nhansu_count:nhansu.length,
       confirm_code:code, submitted_at:new Date().toISOString()
     };
     const res=await fetch(`${SB}/rest/v1/ubkt_ptdl_monthly`,{
@@ -1029,6 +1166,7 @@ function copyCode(){
 function resetForm(){
   Object.keys(fd).forEach(k=>{fd[k]=typeof fd[k]==='number'?0:typeof fd[k]==='boolean'?false:'';});
   submittedCode=null; step=1; maxStep=1;
+  nhansu=[];
   try{localStorage.removeItem(LS);}catch(e){}
   loadData();
 }
@@ -1076,4 +1214,6 @@ async function loadVerifyMode(code){
 })();
 </script>
 </body>
-</html>
+</html
+let nhansu = []; // Mảng nhân sự UBKT
+>
