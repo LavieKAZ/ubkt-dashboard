@@ -7390,118 +7390,103 @@ setTimeout(initLiquidScrollIndicators, 300);
 <script src="./modules/kp-reports/kp_reports.js" charset="UTF-8">
 
 
+
 // ╔══════════════════════════════════════════════════════════
-// ║  window.KPReports v2 — Tổng hợp báo cáo KTGS
+// ║  window.KPReports v3 — dùng ubkt_ptdl_monthly
 // ╚══════════════════════════════════════════════════════════
 window.KPReports = (function(){
   var _U = 'https://hbygfheibcrqaqzoaass.supabase.co/rest/v1';
   var _K = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhieWdmaGVpYmNycWFxem9hYXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDg0MTcsImV4cCI6MjA5NDA4NDQxN30.AM-uMmKKuRIPZLtVyV-N0aj5EXuBIrOoyFL-gotb_Qg';
   var _H = {'Content-Type':'application/json','apikey':_K,'Authorization':'Bearer '+_K};
-  var _QOM = 'status=eq.'+encodeURIComponent('Đang mở'); // URL-safe query for 'Đang mở'
+  var _QOM = 'status=eq.'+encodeURIComponent('Đang mở');
 
-  function _get(tbl, qs){
-    return fetch(_U+'/'+tbl+(qs?'?'+qs:''),{headers:_H}).then(function(r){
-      if(!r.ok) throw new Error('GET '+tbl+' HTTP '+r.status);
-      return r.json();
-    });
-  }
-  function _post(tbl, body){
-    return fetch(_U+'/'+tbl,{method:'POST',headers:Object.assign({},_H,{'Prefer':'return=representation'}),body:JSON.stringify(body)}).then(function(r){
-      return r.text().then(function(t){
-        if(!r.ok) throw new Error('POST '+tbl+' HTTP '+r.status+': '+t);
-        return JSON.parse(t);
-      });
-    });
-  }
-  function _patch(tbl, qs, body){
-    return fetch(_U+'/'+tbl+'?'+qs,{method:'PATCH',headers:Object.assign({},_H,{'Prefer':'return=minimal'}),body:JSON.stringify(body)}).then(function(r){
-      return r.text().then(function(t){
-        if(!r.ok) throw new Error('PATCH '+tbl+' HTTP '+r.status+': '+t.slice(0,120));
-        return true;
-      });
-    });
-  }
+  function _get(tbl,qs){return fetch(_U+'/'+tbl+(qs?'?'+qs:''),{headers:_H}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();});}
+  function _post(tbl,body){return fetch(_U+'/'+tbl,{method:'POST',headers:Object.assign({},_H,{'Prefer':'return=representation'}),body:JSON.stringify(body)}).then(function(r){return r.text().then(function(t){if(!r.ok)throw new Error(t);return JSON.parse(t);});});}
+  function _patch(tbl,qs,body){return fetch(_U+'/'+tbl+'?'+qs,{method:'PATCH',headers:Object.assign({},_H,{'Prefer':'return=minimal'}),body:JSON.stringify(body)}).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error(t);});return true;});}
 
-  var _P=[], _O=[], _R=[], _sel=null;
+  var _P=[],_O=[],_R=[],_sel=null;
 
-  function _esc(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function _esc(s){return String(s||'').replace(/[&<>"]/g,function(x){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[x];});}
   function _pl(type,sub,yr){
-    if(type==='6thang') return sub==='2'?'06 tháng cuối năm '+yr:'06 tháng đầu năm '+yr;
-    if(type==='thang')  return 'tháng '+sub+' năm '+yr;
-    if(type==='quy')    return 'quý '+sub+' năm '+yr;
+    if(type==='6thang')return sub==='2'?'06 tháng cuối năm '+yr:'06 tháng đầu năm '+yr;
+    if(type==='thang')return 'tháng '+sub+' năm '+yr;
+    if(type==='quy')return 'quý '+sub+' năm '+yr;
     return 'năm '+yr;
   }
-  function _toast(msg, ok){
-    if(ok===undefined) ok=true;
+  function _toast(msg,ok){
     var t=document.getElementById('_kpToast');
-    if(!t){
-      t=document.createElement('div'); t.id='_kpToast';
-      t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;padding:10px 20px;border-radius:99px;font-weight:800;font-size:13px;transition:opacity .3s;box-shadow:0 4px 20px rgba(0,0,0,.2);pointer-events:none;font-family:inherit';
-      document.body.appendChild(t);
-    }
-    t.textContent=msg;
-    t.style.background=ok?'#111827':'#dc2626';
-    t.style.color='#fff';
-    t.style.opacity='1';
-    clearTimeout(t._to);
-    t._to=setTimeout(function(){t.style.opacity='0';},3000);
+    if(!t){t=document.createElement('div');t.id='_kpToast';t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;padding:10px 20px;border-radius:99px;font-weight:800;font-size:13px;transition:opacity .3s;box-shadow:0 4px 20px rgba(0,0,0,.2);pointer-events:none;font-family:inherit';document.body.appendChild(t);}
+    t.textContent=msg;t.style.background=(ok===false)?'#dc2626':'#111827';t.style.color='#fff';t.style.opacity='1';clearTimeout(t._to);t._to=setTimeout(function(){t.style.opacity='0';},3000);
   }
 
   function _load(){
     Promise.all([
       _get('ubkt_ktgs_report_periods','order=opened_at.desc'),
       _get('ubkt_base_orgs','select=id,data&order=data->order.asc'),
-      _get('ubkt_ktgs_reports','order=submitted_at.desc')
+      _get('ubkt_ptdl_monthly','order=submitted_at.desc')
     ]).then(function(res){
       _P=res[0]||[];
-      _O=(res[1]||[]).map(function(x){
-        return {id:x.id,name:(x.data&&x.data.name)||x.id,type:(x.data&&x.data.type)||'',order:Number((x.data&&x.data.order)||9999)};
-      }).sort(function(a,b){ return a.order-b.order||a.name.localeCompare(b.name,'vi',{numeric:true}); });
+      _O=(res[1]||[]).map(function(x){return{id:x.id,name:(x.data&&x.data.name)||x.id,type:(x.data&&x.data.type)||'',order:Number((x.data&&x.data.order)||9999)};}).sort(function(a,b){return a.order-b.order||a.name.localeCompare(b.name,'vi',{numeric:true});});
       _R=res[2]||[];
-      if(!_sel) _sel=_P.find(function(x){return x.status==='Đang mở';})||_P[0]||null;
+      if(!_sel)_sel=_P.find(function(x){return x.status==='Đang mở';})||_P[0]||null;
       _renderPeriods();
       _renderList();
-    }).catch(function(e){ _toast('Lỗi tải dữ liệu: '+e.message, false); console.error('[KPReports]',e); });
+    }).catch(function(e){_toast('Lỗi tải dữ liệu: '+e.message,false);console.error('[KPReports]',e);});
   }
+
+  function sv(r){return(r.f_khien_trach||0)+(r.f_canh_cao||0)+(r.f_cach_chuc||0)+(r.f_khai_tru||0);}
 
   function _renderList(){
     var q=(document.getElementById('kpQ')&&document.getElementById('kpQ').value||'').toLowerCase();
     var st=(document.getElementById('kpSt')&&document.getElementById('kpSt').value)||'all';
-    var rs=_sel?_R.filter(function(r){return r.period_id===_sel.id||(!r.period_id&&r.period_text===_sel.period_text);}):_R;
+    var rs=_sel?_R.filter(function(r){return r.period_id===_sel.id||r.period_text===_sel.period_text;}):_R;
     var byOrg={};
-    rs.forEach(function(r){ if(!byOrg[r.org_id]) byOrg[r.org_id]=r; });
+    rs.forEach(function(r){if(!byOrg[r.org_id]||r.submitted_at>byOrg[r.org_id].submitted_at)byOrg[r.org_id]=r;});
     var sub=new Set(rs.map(function(r){return r.org_id;})).size;
     var mis=Math.max(_O.length-sub,0);
-    var tKT=rs.reduce(function(s,r){return s+Number(r.cnt_checked_members||0);},0);
-    var tVP=rs.filter(function(r){return (r.cnt_violation_checks||0)>0;}).length;
+    var tKT=rs.reduce(function(s,r){return s+Number(r.a_dv_kt||0)+Number(r.b_dv_dhvp||0);},0);
+    var tKL=rs.reduce(function(s,r){return s+sv(r);},0);
     var ke=document.getElementById('kpKpis');
-    if(ke) ke.innerHTML=[['Đã nộp',sub,'#007f5c'],['Chưa nộp',mis,'#b0003a'],['KT đảng viên',tKT,'#0044BB'],['Dấu hiệu VP',tVP,'#886400']].map(function(k){return '<div class="kp-kpi"><small>'+k[0]+'</small><b style="color:'+k[2]+'">'+k[1]+'</b></div>';}).join('');
+    if(ke)ke.innerHTML=[['Đã nộp',sub,'#007f5c'],['Chưa nộp',mis,'#b0003a'],['KT+GS đảng viên',tKT,'#0044BB'],['Thi hành kỷ luật',tKL,'#CC003E']].map(function(k){return'<div class="kp-kpi"><small>'+k[0]+'</small><b style="color:'+k[2]+'">'+k[1]+'</b></div>';}).join('');
     var list=_O.filter(function(o){
       var hit=!q||o.name.toLowerCase().indexOf(q)>=0;
-      var ok=st==='all'||(st==='ok'&&byOrg[o.id])||(st==='miss'&&!byOrg[o.id]);
-      return hit&&ok;
+      var r=byOrg[o.id];
+      var tklO=r?sv(r):0,tvpO=r?(r.b_dv_dhvp||0):0;
+      var ok2=st==='all'||(st==='ok'&&r)||(st==='miss'&&!r)||(st==='alert'&&(tklO>0||tvpO>0));
+      return hit&&ok2;
     });
     var el=document.getElementById('kpOrgList');
-    if(!el) return;
+    if(!el)return;
     if(!list.length){el.innerHTML='<div class="kp-empty">Không có kết quả.</div>';return;}
     el.innerHTML=list.map(function(o,i){
       var r=byOrg[o.id];
+      var tklO=r?sv(r):0,tvpO=r?(r.b_dv_dhvp||0):0;
+      var pills=[];
+      if(r&&r.a_dv_kt>0)pills.push('<span style="font-size:10.5px;font-weight:700;color:#0044BB">KT '+r.a_dv_kt+' ĐV</span>');
+      if(r&&r.c_so_cuoc>0)pills.push('<span style="font-size:10.5px;font-weight:700;color:#007A5E">GS '+r.c_so_cuoc+' cuộc</span>');
+      if(tvpO>0)pills.push('<span style="font-size:10.5px;font-weight:700;color:#886400">'+tvpO+' DHVP</span>');
+      if(tklO>0)pills.push('<span style="font-size:10.5px;font-weight:700;color:#CC003E">⚖ '+tklO+' KL</span>');
       var h='<div class="kp-item" style="animation-delay:'+Math.min(i,15)*18+'ms">';
       h+='<div><h3>'+_esc(o.name)+'</h3>';
-      h+='<div class="m">'+(r?'Nộp '+new Date(r.submitted_at).toLocaleDateString('vi-VN')+' · Mã: '+_esc(r.confirm_code||'—'):'Chưa có báo cáo')+'</div>';
-      if(r&&r.cnt_violation_checks>0){h+='<div class="alert-pills">Vi phạm: '+r.cnt_violation_checks+'</div>';}
-      if(r&&r.cnt_disciplines>0){h+='<div class="alert-pills">Kỷ luật: '+r.cnt_disciplines+'</div>';}
+      h+='<div class="m">'+(r?'Nộp '+new Date(r.submitted_at).toLocaleDateString('vi-VN')+' · Mã: '+_esc(r.confirm_code||'—'):'Chưa nộp báo cáo trong kỳ này')+'</div>';
+      if(pills.length)h+='<div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">'+pills.join('')+'</div>';
       h+='</div>';
-      h+='<span class="'+(r?'ok':'miss')+'">'+(r?'&#10003; Đã nộp':'Chưa nộp')+'</span>';
+      h+='<span class="'+(r?'ok':'miss')+'">'+(r?'✓ Đã nộp':'Chưa nộp')+'</span>';
       h+='</div>';
       return h;
     }).join('');
+    // Cập nhật bộ lọc sel thêm option 'alert'
+    var kpSt=document.getElementById('kpSt');
+    if(kpSt&&kpSt.options.length<4){
+      var opt=document.createElement('option');
+      opt.value='alert';opt.text='Có vi phạm/KL';
+      kpSt.appendChild(opt);
+    }
   }
-
 
   function _renderPeriods(){
     var el=document.getElementById('kpPeriodList');
-    if(!el) return;
+    if(!el)return;
     if(!_P.length){el.innerHTML='<div class="kp-empty">Chưa có kỳ nào.</div>';return;}
     el.innerHTML=_P.map(function(p){
       var isOpen=p.status==='Đang mở';
@@ -7509,81 +7494,67 @@ window.KPReports = (function(){
       var pid=_esc(p.id);
       var h='<div class="kp-period'+(isActive?' active':'');
       h+='" data-pid="'+pid+'" onclick="KPReports.selectPeriod(this.dataset.pid)">';
-      h+='<div class="kp-period-top">';
-      h+='<div class="kp-period-name">'+_esc(p.title)+'</div>';
-      h+='<span class="'+(isOpen?'kp-badge-open':'kp-badge-closed')+'">'+_esc(p.status)+'</span>';
-      h+='</div>';
+      h+='<div class="kp-period-top"><div class="kp-period-name">'+_esc(p.title)+'</div>';
+      h+='<span class="'+(isOpen?'kp-badge-open':'kp-badge-closed')+'">'+_esc(p.status)+'</span></div>';
       h+='<div class="kp-period-meta">'+_esc(p.period_text||'')+' · '+(p.opened_at?new Date(p.opened_at).toLocaleDateString('vi-VN'):'')+'</div>';
       h+='<div class="kp-period-acts">';
-      if(isOpen){
-        h+='<button class="kbtn kb-blue" data-pid="'+pid+'" onclick="event.stopPropagation();KPReports.closePeriod(this.dataset.pid)">Đóng kỳ</button>';
-      }else{
-        h+='<button class="kbtn kb-green" data-pid="'+pid+'" onclick="event.stopPropagation();KPReports.openExisting(this.dataset.pid)">Mở lại</button>';
-      }
+      if(isOpen){h+='<button class="kbtn kb-blue" data-pid="'+pid+'" onclick="event.stopPropagation();KPReports.closePeriod(this.dataset.pid)">Đóng kỳ</button>';}
+      else{h+='<button class="kbtn kb-green" data-pid="'+pid+'" onclick="event.stopPropagation();KPReports.openExisting(this.dataset.pid)">Mở lại</button>';}
       h+='</div></div>';
       return h;
     }).join('');
   }
 
-
   function openPeriod(){
-    var type =(document.getElementById('kpPType')&&document.getElementById('kpPType').value)||'6thang';
-    var sub  =(document.getElementById('kpPSub')&&document.getElementById('kpPSub').value.trim())||'1';
-    var year =Number((document.getElementById('kpPYear')&&document.getElementById('kpPYear').value))||2026;
+    var type=(document.getElementById('kpPType')&&document.getElementById('kpPType').value)||'6thang';
+    var sub=(document.getElementById('kpPSub')&&document.getElementById('kpPSub').value.trim())||'1';
+    var year=Number((document.getElementById('kpPYear')&&document.getElementById('kpPYear').value))||2026;
     var title=(document.getElementById('kpPTitle')&&document.getElementById('kpPTitle').value.trim())||('Báo cáo KTGS '+_pl(type,sub,year));
-    var text =_pl(type,sub,year);
+    var text=_pl(type,sub,year);
     _toast('Đang mở kỳ mới...');
     _patch('ubkt_ktgs_report_periods',_QOM,{status:'Đã đóng',closed_at:new Date().toISOString()}).then(function(){
       return _post('ubkt_ktgs_report_periods',{title:title,period_type:type,period_sub:sub,period_year:year,period_text:text,status:'Đang mở',data:{module:'ktgs'}});
-    }).then(function(){
-      _sel=null;
-      _load();
-      _toast('✅ Đã mở kỳ: '+text);
-    }).catch(function(e){ _toast('❌ '+e.message, false); console.error('[KPReports openPeriod]',e); });
+    }).then(function(){_sel=null;_load();_toast('✅ Đã mở kỳ: '+text);})
+    .catch(function(e){_toast('❌ '+e.message,false);console.error('[KPReports openPeriod]',e);});
   }
-
   function closePeriod(id){
-    _patch('ubkt_ktgs_report_periods','id=eq.'+id,{status:'Đã đóng',closed_at:new Date().toISOString()}).then(function(){
-      _load(); _toast('Đã đóng kỳ báo cáo');
-    }).catch(function(e){ _toast('❌ '+e.message, false); });
+    _patch('ubkt_ktgs_report_periods','id=eq.'+id,{status:'Đã đóng',closed_at:new Date().toISOString()}).then(function(){_load();_toast('Đã đóng kỳ');}).catch(function(e){_toast('❌ '+e.message,false);});
   }
-
   function openExisting(id){
     _patch('ubkt_ktgs_report_periods',_QOM,{status:'Đã đóng',closed_at:new Date().toISOString()}).then(function(){
       return _patch('ubkt_ktgs_report_periods','id=eq.'+id,{status:'Đang mở',closed_at:null,opened_at:new Date().toISOString()});
-    }).then(function(){
-      _sel=_P.find(function(p){return p.id===id;})||null;
-      _load(); _toast('Đã mở lại kỳ');
-    }).catch(function(e){ _toast('❌ '+e.message, false); });
+    }).then(function(){_sel=_P.find(function(p){return p.id===id;})||null;_load();_toast('Đã mở lại kỳ');})
+    .catch(function(e){_toast('❌ '+e.message,false);});
   }
-
-  function selectPeriod(id){
-    _sel=_P.find(function(p){return p.id===id;})||null;
-    _renderPeriods(); _renderList();
-  }
-
+  function selectPeriod(id){_sel=_P.find(function(p){return p.id===id;})||null;_renderPeriods();_renderList();}
   function exportCsv(){
     var rs=_sel?_R.filter(function(r){return r.period_id===_sel.id||r.period_text===(_sel&&_sel.period_text);}):_R;
-    var byOrg={};rs.forEach(function(r){if(!byOrg[r.org_id])byOrg[r.org_id]=r;});
-    var rows=[['Cơ sở Đảng','Loại','Trạng thái','Kỳ báo cáo','Nộp lúc','Mã XN','KT nhiệm vụ','Dấu hiệu VP','GS chuyên đề','Phản ánh/KN','Kỷ luật','Khắc phục']];
-    _O.forEach(function(o){var r=byOrg[o.id];rows.push([o.name,o.type,r?'Đã nộp':'Chưa nộp',(_sel&&_sel.period_text)||'',r?new Date(r.submitted_at).toLocaleString('vi-VN'):'',r&&r.confirm_code||'',r&&r.cnt_checked_members||0,r&&r.cnt_violation_checks||0,r&&r.cnt_special_supervisions||0,r&&r.cnt_petitions||0,r&&r.cnt_disciplines||0,r&&r.cnt_remedies||0]);});
-    var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+    var byOrg={};rs.forEach(function(r){if(!byOrg[r.org_id]||r.submitted_at>byOrg[r.org_id].submitted_at)byOrg[r.org_id]=r;});
+    var rows=[['Cơ sở Đảng','Loại','Kỳ báo cáo','KT Điều 30','DHVP','GS chuyên đề','GS-TT nhắc nhở','Phát sinh (PA/TC/KN)','Kỷ luật','Khắc phục','Trạng thái','Nộp lúc','Mã XN']];
+    _O.forEach(function(o){
+      var r=byOrg[o.id];
+      rows.push([o.name,o.type,(_sel&&_sel.period_text)||'',
+        r?r.a_dv_kt||0:'',r?r.b_dv_dhvp||0:'',r?r.c_so_cuoc||0:'',r?r.d_nhacnho||0:'',
+        r?(r.e_phan_anh||0)+(r.e_to_cao||0)+(r.e_khieu_nai||0):'',
+        r?sv(r):'',r?r.g_so_nd||0:'',
+        r?'Đã nộp':'Chưa nộp',r?new Date(r.submitted_at).toLocaleString('vi-VN'):'',r?r.confirm_code||'':'']);
+    });
+    var csv=rows.map(function(r){return r.map(function(v){return'"'+String(v||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
     var a=document.createElement('a');
     a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
-    a.download='tong-hop-ktgs-'+(_sel&&_sel.period_text||'all').replace(/\s+/g,'-')+'.csv';
-    a.click();
-    _toast('Đã xuất CSV');
+    a.download='tong-hop-ptdl-'+(_sel&&_sel.period_text||'all').replace(/\s+/g,'-')+'.csv';
+    a.click();_toast('Đã xuất CSV');
   }
 
-  return {
-    mount: function(){ _load(); },
-    reload: function(){ _load(); },
-    renderList: _renderList,
-    openPeriod: openPeriod,
-    closePeriod: closePeriod,
-    openExisting: openExisting,
-    selectPeriod: selectPeriod,
-    exportCsv: exportCsv
+  return{
+    mount:function(){_load();},
+    reload:function(){_load();},
+    renderList:_renderList,
+    openPeriod:openPeriod,
+    closePeriod:closePeriod,
+    openExisting:openExisting,
+    selectPeriod:selectPeriod,
+    exportCsv:exportCsv
   };
 })();
 
