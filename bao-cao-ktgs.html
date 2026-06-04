@@ -514,6 +514,7 @@ async function loadBaseOrgs(){
       fd.activePeriodText  = periods[0].period_text||'';
       fd.periodText        = periods[0].period_text||'';
       fd.periodId          = periods[0].id||'';
+      fd.periodType        = periods[0].period_type||'6thang';
     } else {
       fd.activePeriodTitle = '';
       fd.activePeriodText  = '';
@@ -1394,7 +1395,7 @@ async function submitToUBKT(){
     const now=new Date().toISOString();
     const payload={
       org_id:fd.orgId, org_name:fd.orgName,
-      period_type:'ktgs', period_text:fd.periodText||'',
+      period_type:fd.periodType||'6thang', period_text:fd.periodText||'',
       period_year:new Date().getFullYear(),
       period_sub:'', period_id:fd.periodId||null,
       report_no:'', report_date:now.split('T')[0],
