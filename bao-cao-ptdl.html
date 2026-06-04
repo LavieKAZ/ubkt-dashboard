@@ -569,8 +569,13 @@ let fd = {
   h_tc_gq:0, h_kn_gq:0, h_kn_doi_hts:0,
   i_so_cuoc:0, i_co_vp:0,
   j_vb_ban_hanh:0, j_dv_du_kt:0,
-  // Phụ lục nhân sự
-  ns_count:1,
+  // Phụ lục nhân sự (theo PTDL mục C)
+  ns_cn_hoten:'', ns_cn_dotuoi:'', ns_cn_ngach:'', ns_cn_cm:'', ns_cn_llct:'',
+  ns_pct_co:false, ns_pct_hoten:'', ns_pct_dotuoi:'', ns_pct_ngach:'', ns_pct_cm:'', ns_pct_llct:'',
+  ns_uv_tong:0, ns_uv_ct:0, ns_uv_kn:0,
+  // Chương trình KTGS
+  ct_ubkt_co:false, ct_ubkt_so_cuoc:0, ct_ubkt_thuc_hien:0, ct_ubkt_ghi_chu:'',
+  ct_btv_co:false,  ct_btv_so_cuoc:0,  ct_btv_thuc_hien:0,  ct_btv_ghi_chu:'',
 };
 
 function esc(s){var m={'&':'&amp;','<':'&lt;','>':'&gt;'};return String(s??'').replace(/[&<>]/g,function(x){return m[x]||x;});}
@@ -586,7 +591,7 @@ let saveTimer;
 function saveLocal(){
   clearTimeout(saveTimer);
   saveTimer=setTimeout(()=>{
-    try{localStorage.setItem(LS,JSON.stringify({fd,step,maxStep,nhansu}));}catch(e){}
+    try{localStorage.setItem(LS,JSON.stringify({fd,step,maxStep}));}catch(e){}
     const el=document.getElementById('asBadge');
     el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1600);
   },600);
@@ -597,7 +602,6 @@ function loadLocal(){
     if(!d) return false;
     if(d.fd) Object.assign(fd,d.fd);
     if(d.maxStep) maxStep=d.maxStep;
-    if(d.nhansu) nhansu=d.nhansu;
     return true;
   }catch(e){return false;}
 }
@@ -829,121 +833,158 @@ ${section('dark','G','Theo dõi thực hiện khắc phục','Sau kiểm tra và
 )}`;
 }
 
-function ensureNhansu(){
-  // Đảm bảo mảng nhân sự đủ số lượng
-  const cnt = Math.max(1, fd.ns_count||1);
-  while(nhansu.length < cnt){
-    const i = nhansu.length;
-    const chucvu = i===0?'Chủ nhiệm':i===1?'Phó Chủ nhiệm':'Ủy viên';
-    nhansu.push({chucvu, hoten:'', dotuoi:'', trinhdo_cm:'', trinhdo_llct:'', ngach_bac:''});
+// ═══════════════════════════════════════════════════
+//  Phụ lục nhân sự & chương trình KTGS (Step 7 Đảng bộ)
+// ═══════════════════════════════════════════════════
+function renderNhanSu(){
+  if(!isDB()) return renderS7();
+
+  var NGACH=['KTVCCC và tương đương','KTVC và tương đương','KTV và tương đương','Cán sự và tương đương','Công chức khác','Không áp dụng'];
+  var DOTUOI=['— Chọn —','Dưới 35','35-40','41-45','46-50','51-55','56-60','Trên 60'];
+  var LLCT=['— Chọn —','Chưa qua đào tạo','Sơ cấp','Trung cấp','Cao cấp','Cử nhân chính trị'];
+
+  function selOpts(arr, val){
+    return arr.map(function(v){
+      return '<option value="'+esc(v)+'" '+(v===val?'selected':'')+'>'+esc(v)+'</option>';
+    }).join('');
   }
-}
-function syncNS(i,field,val){
-  if(!nhansu[i]) return;
-  nhansu[i][field]=val;
-  // Sync chức vụ tự động cho 2 người đầu
-  if(field==='chucvu' && i<2){
-    const el=document.getElementById('nsn_cv_'+i);
-    if(el) el.value=val;
+  function nRow(key,label,hint){
+    var v=nv(key);
+    return '<div class="num-row">'+
+      '<div class="num-row-label">'+label+(hint?'<small>'+hint+'</small>':'')+'</div>'+
+      '<div class="num-stepper">'+
+      '<button class="ns-btn l" onclick="adj(\''+key+'\',-1)" type="button">−</button>'+
+      '<div class="ns-num'+(v===0?' zero':'')+'" >'+
+      '<input id="nsn_'+key+'" type="number" min="0" value="'+v+'" inputmode="numeric"'+
+      ' oninput="syncFd(\''+key+'\',this.value);this.parentElement.className=\'ns-num\'+(Number(this.value)===0?\' zero\':\'\')"'+
+      '></div>'+
+      '<button class="ns-btn r" onclick="adj(\''+key+'\',1)" type="button">+</button>'+
+      '</div></div>';
   }
-  saveLocal();
+
+  var uvKN = Math.max(0, nv('ns_uv_tong') - nv('ns_uv_ct'));
+
+  return '<div class="sh">Phụ lục — Nhân sự UBKT & Chương trình KTGS</div>'+
+'<div class="sd">Dành riêng Đảng bộ cơ sở · Căn cứ Mục C Biểu PTDL Thành ủy · Bắt buộc điền đầy đủ.</div>'+
+'<div class="fields">'+
+
+// ── NHÂN SỰ ──────────────────────────────────────
+'<div class="num-section">'+
+'<div class="num-sec-head red">'+
+'<span class="num-sec-letter" style="background:#FF0052">NS</span>'+
+'<span class="num-sec-title">Nhân sự Ủy ban Kiểm tra Đảng bộ</span>'+
+'</div>'+
+
+// CN
+'<div class="num-row" style="flex-direction:column;align-items:flex-start;gap:10px;padding:14px">'+
+'<div style="font-size:12px;font-weight:900;color:#FF0052;text-transform:uppercase;letter-spacing:.05em">Chủ nhiệm UBKT <span class="req">*</span></div>'+
+'<div class="row2" style="width:100%">'+
+'<label class="field"><span class="fl">Họ và tên <span class="req">*</span></span>'+
+'<input class="inp" type="text" placeholder="Nhập đầy đủ họ tên" value="'+esc(fd.ns_cn_hoten)+'" oninput="syncFd(\'ns_cn_hoten\',this.value)"></label>'+
+'<label class="field"><span class="fl">Độ tuổi</span>'+
+'<select class="sel" onchange="syncFd(\'ns_cn_dotuoi\',this.value)">'+selOpts(DOTUOI, fd.ns_cn_dotuoi||'— Chọn —')+'</select></label>'+
+'</div>'+
+'<div class="row2" style="width:100%">'+
+'<label class="field"><span class="fl">Ngạch, bậc</span>'+
+'<select class="sel" onchange="syncFd(\'ns_cn_ngach\',this.value)">'+selOpts(NGACH, fd.ns_cn_ngach||'Không áp dụng')+'</select></label>'+
+'<label class="field"><span class="fl">Trình độ LLCT</span>'+
+'<select class="sel" onchange="syncFd(\'ns_cn_llct\',this.value)">'+selOpts(LLCT, fd.ns_cn_llct||'— Chọn —')+'</select></label>'+
+'</div>'+
+'<label class="field full" style="width:100%"><span class="fl">Trình độ chuyên môn nghiệp vụ</span>'+
+'<input class="inp" type="text" placeholder="Ví dụ: Thạc sĩ Luật, Cử nhân Kinh tế..." value="'+esc(fd.ns_cn_cm)+'" oninput="syncFd(\'ns_cn_cm\',this.value)"></label>'+
+'</div>'+
+
+// PCT toggle
+'<div class="num-row" style="flex-direction:column;align-items:flex-start;gap:10px;padding:14px">'+
+'<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:800;color:#0055DA">'+
+'<input type="checkbox" '+(fd.ns_pct_co?'checked':'')+' onchange="syncFd(\'ns_pct_co\',this.checked);renderNoScroll()" style="width:18px;height:18px;accent-color:var(--blue)">'+
+'Có Phó Chủ nhiệm UBKT</label>'+
+(fd.ns_pct_co?
+'<div class="row2" style="width:100%">'+
+'<label class="field"><span class="fl">Họ và tên</span>'+
+'<input class="inp" type="text" placeholder="Nhập đầy đủ họ tên" value="'+esc(fd.ns_pct_hoten)+'" oninput="syncFd(\'ns_pct_hoten\',this.value)"></label>'+
+'<label class="field"><span class="fl">Độ tuổi</span>'+
+'<select class="sel" onchange="syncFd(\'ns_pct_dotuoi\',this.value)">'+selOpts(DOTUOI, fd.ns_pct_dotuoi||'— Chọn —')+'</select></label>'+
+'</div>'+
+'<div class="row2" style="width:100%">'+
+'<label class="field"><span class="fl">Ngạch, bậc</span>'+
+'<select class="sel" onchange="syncFd(\'ns_pct_ngach\',this.value)">'+selOpts(NGACH, fd.ns_pct_ngach||'Không áp dụng')+'</select></label>'+
+'<label class="field"><span class="fl">Trình độ LLCT</span>'+
+'<select class="sel" onchange="syncFd(\'ns_pct_llct\',this.value)">'+selOpts(LLCT, fd.ns_pct_llct||'— Chọn —')+'</select></label>'+
+'</div>'+
+'<label class="field full" style="width:100%"><span class="fl">Trình độ chuyên môn nghiệp vụ</span>'+
+'<input class="inp" type="text" placeholder="Ví dụ: Thạc sĩ Luật..." value="'+esc(fd.ns_pct_cm)+'" oninput="syncFd(\'ns_pct_cm\',this.value)"></label>'
+:'<div style="font-size:12px;color:var(--muted);font-weight:600">Không có → bỏ qua phần này.</div>')+
+'</div>'+
+
+// UV
+'<div class="num-row" style="flex-direction:column;align-items:flex-start;gap:10px;padding:14px">'+
+'<div style="font-size:12px;font-weight:900;color:#00C68D;text-transform:uppercase;letter-spacing:.05em">Ủy viên UBKT</div>'+
+nRow('ns_uv_tong','Tổng số Ủy viên UBKT','Không tính Chủ nhiệm và Phó Chủ nhiệm')+
+nRow('ns_uv_ct','Trong đó: Ủy viên chuyên trách','Làm việc toàn thời gian cho UBKT')+
+'<div style="padding:8px 12px;background:var(--n-50);border-radius:var(--r-md);font-size:12.5px;font-weight:700;width:100%">'+
+'Ủy viên kiêm nhiệm (kiêm chức): <b style="color:#0055DA">'+uvKN+'</b> người'+
+'</div>'+
+'</div>'+
+
+'</div>'+ // end .num-section nhân sự
+
+// ── CHƯƠNG TRÌNH KTGS CỦA UBKT ──────────────────
+'<div class="num-section" style="border-color:#7C3AED20;margin-top:12px">'+
+'<div class="num-sec-head" style="background:linear-gradient(to right,rgba(124,58,237,.08),#fff);border-bottom-color:#7C3AED30">'+
+'<span class="num-sec-letter" style="background:#7C3AED">KT</span>'+
+'<span class="num-sec-title">Chương trình KTGS của UBKT Đảng ủy</span>'+
+'<div class="num-sec-ref">Mục B — Biểu PTDL · UBKT thực hiện theo Điều 32 Điều lệ Đảng</div>'+
+'</div>'+
+'<div class="num-row" style="padding:13px 14px">'+
+'<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:700">'+
+'<input type="checkbox" '+(fd.ct_ubkt_co?'checked':'')+' onchange="syncFd(\'ct_ubkt_co\',this.checked);renderNoScroll()" style="width:18px;height:18px;accent-color:#7C3AED">'+
+'UBKT đã xây dựng chương trình KTGS trong kỳ</label>'+
+'</div>'+
+(fd.ct_ubkt_co?
+nRow('ct_ubkt_so_cuoc','Số cuộc theo chương trình','Tổng số cuộc KTGS đã lên kế hoạch')+
+nRow('ct_ubkt_thuc_hien','Đã thực hiện','Số cuộc đã tiến hành trong kỳ')+
+'<div class="num-row" style="padding:13px 14px">'+
+'<div style="width:100%">'+
+'<div class="num-row-label">Ghi chú kết quả thực hiện</div>'+
+'<input class="inp" type="text" placeholder="Nhận xét ngắn về tình hình thực hiện chương trình..." value="'+esc(fd.ct_ubkt_ghi_chu)+'" oninput="syncFd(\'ct_ubkt_ghi_chu\',this.value)" style="margin-top:6px">'+
+'</div></div>'
+:'<div style="padding:10px 14px;font-size:12px;color:var(--muted);font-weight:600">Không có chương trình → bỏ qua.</div>')+
+'</div>'+
+
+// ── CHƯƠNG TRÌNH GS CỦA BTV ĐẢNG ỦY ─────────────
+'<div class="num-section" style="border-color:#0055DA20;margin-top:12px">'+
+'<div class="num-sec-head" style="background:linear-gradient(to right,rgba(0,85,218,.08),#fff);border-bottom-color:#0055DA30">'+
+'<span class="num-sec-letter" style="background:#0055DA">GS</span>'+
+'<span class="num-sec-title">Chương trình giám sát của Ban Thường vụ Đảng ủy</span>'+
+'<div class="num-sec-ref">Mục A — Biểu PTDL · BTV Đảng ủy cơ sở thực hiện</div>'+
+'</div>'+
+'<div class="num-row" style="padding:13px 14px">'+
+'<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:700">'+
+'<input type="checkbox" '+(fd.ct_btv_co?'checked':'')+' onchange="syncFd(\'ct_btv_co\',this.checked);renderNoScroll()" style="width:18px;height:18px;accent-color:#0055DA">'+
+'BTV Đảng ủy đã xây dựng chương trình giám sát trong kỳ</label>'+
+'</div>'+
+(fd.ct_btv_co?
+nRow('ct_btv_so_cuoc','Số cuộc theo chương trình','Tổng số cuộc giám sát đã lên kế hoạch')+
+nRow('ct_btv_thuc_hien','Đã thực hiện','Số cuộc đã tiến hành trong kỳ')+
+'<div class="num-row" style="padding:13px 14px">'+
+'<div style="width:100%">'+
+'<div class="num-row-label">Ghi chú kết quả thực hiện</div>'+
+'<input class="inp" type="text" placeholder="Nhận xét ngắn về tình hình thực hiện chương trình..." value="'+esc(fd.ct_btv_ghi_chu)+'" oninput="syncFd(\'ct_btv_ghi_chu\',this.value)" style="margin-top:6px">'+
+'</div></div>'
+:'<div style="padding:10px 14px;font-size:12px;color:var(--muted);font-weight:600">Không có chương trình → bỏ qua.</div>')+
+'</div>'+
+
+'</div>'; // end .fields
 }
-function addNhanSu(){
-  fd.ns_count = (fd.ns_count||1)+1;
-  const chucvu = nhansu.length===0?'Chủ nhiệm':nhansu.length===1?'Phó Chủ nhiệm':'Ủy viên';
-  nhansu.push({chucvu, hoten:'', dotuoi:'', trinhdo_cm:'', trinhdo_llct:'', ngach_bac:''});
-  saveLocal();
-  renderNoScroll();
-}
-function removeNhanSu(i){
-  if(nhansu.length<=1) return;
-  nhansu.splice(i,1);
-  fd.ns_count=nhansu.length;
-  saveLocal();
-  renderNoScroll();
-}
+
 function renderNoScroll(){
-  const cb=document.getElementById('cardBody');
+  var cb=document.getElementById('cardBody');
   if(!cb) return;
   cb.style.animation='none'; cb.offsetHeight; cb.style.animation='';
   cb.innerHTML=(STEP_FNS[step]||renderS1)();
 }
 
-function renderNhanSu(){
-  if(!isDB()) return renderS7(); // Chi bộ bỏ qua
-  ensureNhansu();
-
-  const DOTUOI=[{v:'',l:'— Chọn —'},'Dưới 35','35-40','41-45','46-50','51-55','56-60','Trên 60'].map(x=>typeof x==='string'?{v:x,l:x}:x);
-  const LLCT=[{v:'',l:'— Chọn —'},'Chưa qua đào tạo','Sơ cấp','Trung cấp','Cao cấp','Cử nhân chính trị'].map(x=>typeof x==='string'?{v:x,l:x}:x);
-  const CV=['Chủ nhiệm','Phó Chủ nhiệm','Ủy viên'];
-
-  const cards = nhansu.map((p,i)=>{
-    const isRequired = i===0;
-    const badge = i===0?'CN':i===1?'PCT':'UV';
-    return `<div class="dc" style="animation-delay:${i*40}ms">
-      <div class="dc-head">
-        <div class="dc-num" style="background:${i===0?'#FF0052':i===1?'#0055DA':'#00C68D'}">${badge}</div>
-        <div class="dc-title">${p.chucvu||'Ủy viên UBKT'}</div>
-        ${i>0?`<button type="button" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;padding:0 4px;line-height:1" onclick="removeNhanSu(${i})">✕</button>`:''}
-      </div>
-      <div class="dc-body">
-        <div class="row2">
-          <label class="field">
-            <span class="fl">Chức vụ trong UBKT ${isRequired?'<span class="req">*</span>':''}</span>
-            <select class="sel" id="nsn_cv_${i}" onchange="syncNS(${i},'chucvu',this.value)">
-              ${CV.map(v=>`<option value="${v}" ${p.chucvu===v?'selected':''}>${v}</option>`).join('')}
-            </select>
-          </label>
-          <label class="field">
-            <span class="fl">Họ và tên ${isRequired?'<span class="req">*</span>':''}</span>
-            <input class="inp" type="text" placeholder="Nhập đầy đủ họ tên"
-              value="${esc(p.hoten)}" oninput="syncNS(${i},'hoten',this.value)"
-              style="font-size:13.5px;padding:9px 11px">
-          </label>
-        </div>
-        <div class="row2">
-          <label class="field">
-            <span class="fl">Độ tuổi</span>
-            <select class="sel" onchange="syncNS(${i},'dotuoi',this.value)">
-              ${DOTUOI.map(o=>`<option value="${o.v}" ${p.dotuoi===o.v?'selected':''}>${o.l}</option>`).join('')}
-            </select>
-          </label>
-          <label class="field">
-            <span class="fl">Trình độ lý luận chính trị</span>
-            <select class="sel" onchange="syncNS(${i},'trinhdo_llct',this.value)">
-              ${LLCT.map(o=>`<option value="${o.v}" ${p.trinhdo_llct===o.v?'selected':''}>${o.l}</option>`).join('')}
-            </select>
-          </label>
-        </div>
-        <label class="field full">
-          <span class="fl">Trình độ chuyên môn</span>
-          <input class="inp" type="text" placeholder="Ví dụ: Thạc sĩ Luật, Cử nhân Kinh tế..."
-            value="${esc(p.trinhdo_cm)}" oninput="syncNS(${i},'trinhdo_cm',this.value)"
-            style="font-size:13.5px;padding:9px 11px">
-        </label>
-        <label class="field full">
-          <span class="fl">Ngạch, bậc công chức (nếu có)</span>
-          <input class="inp" type="text" placeholder="Ví dụ: Chuyên viên bậc 3, CVCC..."
-            value="${esc(p.ngach_bac)}" oninput="syncNS(${i},'ngach_bac',this.value)"
-            style="font-size:13.5px;padding:9px 11px">
-        </label>
-      </div>
-    </div>`;
-  }).join('');
-
-  return `<div class="sh">Phụ lục — Nhân sự Ủy ban Kiểm tra</div>
-<div class="sd">Thông tin nhân sự UBKT của Đảng bộ. <b>Bắt buộc nhập Chủ nhiệm</b> trước khi tiếp tục.</div>
-<div class="fields">
-  <div style="background:var(--c-info-bg);border:1.5px solid var(--c-info-bd);border-radius:14px;padding:11px 14px;font-size:12.5px;font-weight:700;color:#1e40af;line-height:1.6">
-    📋 Nhập thông tin từng Ủy viên UBKT. Bấm <b>"+ Thêm ủy viên"</b> để thêm hàng. Bấm <b>✕</b> để xóa.
-  </div>
-  <div id="nsCards">${cards}</div>
-  <button type="button" class="btn btn-ghost" style="width:100%;border-style:dashed;border-color:var(--c-info-bd);color:var(--blue)" onclick="addNhanSu()">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    Thêm ủy viên UBKT
-  </button>
-</div>`;
-}
 
 
 function renderS7(){
@@ -1054,9 +1095,8 @@ function nextStep(){
   const total = TOTAL_STEPS();
   // Validate nhân sự (bước 7 với Đảng bộ)
   if(step===7 && isDB()){
-    const cn = nhansu.find(p=>p.chucvu==='Chủ nhiệm');
-    if(!cn||!cn.hoten.trim()){
-      showAlert('Vui lòng nhập <b>họ tên Chủ nhiệm UBKT</b> ở phụ lục nhân sự.'); return;
+    if(!(fd.ns_cn_hoten||'').trim()){
+      showAlert('Vui lòng nhập <b>họ tên Chủ nhiệm UBKT</b>.'); return;
     }
   }
   if(step<total){ maxStep=Math.max(maxStep,step+1); goStep(step+1); }
@@ -1144,7 +1184,17 @@ async function submitForm(){
       h_tc_gq:nv('h_tc_gq'), h_kn_gq:nv('h_kn_gq'), h_kn_doi_hts:nv('h_kn_doi_hts'),
       i_so_cuoc:nv('i_so_cuoc'), i_co_vp:nv('i_co_vp'),
       j_vb_ban_hanh:nv('j_vb_ban_hanh'), j_dv_du_kt:nv('j_dv_du_kt'),
-      nhansu:nhansu, nhansu_count:nhansu.length,
+      // Nhân sự CN, PCT, UV
+      ns_cn_hoten:fd.ns_cn_hoten, ns_cn_dotuoi:fd.ns_cn_dotuoi,
+      ns_cn_ngach:fd.ns_cn_ngach, ns_cn_cm:fd.ns_cn_cm, ns_cn_llct:fd.ns_cn_llct,
+      ns_pct_hoten:fd.ns_pct_co?fd.ns_pct_hoten:'', ns_pct_dotuoi:fd.ns_pct_co?fd.ns_pct_dotuoi:'',
+      ns_pct_ngach:fd.ns_pct_co?fd.ns_pct_ngach:'', ns_pct_cm:fd.ns_pct_co?fd.ns_pct_cm:'', ns_pct_llct:fd.ns_pct_co?fd.ns_pct_llct:'',
+      ns_uv_tong:nv('ns_uv_tong'), ns_uv_ct:nv('ns_uv_ct'), ns_uv_kn:Math.max(0,nv('ns_uv_tong')-nv('ns_uv_ct')),
+      // Chương trình KTGS
+      ct_ubkt_co:!!fd.ct_ubkt_co, ct_ubkt_so_cuoc:nv('ct_ubkt_so_cuoc'), ct_ubkt_thuc_hien:nv('ct_ubkt_thuc_hien'), ct_ubkt_ghi_chu:fd.ct_ubkt_ghi_chu||'',
+      ct_btv_co:!!fd.ct_btv_co,  ct_btv_so_cuoc:nv('ct_btv_so_cuoc'),  ct_btv_thuc_hien:nv('ct_btv_thuc_hien'),  ct_btv_ghi_chu:fd.ct_btv_ghi_chu||'',
+      // Legacy nhansu (backward compat)
+      nhansu:[], nhansu_count:nv('ns_uv_tong')+(fd.ns_cn_hoten?1:0)+(fd.ns_pct_co?1:0),
       confirm_code:code, submitted_at:new Date().toISOString()
     };
     const res=await fetch(`${SB}/rest/v1/ubkt_ptdl_monthly`,{
@@ -1166,7 +1216,6 @@ function copyCode(){
 function resetForm(){
   Object.keys(fd).forEach(k=>{fd[k]=typeof fd[k]==='number'?0:typeof fd[k]==='boolean'?false:'';});
   submittedCode=null; step=1; maxStep=1;
-  nhansu=[];
   try{localStorage.removeItem(LS);}catch(e){}
   loadData();
 }
@@ -1215,5 +1264,4 @@ async function loadVerifyMode(code){
 </script>
 </body>
 </html
-let nhansu = []; // Mảng nhân sự UBKT
 >
