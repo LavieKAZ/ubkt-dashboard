@@ -7397,6 +7397,7 @@ window.KPReports = (function(){
   var _U = 'https://hbygfheibcrqaqzoaass.supabase.co/rest/v1';
   var _K = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhieWdmaGVpYmNycWFxem9hYXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDg0MTcsImV4cCI6MjA5NDA4NDQxN30.AM-uMmKKuRIPZLtVyV-N0aj5EXuBIrOoyFL-gotb_Qg';
   var _H = {'Content-Type':'application/json','apikey':_K,'Authorization':'Bearer '+_K};
+  var _QOM = 'status=eq.'+encodeURIComponent('Đang mở'); // URL-safe query for 'Đang mở'
 
   function _get(tbl, qs){
     return fetch(_U+'/'+tbl+(qs?'?'+qs:''),{headers:_H}).then(function(r){
@@ -7532,7 +7533,7 @@ window.KPReports = (function(){
     var title=(document.getElementById('kpPTitle')&&document.getElementById('kpPTitle').value.trim())||('Báo cáo KTGS '+_pl(type,sub,year));
     var text =_pl(type,sub,year);
     _toast('Đang mở kỳ mới...');
-    _patch('ubkt_ktgs_report_periods','status=eq.%C4%90ang%20m%E1%BB%9F',{status:'Đã đóng',closed_at:new Date().toISOString()}).then(function(){
+    _patch('ubkt_ktgs_report_periods',_QOM,{status:'Đã đóng',closed_at:new Date().toISOString()}).then(function(){
       return _post('ubkt_ktgs_report_periods',{title:title,period_type:type,period_sub:sub,period_year:year,period_text:text,status:'Đang mở',data:{module:'ktgs'}});
     }).then(function(){
       _sel=null;
@@ -7548,7 +7549,7 @@ window.KPReports = (function(){
   }
 
   function openExisting(id){
-    _patch('ubkt_ktgs_report_periods','status=eq.%C4%90ang%20m%E1%BB%9F',{status:'Đã đóng',closed_at:new Date().toISOString()}).then(function(){
+    _patch('ubkt_ktgs_report_periods',_QOM,{status:'Đã đóng',closed_at:new Date().toISOString()}).then(function(){
       return _patch('ubkt_ktgs_report_periods','id=eq.'+id,{status:'Đang mở',closed_at:null,opened_at:new Date().toISOString()});
     }).then(function(){
       _sel=_P.find(function(p){return p.id===id;})||null;
