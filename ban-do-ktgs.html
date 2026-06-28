@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<!-- UBKT Tân Mỹ — Bản đồ KTGS v3.0 — Light Glassmorphism macOS style -->
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Bản đồ KTGS — Phường Tân Mỹ</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./config.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+<style>
+:root{
+  --blue:#0055DA;
+  --blue-lt:#3378E8;
+  --blue-xlt:#e8f0fd;
+  --green:#00C68D;
+  --green-xlt:#e0faf3;
+  --yellow:#FFD400;
+  --yellow-xlt:#fff9d6;
+  --red:#FF0052;
+  --red-xlt:#ffe0eb;
+
+  /* Light glass palette */
+  --bg-page:#eef2f7;
+  --bg-sidebar:rgba(255,255,255,.72);
+  --bg-topbar:rgba(255,255,255,.82);
+  --glass-card:rgba(255,255,255,.68);
+  --glass-float:rgba(255,255,255,.88);
+  --glass-border:rgba(0,0,0,.07);
+  --glass-border-strong:rgba(0,0,0,.12);
+
+  --ink:#0d1b2e;
+  --ink2:#1e3a5f;
+  --muted:#5a7494;
+  --muted-lt:#8fa9c4;
+  --line:rgba(0,0,0,.06);
+
+  --shadow-sm:0 2px 8px rgba(0,0,0,.06),0 0 0 1px rgba(0,0,0,.04);
+  --shadow-md:0 8px 28px rgba(0,0,0,.10),0 0 0 1px rgba(0,0,0,.05);
+  --shadow-lg:0 20px 50px rgba(0,0,0,.14),0 0 0 1px rgba(0,0,0,.06);
+  --shadow-blue:0 6px 20px rgba(0,85,218,.22);
+
+  --radius:14px;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Be Vietnam Pro',sans-serif;
+  background:var(--bg-page);
+  color:var(--ink);
+  /* Subtle linen texture */
+  background-image:radial-gradient(circle at 20% 20%,rgba(0,85,218,.04) 0%,transparent 50%),
+    radial-gradient(circle at 80% 80%,rgba(0,198,141,.04) 0%,transparent 50%);
+  overflow:hidden;
+}
+
+/* ══ GLASS MIXINS ══ */
+.g-bar{
+  background:var(--bg-topbar);
+  backdrop-filter:blur(32px) saturate(1.8);
+  -webkit-backdrop-filter:blur(32px) saturate(1.8);
+  border-bottom:1px solid var(--glass-border);
+  box-shadow:var(--shadow-sm);
+}
+.g-side{
+  background:var(--bg-sidebar);
+  backdrop-filter:blur(28px) saturate(1.6);
+  -webkit-backdrop-filter:blur(28px) saturate(1.6);
+  border-right:1px solid var(--glass-border);
+  box-shadow:2px 0 16px rgba(0,0,0,.05);
+}
+.g-card{
+  background:var(--glass-card);
+  backdrop-filter:blur(20px) saturate(1.5);
+  -webkit-backdrop-filter:blur(20px) saturate(1.5);
+  border:1px solid var(--glass-border);
+  box-shadow:var(--shadow-sm);
+  border-radius:var(--radius);
+}
+.g-float{
+  background:var(--glass-float);
+  backdrop-filter:blur(40px) saturate(2);
+  -webkit-backdrop-filter:blur(40px) saturate(2);
+  border:1px solid var(--glass-border-strong);
+  box-shadow:var(--shadow-lg);
+}
+
+/* ══ LAYOUT ══ */
+.map-page{display:flex;flex-direction:column;height:100vh;}
+.map-topbar{flex-shrink:0;z-index:1100;padding:10px 18px;
+  display:flex;align-items:center;justify-content:space-between;gap:14px;}
+.map-body{display:flex;flex:1;overflow:hidden;}
+
+/* ══ SIDEBAR ══ */
+.map-sidebar{
+  width:306px;flex-shrink:0;
+  overflow-y:auto;display:flex;flex-direction:column;
+  scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.1) transparent;
+}
+.map-sidebar::-webkit-scrollbar{width:4px;}
+.map-sidebar::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);border-radius:2px;}
+
+.sb-sec{padding:13px 15px;border-bottom:1px solid var(--line);}
+.sb-lbl{
+  font-size:.64rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--muted-lt);margin-bottom:9px;
+}
+
+/* ══ KPI CARDS ══ */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.kpi-c{
+  padding:10px 12px;border-radius:12px;
+  border:1px solid var(--glass-border);
+  background:rgba(255,255,255,.8);
+  transition:.18s var(--ease);
+  position:relative;overflow:hidden;
+}
+.kpi-c::after{
+  content:"";position:absolute;top:0;left:0;right:0;height:2px;border-radius:2px 2px 0 0;
+}
+.kpi-c.c-b::after{background:var(--blue);}
+.kpi-c.c-g::after{background:var(--green);}
+.kpi-c.c-y::after{background:var(--yellow);}
+.kpi-c.c-r::after{background:var(--red);}
+.kpi-c:hover{transform:translateY(-1px);box-shadow:var(--shadow-md);}
+.kpi-v{font-size:1.35rem;font-weight:900;line-height:1;margin-bottom:3px;}
+.kpi-l{font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+.kpi-c.c-b .kpi-v{color:var(--blue);}
+.kpi-c.c-g .kpi-v{color:var(--green);}
+.kpi-c.c-y .kpi-v{color:#b8960a;}
+.kpi-c.c-r .kpi-v{color:var(--red);}
+
+/* ══ LAYER TOGGLES ══ */
+.layer-row{display:flex;align-items:center;justify-content:space-between;
+  padding:7px 0;border-bottom:1px solid rgba(0,0,0,.03);}
+.layer-row:last-child{border:none;}
+.layer-lbl{display:flex;align-items:center;gap:8px;
+  font-size:.8rem;font-weight:600;color:var(--ink2);cursor:pointer;}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+/* macOS toggle */
+.sw{position:relative;width:38px;height:22px;flex-shrink:0;cursor:pointer;}
+.sw input{opacity:0;width:0;height:0;position:absolute;}
+.sw-tr{position:absolute;inset:0;border-radius:11px;
+  background:rgba(0,0,0,.12);transition:.22s var(--ease);}
+.sw-th{position:absolute;width:16px;height:16px;border-radius:50%;
+  background:white;top:3px;left:3px;
+  box-shadow:0 1px 3px rgba(0,0,0,.25);
+  transition:.22s var(--ease);}
+.sw input:checked + .sw-tr{background:var(--green);}
+.sw input:checked ~ .sw-th{transform:translateX(16px);}
+
+/* ══ KP LIST ══ */
+.kp-item{
+  padding:9px 10px;border-radius:11px;cursor:pointer;
+  transition:.14s var(--ease);border:1px solid transparent;
+  margin-bottom:3px;
+}
+.kp-item:hover{background:rgba(0,85,218,.04);border-color:rgba(0,85,218,.1);}
+.kp-item.active{background:var(--blue-xlt);border-color:rgba(0,85,218,.2);}
+.kp-nm{font-size:.8rem;font-weight:800;color:var(--ink);}
+.kp-st{font-size:.68rem;color:var(--muted);margin-top:2px;}
+.kp-bar-bg{height:3px;background:rgba(0,0,0,.06);border-radius:2px;margin-top:5px;overflow:hidden;}
+.kp-bar-fill{height:100%;border-radius:2px;transition:.4s var(--ease);}
+
+/* ══ ALERT LIST ══ */
+.alert-row{display:flex;align-items:flex-start;gap:9px;padding:8px 0;
+  border-bottom:1px solid rgba(0,0,0,.04);cursor:pointer;transition:.13s;}
+.alert-row:last-child{border:none;}
+.alert-row:hover .at{color:var(--ink);}
+.ai{width:26px;height:26px;border-radius:8px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:.78rem;}
+.ai.cao{background:var(--red-xlt);}
+.ai.tb{background:var(--yellow-xlt);}
+.ai.thap{background:var(--green-xlt);}
+.at{font-size:.75rem;font-weight:600;color:var(--ink2);line-height:1.45;}
+.am{font-size:.67rem;color:var(--muted-lt);margin-top:2px;}
+
+/* ══ FILTER PILLS ══ */
+.pill-row{display:flex;gap:5px;}
+.pill{
+  padding:5px 13px;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;
+  border:1px solid var(--glass-border-strong);
+  background:rgba(255,255,255,.7);
+  color:var(--muted);transition:.14s var(--ease);
+}
+.pill:hover{background:white;color:var(--ink);}
+.pill.active{background:var(--blue);border-color:var(--blue);color:white;
+  box-shadow:var(--shadow-blue);}
+
+/* ══ INFO PANEL ══ */
+.info-panel{
+  position:absolute;top:13px;right:13px;width:265px;
+  border-radius:18px;z-index:600;overflow:hidden;
+  transition:.24s var(--ease);transform-origin:top right;
+}
+.info-panel.hidden{opacity:0;pointer-events:none;transform:scale(.95) translateY(-6px);}
+.info-hd{
+  padding:13px 16px;
+  background:linear-gradient(135deg,var(--blue) 0%,var(--blue-lt) 100%);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.info-hd h3{font-size:.9rem;font-weight:900;color:white;}
+.info-cls{
+  background:rgba(255,255,255,.2);border:none;color:white;cursor:pointer;
+  width:22px;height:22px;border-radius:6px;font-size:.8rem;
+  display:flex;align-items:center;justify-content:center;transition:.13s;
+}
+.info-cls:hover{background:rgba(255,255,255,.35);}
+.info-bd{padding:12px 15px;background:rgba(255,255,255,.92);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);}
+.info-r{display:flex;justify-content:space-between;align-items:flex-start;
+  padding:6px 0;border-bottom:1px solid rgba(0,0,0,.04);font-size:.75rem;}
+.info-r:last-child{border:none;}
+.info-r .lb{color:var(--muted);font-weight:600;}
+.info-r .vl{font-weight:800;color:var(--ink);text-align:right;max-width:155px;}
+
+/* ══ LEGEND ══ */
+.map-legend{
+  position:absolute;bottom:16px;left:13px;
+  border-radius:14px;padding:11px 14px;z-index:500;min-width:158px;
+}
+.lg-t{font-size:.64rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--muted);margin-bottom:8px;}
+.lg-r{display:flex;align-items:center;gap:7px;margin-bottom:4px;font-size:.71rem;color:var(--ink2);}
+.lg-b{width:16px;height:10px;border-radius:3px;flex-shrink:0;}
+.lg-sep{border:none;border-top:1px solid var(--line);margin:7px 0;}
+
+/* ══ PULSE ══ */
+@keyframes pulse{
+  0%{transform:scale(1);opacity:.7;}
+  70%{transform:scale(1.9);opacity:0;}
+  100%{transform:scale(1);opacity:0;}
+}
+.pw{position:relative;width:22px;height:22px;}
+.pw .ring{
+  position:absolute;width:30px;height:30px;border-radius:50%;
+  top:-4px;left:-4px;pointer-events:none;
+}
+.pw .ring.r{background:rgba(255,0,82,.25);animation:pulse 1.9s ease-out infinite;}
+.pw .ring.y{background:rgba(255,212,0,.22);animation:pulse 2.5s ease-out infinite;}
+
+/* ══ LOADING ══ */
+.map-loading{
+  position:absolute;inset:0;
+  background:rgba(238,242,247,.8);backdrop-filter:blur(10px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:700;gap:13px;
+}
+.spin{width:36px;height:36px;border:3px solid rgba(0,85,218,.12);
+  border-top-color:var(--blue);border-radius:50%;animation:spin .65s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.ld-t{font-size:.8rem;font-weight:700;color:var(--muted);}
+
+/* ══ STATUS BADGE ══ */
+.s-badge{
+  font-size:.69rem;font-weight:700;padding:4px 12px;border-radius:20px;
+  background:rgba(255,255,255,.8);border:1px solid var(--glass-border-strong);
+  color:var(--muted);
+}
+
+/* ══ ADD BTN ══ */
+.add-btn{
+  width:100%;margin-top:9px;padding:9px;border-radius:10px;
+  background:transparent;border:1.5px dashed rgba(0,0,0,.12);
+  font-size:.76rem;font-weight:700;color:var(--muted);cursor:pointer;
+  font-family:'Be Vietnam Pro',sans-serif;
+  transition:.14s var(--ease);
+}
+.add-btn:hover{background:rgba(0,85,218,.04);border-color:rgba(0,85,218,.25);color:var(--blue);}
+
+/* ══ BACK BTN ══ */
+.back-btn{
+  display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:9px;
+  background:rgba(255,255,255,.75);border:1px solid var(--glass-border-strong);
+  color:var(--muted);font-size:.78rem;font-weight:700;cursor:pointer;
+  font-family:'Be Vietnam Pro',sans-serif;
+  transition:.14s var(--ease);white-space:nowrap;
+}
+.back-btn:hover{background:white;color:var(--ink);box-shadow:var(--shadow-sm);}
+
+/* ══ MODAL ══ */
+.modal-ov{
+  display:none;position:fixed;inset:0;z-index:9000;
+  background:rgba(0,0,0,.25);backdrop-filter:blur(6px);
+  align-items:center;justify-content:center;
+}
+.modal-bx{
+  background:rgba(255,255,255,.95);
+  backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);
+  border:1px solid var(--glass-border-strong);border-radius:22px;
+  padding:26px;width:420px;max-width:calc(100vw - 32px);
+  box-shadow:var(--shadow-lg);
+}
+.modal-ti{font-size:.95rem;font-weight:900;color:var(--ink);margin-bottom:18px;}
+.fm-lb{font-size:.72rem;font-weight:700;color:var(--muted);
+  display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em;}
+.fm-in,.fm-ta,.fm-sl{
+  width:100%;padding:9px 12px;border-radius:10px;
+  background:rgba(0,0,0,.03);border:1px solid rgba(0,0,0,.1);
+  color:var(--ink);font-family:'Be Vietnam Pro',sans-serif;font-size:.82rem;
+  transition:.14s;outline:none;
+}
+.fm-in:focus,.fm-ta:focus,.fm-sl:focus{
+  border-color:rgba(0,85,218,.5);background:var(--blue-xlt);
+  box-shadow:0 0 0 3px rgba(0,85,218,.1);
+}
+.fm-ta{resize:none;}
+.fm-f{margin-bottom:13px;}
+.radio-row{display:flex;gap:7px;}
+.ro{flex:1;padding:8px;border-radius:9px;border:1px solid rgba(0,0,0,.09);
+  display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.78rem;font-weight:700;
+  background:rgba(0,0,0,.02);transition:.13s;color:var(--ink2);}
+.ro:hover{background:rgba(0,85,218,.05);border-color:rgba(0,85,218,.2);}
+.ro input{accent-color:var(--blue);}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
+.btn-cl{padding:9px 20px;border-radius:10px;background:rgba(0,0,0,.04);
+  border:1px solid rgba(0,0,0,.1);color:var(--muted);
+  font-size:.82rem;font-weight:700;cursor:pointer;font-family:'Be Vietnam Pro',sans-serif;transition:.13s;}
+.btn-cl:hover{background:rgba(0,0,0,.07);}
+.btn-sv{padding:9px 22px;border-radius:10px;background:var(--blue);border:none;
+  color:white;font-size:.82rem;font-weight:800;cursor:pointer;
+  font-family:'Be Vietnam Pro',sans-serif;
+  box-shadow:var(--shadow-blue);transition:.14s;}
+.btn-sv:hover{background:var(--blue-lt);}
+
+/* ══ LEAFLET overrides ══ */
+.leaflet-popup-content-wrapper{
+  background:rgba(255,255,255,.92) !important;
+  backdrop-filter:blur(20px) !important;
+  border:1px solid rgba(0,0,0,.1) !important;
+  border-radius:14px !important;
+  box-shadow:0 10px 32px rgba(0,0,0,.14) !important;
+  color:var(--ink) !important;
+}
+.leaflet-popup-content{font-family:'Be Vietnam Pro',sans-serif !important;font-size:.8rem !important;margin:10px 14px !important;color:var(--ink) !important;}
+.leaflet-popup-tip{display:none !important;}
+.leaflet-popup-close-button{color:var(--muted) !important;}
+.leaflet-control-zoom a{
+  background:rgba(255,255,255,.88) !important;
+  backdrop-filter:blur(16px) !important;
+  border-color:rgba(0,0,0,.1) !important;
+  color:var(--ink) !important;
+  font-weight:700 !important;
+}
+.leaflet-control-zoom a:hover{background:white !important;}
+
+@media(max-width:768px){
+  .map-sidebar{display:none;}
+  .info-panel{width:calc(100% - 26px);}
+}
+</style>
+</head>
+<body>
+<div class="map-page">
+
+  <!-- ══ TOPBAR ══ -->
+  <div class="map-topbar g-bar">
+    <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+      <button class="back-btn"
+        onclick="if(window.history.length>1)window.history.back();else if(window.switchPage)switchPage('dashboard')">
+        ← Dashboard
+      </button>
+      <div style="min-width:0;">
+        <div style="font-size:.92rem;font-weight:900;color:var(--ink);white-space:nowrap;">
+          🗺 Bản đồ KTGS — Phường Tân Mỹ
+        </div>
+        <div style="font-size:.65rem;color:var(--muted-lt);text-transform:uppercase;letter-spacing:.07em;">
+          22 khu phố mới · Hiệu lực 17/6/2026 · Kiểm tra · Giám sát · Cảnh báo dư luận
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+      <div class="pill-row">
+        <button class="pill active" onclick="setKy(this,'HK1_2026')">HK1/2026</button>
+        <button class="pill" onclick="setKy(this,'HK2_2025')">HK2/2025</button>
+        <button class="pill" onclick="setKy(this,'HK1_2025')">HK1/2025</button>
+      </div>
+      <span id="mapDbStatus" class="s-badge">⏳ Đang tải</span>
+    </div>
+  </div>
+
+  <!-- ══ BODY ══ -->
+  <div class="map-body">
+
+    <!-- ══ SIDEBAR ══ -->
+    <div class="map-sidebar g-side">
+
+      <!-- KPI -->
+      <div class="sb-sec">
+        <div class="sb-lbl">Tổng quan phường</div>
+        <div class="kpi-grid">
+          <div class="kpi-c c-b">
+            <div class="kpi-v" id="kpi-hodan">—</div>
+            <div class="kpi-l">Hộ dân</div>
+          </div>
+          <div class="kpi-c c-g">
+            <div class="kpi-v" id="kpi-danso">—</div>
+            <div class="kpi-l">Dân số (est.)</div>
+          </div>
+          <div class="kpi-c c-y">
+            <div class="kpi-v" id="kpi-kt">—</div>
+            <div class="kpi-l">Cuộc kiểm tra</div>
+          </div>
+          <div class="kpi-c c-r">
+            <div class="kpi-v" id="kpi-alert">—</div>
+            <div class="kpi-l">Cảnh báo</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Layer toggles -->
+      <div class="sb-sec">
+        <div class="sb-lbl">Lớp bản đồ</div>
+        <div class="layer-row">
+          <label class="layer-lbl" for="l-danso">
+            <span class="dot" style="background:var(--blue);"></span>Mật độ hộ dân
+          </label>
+          <label class="sw">
+            <input type="checkbox" id="l-danso" checked onchange="toggleLayer('danso',this.checked)">
+            <div class="sw-tr"></div><div class="sw-th"></div>
+          </label>
+        </div>
+        <div class="layer-row">
+          <label class="layer-lbl" for="l-ktgs">
+            <span class="dot" style="background:var(--green);"></span>Kết quả KTGS
+          </label>
+          <label class="sw">
+            <input type="checkbox" id="l-ktgs" onchange="toggleLayer('ktgs',this.checked)">
+            <div class="sw-tr"></div><div class="sw-th"></div>
+          </label>
+        </div>
+        <div class="layer-row">
+          <label class="layer-lbl" for="l-alert">
+            <span class="dot" style="background:var(--red);"></span>Cảnh báo dư luận
+          </label>
+          <label class="sw">
+            <input type="checkbox" id="l-alert" checked onchange="toggleLayer('alert',this.checked)">
+            <div class="sw-tr"></div><div class="sw-th"></div>
+          </label>
+        </div>
+        <div class="layer-row">
+          <label class="layer-lbl" for="l-label">
+            <span class="dot" style="background:var(--muted-lt);"></span>Nhãn khu phố
+          </label>
+          <label class="sw">
+            <input type="checkbox" id="l-label" checked onchange="toggleLayer('label',this.checked)">
+            <div class="sw-tr"></div><div class="sw-th"></div>
+          </label>
+        </div>
+      </div>
+
+      <!-- KP List -->
+      <div class="sb-sec" style="flex:1;">
+        <div class="sb-lbl" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>22 khu phố mới</span>
+          <span style="font-size:.68rem;font-weight:700;color:var(--blue);cursor:pointer;" onclick="zoomFit()">Hiển thị tất cả</span>
+        </div>
+        <div id="kpList"></div>
+      </div>
+
+      <!-- Alert list -->
+      <div class="sb-sec">
+        <div class="sb-lbl">Cảnh báo dư luận (<span id="alertCount">—</span>)</div>
+        <div id="alertList"></div>
+        <button class="add-btn" onclick="openModal()">+ Thêm điểm cảnh báo</button>
+      </div>
+
+    </div><!-- /sidebar -->
+
+    <!-- ══ MAP ══ -->
+    <div style="flex:1;position:relative;">
+      <div id="map" style="width:100%;height:100%;"></div>
+
+      <!-- Loading -->
+      <div class="map-loading" id="mapLoading">
+        <div class="spin"></div>
+        <div class="ld-t">Đang tải dữ liệu bản đồ...</div>
+      </div>
+
+      <!-- Info Panel -->
+      <div class="info-panel g-float hidden" id="infoPanel">
+        <div class="info-hd">
+          <h3 id="infoPanelTitle">Khu phố</h3>
+          <button class="info-cls" onclick="closeInfo()">✕</button>
+        </div>
+        <div class="info-bd" id="infoPanelBody"></div>
+      </div>
+
+      <!-- Legend -->
+      <div class="map-legend g-card" id="mapLegend">
+        <div class="lg-t">Số hộ dân</div>
+        <div class="lg-r"><div class="lg-b" style="background:rgba(0,85,218,.12);border:1px solid rgba(0,85,218,.2);"></div><span>&lt; 1.000 hộ</span></div>
+        <div class="lg-r"><div class="lg-b" style="background:rgba(0,85,218,.28);border:1px solid rgba(0,85,218,.4);"></div><span>1.000–1.300 hộ</span></div>
+        <div class="lg-r"><div class="lg-b" style="background:rgba(0,85,218,.55);border:1px solid rgba(0,85,218,.7);"></div><span>1.300–1.600 hộ</span></div>
+        <div class="lg-r"><div class="lg-b" style="background:var(--blue);border:1px solid var(--blue-lt);"></div><span>&gt; 1.600 hộ</span></div>
+        <hr class="lg-sep">
+        <div class="lg-r"><div class="dot" style="background:var(--red);width:10px;height:10px;"></div><span>Cảnh báo cao</span></div>
+        <div class="lg-r"><div class="dot" style="background:var(--yellow);width:10px;height:10px;"></div><span>Cảnh báo TB</span></div>
+        <div class="lg-r"><div class="dot" style="background:var(--green);width:10px;height:10px;"></div><span>Cảnh báo thấp</span></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL ══ -->
+<div class="modal-ov" id="alertModal">
+  <div class="modal-bx">
+    <div class="modal-ti">📍 Thêm điểm cảnh báo dư luận</div>
+    <div class="fm-f">
+      <label class="fm-lb">Toạ độ (click trên bản đồ hoặc nhập thủ công)</label>
+      <div style="display:flex;gap:8px;">
+        <input id="aLat" type="number" step="0.00001" placeholder="Vĩ độ (lat)" class="fm-in" style="flex:1;">
+        <input id="aLng" type="number" step="0.00001" placeholder="Kinh độ (lng)" class="fm-in" style="flex:1;">
+      </div>
+    </div>
+    <div class="fm-f">
+      <label class="fm-lb">Nội dung cảnh báo</label>
+      <textarea id="aDesc" class="fm-ta" rows="3" placeholder="Mô tả nội dung dư luận, sự việc cần theo dõi..."></textarea>
+    </div>
+    <div class="fm-f">
+      <label class="fm-lb">Mức độ</label>
+      <div class="radio-row">
+        <label class="ro"><input type="radio" name="mucDo" value="cao"> <span style="color:var(--red);">🔴 Cao</span></label>
+        <label class="ro"><input type="radio" name="mucDo" value="trung_binh" checked> <span style="color:#b8960a;">🟡 Trung bình</span></label>
+        <label class="ro"><input type="radio" name="mucDo" value="thap"> <span style="color:var(--green);">🟢 Thấp</span></label>
+      </div>
+    </div>
+    <div class="fm-f">
+      <label class="fm-lb">Khu phố</label>
+      <select id="aKP" class="fm-sl"><option value="">— Chọn khu phố —</option></select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cl" onclick="closeModal()">Huỷ</button>
+      <button class="btn-sv" onclick="saveAlert()">Lưu cảnh báo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════
+//  CONFIG
+// ════════════════════════════
+const SB_URL = window.UBKT_SUPABASE_URL || 'https://hbygfheibcrqaqzoaass.supabase.co';
+const SB_KEY = window.UBKT_SUPABASE_ANON_KEY || '';
+const sb = (typeof window.supabase !== 'undefined') ? window.supabase.createClient(SB_URL, SB_KEY) : null;
+
+let currentKy = 'HK1_2026';
+let map, geojsonLayer, labelGroup, alertGroup;
+let layers = {danso:true, ktgs:false, alert:true, label:true};
+let kpData = [], alertData = [], activeKP = null;
+
+// ══ 22 KHU PHỐ MỚI ══
+const KP_MASTER = [
+  {id:'kp1', ten:'Khu phố 1',  ho_dan:1376, ranh:'Từ 213-317 đường Nguyễn Thị Thập; 2-82 đường Tân Mỹ; 88-220 đường Võ Thị Đặng'},
+  {id:'kp2', ten:'Khu phố 2',  ho_dan:1147, ranh:'01-39 đường Tân Mỹ; 02-80 đường số 1; 105A-211 Nguyễn Thị Thập; 442-460 Nguyễn Văn Linh'},
+  {id:'kp3', ten:'Khu phố 3',  ho_dan:1348, ranh:'Từ 462 NVL đến Nguyễn Lương Bằng; 43 Tân Mỹ đến NVL; 1-99 đường số 1'},
+  {id:'kp4', ten:'Khu phố 4',  ho_dan:1114, ranh:'Từ số nhà 1 KDC Cityland đến Cầu Đa Khoa; Giáp rạch Cả Cấm'},
+  {id:'kp5', ten:'Khu phố 5',  ho_dan:1051, ranh:'Từ số 1 Nguyễn Thị Thập đến đường số 1 Cityland; Đường dẫn dạ cầu Phú Mỹ'},
+  {id:'kp6', ten:'Khu phố 6',  ho_dan:1571, ranh:'Đường Nguyễn Lương Bằng, Nguyễn Đổng Chi, Nguyễn Văn Linh; Giáp rạch Đôi & Cả Cấm'},
+  {id:'kp7', ten:'Khu phố 7',  ho_dan:1597, ranh:'Dạ cầu Phú Mỹ đến 558-774 Huỳnh Tấn Phát; Giáp rạch Cả Cấm'},
+  {id:'kp8', ten:'Khu phố 8',  ho_dan:969,  ranh:'Số 1 đến cầu Phú Thuận; 782-hẻm 944 Huỳnh Tấn Phát; Giáp rạch'},
+  {id:'kp9', ten:'Khu phố 9',  ho_dan:875,  ranh:'CC M5-M8, Green View, Acentia, Cảnh Viên 2-3, Mỹ Thái 2A/2B (Phú Mỹ Hưng)'},
+  {id:'kp10',ten:'Khu phố 10', ho_dan:933,  ranh:'CC Riverside, Hưng Phúc, Premier, Nam Khang; Mỹ Phú 1-3, Mỹ Thái 3, Chateau 1-4'},
+  {id:'kp11',ten:'Khu phố 11', ho_dan:1005, ranh:'CC Cảnh Viên 1, Mỹ Viên, Mỹ Khang, Nam Phúc, The Aurora, Antonia; Nam Thông 1-3'},
+  {id:'kp12',ten:'Khu phố 12', ho_dan:1601, ranh:'Từ hẻm 944 đến hẻm 1056 đường Huỳnh Tấn Phát; Ranh giáp rạch'},
+  {id:'kp13',ten:'Khu phố 13', ho_dan:1415, ranh:'Từ hẻm 1056 đến hẻm 1248 đường Huỳnh Tấn Phát; Ranh giáp rạch'},
+  {id:'kp14',ten:'Khu phố 14', ho_dan:1049, ranh:'Hẻm 1250 đến đường Hoàng Quốc Việt; đến cầu Ông Đội; Ranh giáp rạch'},
+  {id:'kp15',ten:'Khu phố 15', ho_dan:1342, ranh:'Đường HQV đến đường 15B; Từ 1334 đến Phạm Hữu Lầu; Số 02-52 đường Phạm Hữu Lầu'},
+  {id:'kp16',ten:'Khu phố 16', ho_dan:1513, ranh:'Trường TH Phú Mỹ đến đường 15B; Giao lộ Phạm Hữu Lầu–15B đến ranh dự án'},
+  {id:'kp17',ten:'Khu phố 17', ho_dan:765,  ranh:'Đường 15B từ cầu Ông Đội đến Phạm Hữu Lầu; Số 132 PHL đến đường số 5'},
+  {id:'kp18',ten:'Khu phố 18', ho_dan:964,  ranh:'Chung cư Bellaza Lô A; Chung cư Bellaza Lô D và Lô E'},
+  {id:'kp19',ten:'Khu phố 19', ho_dan:933,  ranh:'DA DVCI Q4, X51, Tân Thành Lập 1-2, TĐC Phú Mỹ, DA BTP, Vinaland'},
+  {id:'kp20',ten:'Khu phố 20', ho_dan:1145, ranh:'Từ số 01 Phạm Hữu Lầu đến đường 15B; Giáp CC Đức Khải; Ranh rạch Đỉa'},
+  {id:'kp21',ten:'Khu phố 21', ho_dan:1311, ranh:'Chung cư Đức Khải lô A1 đến A5'},
+  {id:'kp22',ten:'Khu phố 22', ho_dan:1184, ranh:'Chung cư Đức Khải lô B1 đến B4'},
+];
+
+// ══ GeoJSON placeholder (thay bằng file thực từ QGIS) ══
+const W=0.007, H=0.005, BL=106.726, BT=10.728;
+function mkGrid(id,c,r,w,h){
+  const l=BL+c*w, b=BT+r*h;
+  return {type:"Feature",id,properties:{ten_khu_pho:"",id},
+    geometry:{type:"Polygon",coordinates:[[[l,b],[l+w,b],[l+w,b+h],[l,b+h],[l,b]]]}};
+}
+const TAN_MY_GJ={type:"FeatureCollection",features:[
+  mkGrid('kp1',0,0,W,H),mkGrid('kp2',1,0,W,H),mkGrid('kp3',2,0,W,H),mkGrid('kp4',3,0,W,H),
+  mkGrid('kp5',0,1,W,H),mkGrid('kp6',1,1,W,H),mkGrid('kp7',2,1,W,H),mkGrid('kp8',3,1,W,H),
+  mkGrid('kp9',0,2,W,H),mkGrid('kp10',1,2,W,H),mkGrid('kp11',2,2,W,H),mkGrid('kp12',3,2,W,H),
+  mkGrid('kp13',0,3,W,H),mkGrid('kp14',1,3,W,H),mkGrid('kp15',2,3,W,H),mkGrid('kp16',3,3,W,H),
+  mkGrid('kp17',0,4,W,H),mkGrid('kp18',1,4,W,H),mkGrid('kp19',2,4,W,H),mkGrid('kp20',3,4,W,H),
+  mkGrid('kp21',0.5,5,W*1.5,H),mkGrid('kp22',2,5,W*1.5,H)
+]};
+
+const SAMPLE_ALERTS=[
+  {id:1,mo_ta:'Tranh chấp đất đai phức tạp, nhiều đơn thư khiếu nại kéo dài',muc_do:'cao',khu_pho_id:'kp12',lat:10.7432,lng:106.7364,ngay:'14/06/2026'},
+  {id:2,mo_ta:'Phản ánh về thi công gây ồn ào và bụi bặm ảnh hưởng dân cư',muc_do:'trung_binh',khu_pho_id:'kp7',lat:10.7380,lng:106.7328,ngay:'11/06/2026'},
+  {id:3,mo_ta:'Ý kiến về cấp GCNQSDĐ chậm trễ',muc_do:'cao',khu_pho_id:'kp6',lat:10.7358,lng:106.7296,ngay:'08/06/2026'},
+  {id:4,mo_ta:'Phản ánh về vệ sinh môi trường khu vực chợ',muc_do:'trung_binh',khu_pho_id:'kp2',lat:10.7305,lng:106.7278,ngay:'05/06/2026'},
+  {id:5,mo_ta:'Thông tin về tình hình an ninh trật tự ban đêm',muc_do:'thap',khu_pho_id:'kp21',lat:10.7281,lng:106.7320,ngay:'01/06/2026'},
+];
+
+// ════════════════════════════
+//  MAP INIT
+// ════════════════════════════
+function initMap(){
+  map = L.map('map',{center:[10.733,106.731],zoom:14,zoomControl:false});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap',maxZoom:19
+  }).addTo(map);
+  L.control.zoom({position:'bottomright'}).addTo(map);
+  map.on('click',e=>{
+    if(document.getElementById('alertModal').style.display==='flex'){
+      document.getElementById('aLat').value=e.latlng.lat.toFixed(5);
+      document.getElementById('aLng').value=e.latlng.lng.toFixed(5);
+    }
+  });
+  loadData();
+}
+
+// ════════════════════════════
+//  DATA
+// ════════════════════════════
+async function loadData(){
+  document.getElementById('mapLoading').style.display='flex';
+  let kpOk=false,alOk=false;
+  if(sb){
+    try{const{data,error}=await sb.from('khu_pho_tanmy').select('*').order('ten_khu_pho');
+      if(!error&&data&&data.length){kpData=data;kpOk=true;}}catch(e){}
+    try{const{data,error}=await sb.from('canh_bao_du_luan').select('*').eq('ky_bao_cao',currentKy);
+      if(!error&&data){alertData=data;alOk=true;}}catch(e){}
+  }
+  if(!kpOk) kpData=KP_MASTER.map(k=>({...k,dan_so:k.ho_dan*3,kt:0,gs:0}));
+  if(!alOk) alertData=SAMPLE_ALERTS;
+  document.getElementById('mapDbStatus').textContent=kpOk?'✅ Supabase':'📊 Dữ liệu mẫu';
+  renderAll();
+  document.getElementById('mapLoading').style.display='none';
+}
+
+// ════════════════════════════
+//  RENDER
+// ════════════════════════════
+function renderAll(){
+  renderKPI();renderGeoJSON();renderAlerts();
+  renderKPList();renderAlertList();fillKPSel();
+}
+
+function renderKPI(){
+  const h=kpData.reduce((s,k)=>s+(k.ho_dan||0),0);
+  const d=kpData.reduce((s,k)=>s+(k.dan_so||k.ho_dan*3||0),0);
+  const t=kpData.reduce((s,k)=>s+(k.kt||0),0);
+  document.getElementById('kpi-hodan').textContent=h.toLocaleString('vi');
+  document.getElementById('kpi-danso').textContent=d.toLocaleString('vi');
+  document.getElementById('kpi-kt').textContent=t||'—';
+  document.getElementById('kpi-alert').textContent=alertData.length;
+  document.getElementById('alertCount').textContent=alertData.length;
+}
+
+function fStyle(f){
+  const kp=kpData.find(k=>k.id===f.id||k.geojson_id===f.id);
+  const hd=kp?(kp.ho_dan||0):0;
+  let fill,border;
+  if(layers.danso){
+    if(hd>1500){fill='rgba(0,85,218,.65)';border='rgba(0,85,218,.9)';}
+    else if(hd>1250){fill='rgba(0,85,218,.40)';border='rgba(0,85,218,.65)';}
+    else if(hd>950){fill='rgba(0,85,218,.22)';border='rgba(0,85,218,.45)';}
+    else{fill='rgba(0,85,218,.09)';border='rgba(0,85,218,.25)';}
+  } else if(layers.ktgs){
+    const sc=(kp?(kp.kt||0)+(kp.gs||0):0);
+    if(sc>10){fill='rgba(0,198,141,.55)';border='rgba(0,198,141,.85)';}
+    else if(sc>5){fill='rgba(0,198,141,.28)';border='rgba(0,198,141,.55)';}
+    else{fill='rgba(0,198,141,.09)';border='rgba(0,198,141,.3)';}
+  } else {fill='rgba(0,0,0,.04)';border='rgba(0,0,0,.15)';}
+  return{fillColor:fill,color:border,weight:1.5,fillOpacity:1,opacity:1};
+}
+
+function renderGeoJSON(){
+  if(geojsonLayer) map.removeLayer(geojsonLayer);
+  if(labelGroup)   map.removeLayer(labelGroup);
+  const gj=JSON.parse(JSON.stringify(TAN_MY_GJ));
+  gj.features.forEach(f=>{const m=KP_MASTER.find(k=>k.id===f.id);if(m)f.properties.ten_khu_pho=m.ten;});
+  geojsonLayer=L.geoJSON(gj,{
+    style:fStyle,
+    onEachFeature:(f,layer)=>{
+      layer.on({
+        mouseover:()=>layer.setStyle({weight:2.5,fillOpacity:Math.min(1,(parseFloat(fStyle(f).fillOpacity||0)+.12))}),
+        mouseout:()=>geojsonLayer.resetStyle(layer),
+        click:()=>{showInfo(f.id);map.fitBounds(layer.getBounds(),{padding:[30,30]});}
+      });
+    }
+  }).addTo(map);
+
+  labelGroup=L.layerGroup();
+  gj.features.forEach(f=>{
+    const c=L.geoJSON(f).getBounds().getCenter();
+    const kp=kpData.find(k=>k.id===f.id||k.geojson_id===f.id);
+    L.marker(c,{icon:L.divIcon({
+      className:'',
+      html:`<div style="background:rgba(255,255,255,.85);backdrop-filter:blur(12px);
+        border:1px solid rgba(0,0,0,.1);border-radius:8px;padding:4px 9px;
+        font-family:'Be Vietnam Pro',sans-serif;font-weight:800;font-size:11px;
+        color:#0d1b2e;white-space:nowrap;text-align:center;
+        box-shadow:0 2px 8px rgba(0,0,0,.1);">
+        ${f.properties.ten_khu_pho||f.id}
+        ${kp?`<div style="font-size:10px;font-weight:600;color:#00C68D;margin-top:1px;">${(kp.ho_dan||0).toLocaleString('vi')} hộ</div>`:''}
+      </div>`,iconAnchor:[60,22]
+    }),interactive:false}).addTo(labelGroup);
+  });
+  if(layers.label) labelGroup.addTo(map);
+}
+
+function renderAlerts(){
+  if(alertGroup) map.removeLayer(alertGroup);
+  alertGroup=L.layerGroup();
+  alertData.forEach(a=>{
+    if(!a.lat||!a.lng) return;
+    const clr=a.muc_do==='cao'?'#FF0052':a.muc_do==='trung_binh'?'#FFD400':'#00C68D';
+    const rc=a.muc_do==='cao'?'r':'y';
+    const pulse=a.muc_do!=='thap';
+    L.marker([a.lat,a.lng],{icon:L.divIcon({
+      className:'',
+      html:`<div class="pw">
+        ${pulse?`<div class="ring ${rc}"></div>`:''}
+        <div style="width:22px;height:22px;border-radius:50%;background:${clr};
+          border:2.5px solid white;
+          box-shadow:0 2px 8px rgba(0,0,0,.2),0 0 0 1px rgba(0,0,0,.08);
+          display:flex;align-items:center;justify-content:center;
+          font-size:11px;color:white;font-weight:900;position:relative;z-index:1;">!</div>
+      </div>`,iconSize:[22,22],iconAnchor:[11,11]
+    })}).bindPopup(`
+      <div>
+        <div style="font-weight:900;font-size:.82rem;color:${clr};margin-bottom:6px;">
+          ${a.muc_do==='cao'?'🔴 CAO':a.muc_do==='trung_binh'?'🟡 Trung bình':'🟢 Thấp'}
+        </div>
+        <div style="font-size:.8rem;line-height:1.55;color:#1e3a5f;">${a.mo_ta}</div>
+        <div style="font-size:.7rem;color:#8fa9c4;margin-top:6px;">📅 ${a.ngay||''} · ${a.khu_pho_id||''}</div>
+      </div>
+    `).addTo(alertGroup);
+  });
+  if(layers.alert) alertGroup.addTo(map);
+}
+
+function renderKPList(){
+  const el=document.getElementById('kpList');el.innerHTML='';
+  const mx=Math.max(...kpData.map(k=>k.ho_dan||0));
+  kpData.forEach(kp=>{
+    const pct=mx>0?Math.round((kp.ho_dan/mx)*100):0;
+    const als=alertData.filter(a=>a.khu_pho_id===kp.id);
+    const d=document.createElement('div');
+    d.className='kp-item'+(activeKP===kp.id?' active':'');
+    d.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span class="kp-nm">${kp.ten||kp.id}</span>
+        <span style="font-size:.7rem;font-weight:800;color:var(--blue);">${(kp.ho_dan||0).toLocaleString('vi')} hộ</span>
+      </div>
+      <div class="kp-bar-bg"><div class="kp-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,rgba(0,85,218,.4),var(--blue));"></div></div>
+      <div class="kp-st">KT: ${kp.kt||0} · GS: ${kp.gs||0}${als.length?` · <span style="color:var(--red);font-weight:700;">${als.length} cảnh báo</span>`:''}</div>`;
+    d.addEventListener('click',()=>zoomToKP(kp.id));
+    el.appendChild(d);
+  });
+}
+
+function renderAlertList(){
+  const el=document.getElementById('alertList');el.innerHTML='';
+  if(!alertData.length){el.innerHTML='<div style="font-size:.75rem;color:var(--muted-lt);padding:8px 0;">Không có cảnh báo nào.</div>';return;}
+  [...alertData].sort((a,b)=>({cao:0,trung_binh:1,thap:2}[a.muc_do]||1)-({cao:0,trung_binh:1,thap:2}[b.muc_do]||1))
+  .forEach(a=>{
+    const cls=a.muc_do==='cao'?'cao':a.muc_do==='trung_binh'?'tb':'thap';
+    const ico=a.muc_do==='cao'?'🔴':a.muc_do==='trung_binh'?'🟡':'🟢';
+    const d=document.createElement('div');d.className='alert-row';
+    d.innerHTML=`<div class="ai ${cls}">${ico}</div>
+      <div><div class="at">${a.mo_ta}</div><div class="am">${a.ngay||''} · ${a.khu_pho_id||''}</div></div>`;
+    d.addEventListener('click',()=>{if(a.lat&&a.lng)map.setView([a.lat,a.lng],17);});
+    el.appendChild(d);
+  });
+}
+
+function fillKPSel(){
+  const s=document.getElementById('aKP');
+  s.innerHTML='<option value="">— Chọn khu phố —</option>';
+  KP_MASTER.forEach(k=>{const o=document.createElement('option');o.value=k.id;o.textContent=k.ten;s.appendChild(o);});
+}
+
+// ════════════════════════════
+//  INFO PANEL
+// ════════════════════════════
+function showInfo(id){
+  activeKP=id;
+  const kp=kpData.find(k=>k.id===id)||KP_MASTER.find(k=>k.id===id);
+  if(!kp) return;
+  const als=alertData.filter(a=>a.khu_pho_id===id);
+  const cao=als.filter(a=>a.muc_do==='cao').length;
+  document.getElementById('infoPanelTitle').textContent=kp.ten||id;
+  document.getElementById('infoPanelBody').innerHTML=`
+    <div class="info-r"><span class="lb">Số hộ dân</span><span class="vl" style="color:var(--blue);">${(kp.ho_dan||0).toLocaleString('vi')} hộ</span></div>
+    <div class="info-r"><span class="lb">Dân số (ước)</span><span class="vl">${((kp.dan_so||kp.ho_dan*3)||0).toLocaleString('vi')} người</span></div>
+    <div class="info-r"><span class="lb">Cuộc kiểm tra</span><span class="vl" style="color:#b8960a;">${kp.kt||0}</span></div>
+    <div class="info-r"><span class="lb">Cuộc giám sát</span><span class="vl" style="color:var(--green);">${kp.gs||0}</span></div>
+    <div class="info-r"><span class="lb">Cảnh báo</span>
+      <span class="vl" style="color:${cao>0?'var(--red)':'var(--ink)'};">${als.length} điểm${cao>0?' ('+cao+' cao)':''}</span></div>
+    <div class="info-r"><span class="lb">Ranh giới</span>
+      <span class="vl" style="font-size:.67rem;font-weight:600;color:var(--muted);">${kp.ranh||'—'}</span></div>
+    ${als.length?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line);">
+      <div style="font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted-lt);margin-bottom:6px;">Điểm cảnh báo</div>
+      ${als.map(a=>`<div style="padding:6px 8px;background:rgba(0,0,0,.03);border-radius:7px;margin-bottom:3px;font-size:.7rem;color:var(--ink2);">
+        ${a.muc_do==='cao'?'🔴':a.muc_do==='trung_binh'?'🟡':'🟢'} ${a.mo_ta}</div>`).join('')}
+    </div>`:''}`;
+  document.getElementById('infoPanel').classList.remove('hidden');
+  renderKPList();
+}
+
+function closeInfo(){document.getElementById('infoPanel').classList.add('hidden');activeKP=null;renderKPList();}
+
+// ════════════════════════════
+//  CONTROLS
+// ════════════════════════════
+function toggleLayer(n,on){
+  layers[n]=on;
+  if(n==='danso'||n==='ktgs')renderGeoJSON();
+  else if(n==='alert'){on?alertGroup.addTo(map):map.removeLayer(alertGroup);}
+  else if(n==='label'){on?labelGroup.addTo(map):map.removeLayer(labelGroup);}
+}
+function setKy(btn,ky){
+  currentKy=ky;
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');loadData();
+}
+function zoomToKP(id){
+  activeKP=id;
+  const f=TAN_MY_GJ.features.find(x=>x.id===id);
+  if(f)map.fitBounds(L.geoJSON(f).getBounds(),{padding:[40,40]});
+  showInfo(id);
+}
+function zoomFit(){if(geojsonLayer)map.fitBounds(geojsonLayer.getBounds(),{padding:[20,20]});}
+
+// ════════════════════════════
+//  MODAL
+// ════════════════════════════
+function openModal(){
+  document.getElementById('alertModal').style.display='flex';
+  document.getElementById('aDesc').value='';
+  document.getElementById('aLat').value='';
+  document.getElementById('aLng').value='';
+}
+function closeModal(){document.getElementById('alertModal').style.display='none';}
+async function saveAlert(){
+  const lat=parseFloat(document.getElementById('aLat').value);
+  const lng=parseFloat(document.getElementById('aLng').value);
+  const desc=document.getElementById('aDesc').value.trim();
+  const muc=document.querySelector('input[name="mucDo"]:checked')?.value||'trung_binh';
+  const kpId=document.getElementById('aKP').value;
+  if(!desc){alert('Vui lòng nhập nội dung cảnh báo.');return;}
+  if(isNaN(lat)||isNaN(lng)){alert('Vui lòng nhập hoặc click chọn toạ độ trên bản đồ.');return;}
+  const rec={mo_ta:desc,muc_do:muc,lat,lng,khu_pho_id:kpId,ngay:new Date().toLocaleDateString('vi-VN'),ky_bao_cao:currentKy,trang_thai:'active'};
+  if(sb){try{await sb.from('canh_bao_du_luan').insert(rec);}catch(e){}}
+  alertData.unshift({id:Date.now(),...rec});
+  closeModal();renderAlerts();renderAlertList();renderKPI();
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('alertModal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+  initMap();
+});
+</script>
+</body>
+</html>
