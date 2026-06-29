@@ -1293,8 +1293,7 @@ document.addEventListener('DOMContentLoaded',function(){
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeEditModal();});
 });
 </script>
-</body>
-</html><!-- Dynamic Region Fields — Nhập dữ liệu khu phố -->
+<!-- Dynamic Region Fields — Nhập dữ liệu khu phố -->
 <style id="dynamic-map-field-styles">
 .dynamic-field-backdrop{display:none;position:fixed;inset:0;z-index:1200;background:rgba(7,20,35,.46);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:16px}
 .dynamic-field-backdrop.is-open{display:flex}
@@ -1587,10 +1586,14 @@ document.addEventListener('DOMContentLoaded',function(){
   }
 
   function bind() {
-    document.querySelectorAll('[data-edit-region]').forEach(b => b.addEventListener('click', () => {
+    document.addEventListener('click', e => {
+      const editButton = e.target.closest('[data-edit-region]');
+      if (!editButton) return;
+      e.preventDefault();
       const id = app()?.state.selectedRegionId;
       if (id) openRegionEditor(id);
-    }));
+      else app()?.showToast('Vui lòng chọn một khu phố trên bản đồ trước.');
+    });
     document.querySelectorAll('[data-dynamic-close]').forEach(b => b.addEventListener('click', closeRegionEditor));
     document.getElementById('dynamicRegionFieldModal')?.addEventListener('click', e => { if(e.target === document.getElementById('dynamicRegionFieldModal')) closeRegionEditor(); });
     document.getElementById('dynamicRegionFieldForm')?.addEventListener('submit', saveRegionData);
@@ -1606,3 +1609,5 @@ document.addEventListener('DOMContentLoaded',function(){
   else bind();
 })();
 </script>
+</body>
+</html>
