@@ -2334,7 +2334,7 @@ body{
             <div class="card rounded-3xl p-5">
               <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
-                  <h3 class="text-xl font-extrabold">Theo dõi nộp báo cáo — Cơ sở Đảng</h3>
+                  <h3 class="text-xl font-extrabold">Theo dõi cơ sở</h3>
                   <p class="text-sm text-slate-500 mt-1">Tháng 3 = Quý I · Tháng 6 = Quý II · Tháng 10 = Báo cáo năm · Chuyên đề = phát sinh</p>
                 </div>
                 <div class="flex flex-wrap gap-2 items-center">
@@ -3519,6 +3519,13 @@ body{
       if(btn) btn.textContent=show?"Ẩn":"Hiện";
     }
 
+    function getLoginReturnTarget(){
+      const next = new URLSearchParams(location.search).get("next");
+      if(!next || next.includes("://") || next.startsWith("//")) return "";
+      if(next === "index.html" || next === "./index.html") return "";
+      return next;
+    }
+
     async function login(){
       const userInput=document.getElementById("loginUser");
       const passInput=document.getElementById("loginPass");
@@ -3559,6 +3566,11 @@ body{
         }
 
         clearLoginMessage();
+        const returnTarget = getLoginReturnTarget();
+        if(returnTarget){
+          location.href = returnTarget;
+          return;
+        }
         document.getElementById("loginScreen").classList.remove("active");
         document.getElementById("appScreen").classList.add("active");
         render();
