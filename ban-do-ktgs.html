@@ -40,7 +40,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .topbar, .mode-navigation, .summary-strip, .workspace, .page-footer { max-width: 1680px; margin-left: auto; margin-right: auto; }
 .topbar { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 14px; }
 .brand-block { display: flex; align-items: center; gap: 15px; min-width: 0; }
-.brand-mark { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; background: var(--blue); color: white; font-weight: 800; box-shadow: 0 10px 25px rgba(0,85,218,.25); flex: 0 0 auto; }
+.brand-mark { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; background: #fff; color: white; font-weight: 800; box-shadow: 0 10px 25px rgba(0,85,218,.25); flex: 0 0 auto; overflow: hidden; border: 1px solid var(--border); }
+.brand-mark img { width: 100%; height: 100%; object-fit: contain; padding: 4px; display: block; }
 h1, h2, h3, p { margin-top: 0; }
 h1 { margin-bottom: 3px; font-size: clamp(1.25rem, 2vw, 1.8rem); line-height: 1.15; }
 h2 { margin-bottom: 0; font-size: 1.2rem; }
@@ -175,7 +176,7 @@ textarea { resize: vertical; min-height: 88px; }
   .summary-strip { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 @media (max-width: 600px) {
-  .brand-mark { display: none; }
+  .brand-mark { display: grid; }
   .top-actions { align-items: stretch; flex-direction: column; }
   .map-card-header { align-items: flex-start; flex-direction: column; }
   .map-tools, .search-control, .search-control input { width: 100%; }
@@ -217,7 +218,7 @@ textarea { resize: vertical; min-height: 88px; }
 .mode-navigation button[aria-pressed="true"] { background:rgba(255,255,255,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#0d2417;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.12),0 0.5px 0 rgba(255,255,255,.8) inset; }
 @media (max-width:900px) { .workspace{grid-template-columns:1fr!important;gap:10px} .map-stage{min-height:52svh} .topbar{flex-wrap:wrap;gap:8px} .top-actions{width:100%;justify-content:space-between;flex-wrap:wrap;gap:8px} .mode-navigation,.summary-strip{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none;flex-wrap:nowrap!important} .mode-navigation::-webkit-scrollbar,.summary-strip::-webkit-scrollbar{display:none} }
 @media (max-width:768px) { html,body{overflow-x:hidden} .app-shell{padding:10px 10px 0} .map-stage{min-height:52svh;border-radius:16px;padding:6px} #wardMap{touch-action:none;-webkit-user-select:none;user-select:none} .detail-panel{position:fixed;inset:auto 0 0 0;height:72svh;border-radius:22px 22px 0 0;z-index:600;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;box-shadow:0 -12px 40px rgba(0,0,0,.18);padding-top:20px} .detail-panel::before{content:"";position:absolute;top:8px;left:50%;transform:translateX(-50%);width:36px;height:4px;background:rgba(0,0,0,.14);border-radius:2px} .tab-list{overflow-x:auto;flex-wrap:nowrap} .topbar{gap:6px} .brand-mark{width:36px!important;height:36px!important;border-radius:10px!important} .page-footer{padding-bottom:80px} .form-grid,.key-value-grid{grid-template-columns:1fr} }
-@media (max-width:480px) { .app-shell{padding:8px 8px 0} .brand-mark{display:none!important} .detail-panel{height:76svh} h1{font-size:.95rem!important} }
+@media (max-width:480px) { .app-shell{padding:8px 8px 0} .brand-mark{width:34px!important;height:34px!important;display:grid!important} .detail-panel{height:76svh} h1{font-size:.95rem!important} }
 
   </style>
 </head>
@@ -228,7 +229,7 @@ textarea { resize: vertical; min-height: 88px; }
     <header class="topbar">
     <button onclick="window.location.href='index.html'" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.9);backdrop-filter:blur(12px);color:#1a3a2a;font-size:.78rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:inherit;">← Dashboard</button>
       <div class="brand-block">
-        <div class="brand-mark" aria-hidden="true">TM</div>
+        <div class="brand-mark" aria-hidden="true"><img src="assets/ubkt-logo.png" alt=""></div>
         <div>
           <p class="eyebrow">UBKT ĐẢNG ỦY · PHƯỜNG TÂN MỸ</p>
           <h1>Bản đồ KTGS Phường Tân Mỹ</h1>
@@ -313,6 +314,7 @@ textarea { resize: vertical; min-height: 88px; }
             </div>
             <p class="detail-meta" id="regionMeta"></p>
             <div class="admin-actions" id="adminActions" hidden>
+              <button class="button button-primary" id="dynEditRegionBtn" type="button" data-edit-region>Nhập thông tin khu phố</button>
               <button class="button button-primary" type="button" data-open-modal="reflectionModal">Thêm phản ánh, kiến nghị</button>
               <button class="button button-secondary" type="button" data-open-modal="reportModal">Cập nhật báo cáo định kỳ</button>
             </div>
@@ -339,7 +341,7 @@ textarea { resize: vertical; min-height: 88px; }
           <p class="eyebrow">QUẢN TRỊ DỮ LIỆU</p>
           <h2 id="reflectionModalTitle">Thêm phản ánh, kiến nghị</h2>
         </div>
-        <button class="icon-button" value="cancel" aria-label="Đóng">×</button>
+        <button class="icon-button" type="button" value="cancel" data-close-dialog="reflectionModal" aria-label="Đóng">×</button>
       </div>
       <div class="form-grid">
         <label><span>Khu phố</span><select name="regionId" required></select></label>
@@ -385,8 +387,8 @@ textarea { resize: vertical; min-height: 88px; }
       </div>
       <div class="modal-note">Bản demo lưu dữ liệu trong trình duyệt hiện tại. Hệ thống chính thức phải lưu trên máy chủ và kiểm tra quyền trước khi trả dữ liệu.</div>
       <div class="modal-actions">
-        <button class="button button-secondary" value="cancel">Hủy</button>
-        <button class="button button-primary" value="default" id="saveReflection">Lưu nội dung</button>
+        <button class="button button-secondary" type="button" value="cancel" data-close-dialog="reflectionModal">Hủy</button>
+        <button class="button button-primary" type="button" value="default" id="saveReflection">Lưu nội dung</button>
       </div>
     </form>
   </dialog>
@@ -398,7 +400,7 @@ textarea { resize: vertical; min-height: 88px; }
           <p class="eyebrow">QUẢN TRỊ DỮ LIỆU</p>
           <h2 id="reportModalTitle">Cập nhật báo cáo định kỳ</h2>
         </div>
-        <button class="icon-button" value="cancel" aria-label="Đóng">×</button>
+        <button class="icon-button" type="button" value="cancel" data-close-dialog="reportModal" aria-label="Đóng">×</button>
       </div>
       <div class="form-grid">
         <label><span>Khu phố</span><select name="regionId" required></select></label>
@@ -425,8 +427,8 @@ textarea { resize: vertical; min-height: 88px; }
       </div>
       <div class="modal-note">Bản demo chưa tải tệp lên máy chủ. Trong dự án chính thức, tệp đính kèm phải được kiểm tra loại tệp, dung lượng, quyền truy cập và nhật ký tải xuống.</div>
       <div class="modal-actions">
-        <button class="button button-secondary" value="cancel">Hủy</button>
-        <button class="button button-primary" value="default" id="saveReport">Lưu báo cáo</button>
+        <button class="button button-secondary" type="button" value="cancel" data-close-dialog="reportModal">Hủy</button>
+        <button class="button button-primary" type="button" value="default" id="saveReport">Lưu báo cáo</button>
       </div>
     </form>
   </dialog>
@@ -780,6 +782,13 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
     });
 
     document.addEventListener('click', event => {
+      const closeDialog = event.target.closest('[data-close-dialog]');
+      if (closeDialog) {
+        const modal = document.getElementById(closeDialog.dataset.closeDialog);
+        if (modal && typeof modal.close === 'function') modal.close();
+        return;
+      }
+
       const trigger = event.target.closest('[data-open-modal]');
       if (!trigger) return;
       const modal = document.getElementById(trigger.dataset.openModal);
@@ -787,6 +796,12 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
       if (modal === elements.reflectionModal) elements.reflectionForm.elements.date.value = new Date().toISOString().slice(0,10);
       if (modal === elements.reportModal) elements.reportForm.elements.updatedAt.value = new Date().toISOString().slice(0,10);
       modal.showModal();
+    });
+
+    [elements.reflectionModal, elements.reportModal].forEach(modal => {
+      modal.addEventListener('click', event => {
+        if (event.target === modal) modal.close();
+      });
     });
 
     document.getElementById('saveReflection').addEventListener('click', event => {
@@ -1572,6 +1587,10 @@ document.addEventListener('DOMContentLoaded',function(){
   }
 
   function bind() {
+    document.querySelectorAll('[data-edit-region]').forEach(b => b.addEventListener('click', () => {
+      const id = app()?.state.selectedRegionId;
+      if (id) openRegionEditor(id);
+    }));
     document.querySelectorAll('[data-dynamic-close]').forEach(b => b.addEventListener('click', closeRegionEditor));
     document.getElementById('dynamicRegionFieldModal')?.addEventListener('click', e => { if(e.target === document.getElementById('dynamicRegionFieldModal')) closeRegionEditor(); });
     document.getElementById('dynamicRegionFieldForm')?.addEventListener('submit', saveRegionData);
