@@ -1755,5 +1755,309 @@ document.addEventListener('DOMContentLoaded',function(){
   else bind();
 })();
 </script>
+<style id="hard-region-info-modal-styles">
+.hard-region-backdrop{display:none;position:fixed;inset:0;z-index:1800;align-items:center;justify-content:center;padding:16px;background:rgba(7,20,35,.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.hard-region-backdrop.is-open{display:flex}
+.hard-region-dialog{width:min(980px,100%);max-height:92vh;overflow:auto;background:rgba(255,255,255,.98);border:1px solid rgba(255,255,255,.72);border-radius:20px;box-shadow:0 30px 90px rgba(4,22,43,.32);animation:modalRise .24s var(--easing)}
+.hard-region-header{position:sticky;top:0;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 20px 14px;background:rgba(255,255,255,.95);backdrop-filter:blur(18px);border-bottom:1px solid #e6edf6;border-radius:20px 20px 0 0}
+.hard-region-header h2{margin:3px 0 0;font-size:1.18rem}.hard-region-header p{margin:0;color:#607089;font-size:.78rem;line-height:1.45}.hard-region-eyebrow{margin:0;color:#0055DA;font-size:.64rem;font-weight:850;text-transform:uppercase;letter-spacing:.1em}
+.hard-region-close{width:36px;height:36px;border:0;border-radius:12px;background:#eef2f7;color:#31445d;cursor:pointer;display:grid;place-items:center}
+.hard-region-body{padding:18px 20px 22px}.hard-section{margin-bottom:16px;padding:15px;border:1px solid #e2e9f2;border-radius:14px;background:#fbfdff}.hard-section h3{margin:0 0 12px;font-size:.84rem;color:#075f45;text-transform:uppercase;letter-spacing:.06em;font-weight:850}.hard-section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.hard-section-head h3{margin:0}
+.hard-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.hard-control{display:grid;gap:5px}.hard-control.span-two{grid-column:1/-1}.hard-control label{font-size:.73rem;font-weight:760;color:#52657e}.hard-control input,.hard-control textarea{width:100%;border:1.5px solid #d8e2ee;border-radius:11px;padding:9px 11px;background:white;font-family:inherit;font-size:.85rem;outline:none;box-sizing:border-box}.hard-control input:focus,.hard-control textarea:focus{border-color:#0055DA;background:#f0f5ff;box-shadow:0 0 0 3px rgba(0,85,218,.1)}.hard-control textarea{min-height:72px;resize:vertical}.hard-help{margin:8px 0 0;color:#718096;font-size:.7rem;line-height:1.45}
+.hard-list{display:grid;gap:9px}.hard-position-row{display:grid;grid-template-columns:1fr 1.2fr auto;gap:8px;align-items:end;padding:10px;border:1px solid #e1e8f1;border-radius:12px;background:white}.hard-field-row{display:grid;grid-template-columns:1fr 1.2fr 1fr auto;gap:8px;align-items:end;padding:10px;border:1px solid #e1e8f1;border-radius:12px;background:white}.hard-add{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(0,85,218,.18);border-radius:11px;background:#eaf2ff;color:#0055DA;font-weight:850;padding:9px 12px;cursor:pointer}.hard-remove{width:36px;height:36px;border:0;border-radius:10px;background:#fff0f4;color:#b31243;font-weight:900;cursor:pointer;display:grid;place-items:center}
+.hard-actions{display:flex;justify-content:flex-end;gap:9px;padding-top:16px;border-top:1px solid #e7edf5}.hard-cancel,.hard-save{border:0;border-radius:11px;padding:10px 18px;font-weight:800;cursor:pointer;font-family:inherit;font-size:.85rem}.hard-cancel{background:#edf2f7;color:#52657e}.hard-save{display:inline-flex;align-items:center;gap:8px;background:#0055DA;color:white;box-shadow:0 4px 14px rgba(0,85,218,.3)}
+@media(max-width:700px){.hard-grid,.hard-position-row,.hard-field-row{grid-template-columns:1fr}.hard-control.span-two{grid-column:auto}.hard-section-head{align-items:flex-start;flex-direction:column}.hard-remove{width:100%}}
+</style>
+
+<div id="hardRegionInfoModal" class="hard-region-backdrop" aria-hidden="true">
+  <div class="hard-region-dialog" role="dialog" aria-modal="true" aria-labelledby="hardRegionInfoTitle">
+    <div class="hard-region-header">
+      <div>
+        <p class="hard-region-eyebrow">Nhap thong tin khu pho</p>
+        <h2 id="hardRegionInfoTitle">Cap nhat thong tin</h2>
+        <p>Nhap cac truong co dinh va them truong giam sat tuy theo nhiem vu duoc giao.</p>
+      </div>
+      <button class="hard-region-close" type="button" data-hard-close aria-label="Dong"><i data-lucide="x"></i></button>
+    </div>
+    <form id="hardRegionInfoForm" class="hard-region-body">
+      <div class="hard-section">
+        <h3>Thong tin co ban</h3>
+        <div class="hard-grid">
+          <div class="hard-control span-two"><label for="hard-cell">Ten chi bo / khu pho</label><input id="hard-cell" type="text" placeholder="VD: Chi bo Khu pho 1"></div>
+          <div class="hard-control"><label for="hard-official">So luong dang vien chinh thuc</label><input id="hard-official" type="number" min="0" placeholder="0"></div>
+          <div class="hard-control"><label for="hard-probation">So luong dang vien du bi</label><input id="hard-probation" type="number" min="0" placeholder="0"></div>
+          <div class="hard-control"><label for="hard-total">Tong so dang vien</label><input id="hard-total" type="number" min="0" placeholder="Tu tinh theo 2 o tren"></div>
+          <div class="hard-control"><label for="hard-committee">So chi uy vien</label><input id="hard-committee" type="number" min="0" placeholder="0"></div>
+          <div class="hard-control"><label for="hard-groups">So to dang</label><input id="hard-groups" type="number" min="0" placeholder="0"></div>
+          <div class="hard-control"><label for="hard-schedule">Che do sinh hoat</label><input id="hard-schedule" type="text" placeholder="VD: Dinh ky hang thang"></div>
+          <div class="hard-control"><label for="hard-address">Dia diem sinh hoat / dia chi</label><input id="hard-address" type="text" placeholder="Nhap dia chi hoac dia diem sinh hoat"></div>
+        </div>
+      </div>
+
+      <div class="hard-section">
+        <div class="hard-section-head">
+          <h3>Ten cac chuc danh trong khu pho</h3>
+          <button class="hard-add" id="hardAddPosition" type="button"><i data-lucide="plus"></i><span>Them chuc danh</span></button>
+        </div>
+        <div class="hard-list" id="hardPositionList"></div>
+      </div>
+
+      <div class="hard-section">
+        <h3>Chi so giam sat tong hop</h3>
+        <div class="hard-grid">
+          <div class="hard-control"><label for="hard-kt-total">Tong so noi dung KTGS</label><input id="hard-kt-total" type="number" min="0" placeholder="0"></div>
+          <div class="hard-control"><label for="hard-kt-done">Da hoan thanh</label><input id="hard-kt-done" type="number" min="0" placeholder="0"></div>
+          <div class="hard-control"><label for="hard-kt-ongoing">Dang thuc hien</label><input id="hard-kt-ongoing" type="number" min="0" placeholder="0"></div>
+          <div class="hard-control"><label for="hard-kt-overdue" style="color:#b31243;">Qua han</label><input id="hard-kt-overdue" type="number" min="0" placeholder="0"></div>
+        </div>
+      </div>
+
+      <div class="hard-section">
+        <div class="hard-section-head">
+          <h3>Truong du lieu theo nhiem vu giam sat</h3>
+          <button class="hard-add" id="hardAddField" type="button"><i data-lucide="plus"></i><span>Them truong</span></button>
+        </div>
+        <div class="hard-list" id="hardFieldList"></div>
+        <p class="hard-help">Dung nut + de tao truong rieng cho tung nhiem vu, vi du: Tien do thu nop dang phi, Ho so can bo dang vien, Noi dung tiep tuc theo doi.</p>
+      </div>
+
+      <div class="hard-actions">
+        <button class="hard-cancel" type="button" data-hard-close>Huy</button>
+        <button class="hard-save" type="submit"><i data-lucide="save"></i><span>Luu thong tin khu pho</span></button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script id="hard-region-info-modal-script">
+(function(){
+  let currentRegionId = null;
+  let positions = [];
+  let customFields = [];
+  const getApp = () => window.TanMyMapApp;
+  const defaults = [
+    { title: 'Bi thu chi bo', name: '' },
+    { title: 'Pho Bi thu chi bo', name: '' },
+    { title: 'Truong khu pho', name: '' },
+    { title: 'Truong ban cong tac Mat tran', name: '' }
+  ];
+  const uid = prefix => prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+  const html = value => String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+  const num = id => parseInt(document.getElementById(id)?.value, 10) || 0;
+  const str = id => (document.getElementById(id)?.value || '').trim();
+  function icons(){ if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons(); }
+
+  function renderPositions(){
+    const list = document.getElementById('hardPositionList');
+    if (!list) return;
+    if (!positions.length) positions = defaults.map(item => ({...item}));
+    list.innerHTML = positions.map((item, index) => `
+      <div class="hard-position-row" data-hard-position="${index}">
+        <div class="hard-control"><label>Chuc danh</label><input type="text" data-hard-position-title value="${html(item.title)}" placeholder="VD: Bi thu chi bo"></div>
+        <div class="hard-control"><label>Ho va ten</label><input type="text" data-hard-position-name value="${html(item.name)}" placeholder="Nhap ho ten"></div>
+        <button class="hard-remove" type="button" data-hard-remove-position aria-label="Xoa chuc danh"><i data-lucide="trash-2"></i></button>
+      </div>`).join('');
+    icons();
+  }
+
+  function renderFields(){
+    const list = document.getElementById('hardFieldList');
+    if (!list) return;
+    if (!customFields.length) customFields = [{ id: uid('field'), label: 'Nhiem vu giam sat duoc giao', value: '', note: '' }];
+    list.innerHTML = customFields.map((item, index) => `
+      <div class="hard-field-row" data-hard-field="${index}">
+        <div class="hard-control"><label>Ten truong / nhiem vu</label><input type="text" data-hard-field-label value="${html(item.label)}" placeholder="VD: Giam sat sinh hoat chi bo"></div>
+        <div class="hard-control"><label>Gia tri / trang thai</label><input type="text" data-hard-field-value value="${html(item.value)}" placeholder="VD: Dang theo doi"></div>
+        <div class="hard-control"><label>Ghi chu</label><input type="text" data-hard-field-note value="${html(item.note)}" placeholder="Ghi chu ngan"></div>
+        <button class="hard-remove" type="button" data-hard-remove-field aria-label="Xoa truong"><i data-lucide="trash-2"></i></button>
+      </div>`).join('');
+    icons();
+  }
+
+  function syncRows(){
+    positions = Array.from(document.querySelectorAll('[data-hard-position]')).map(row => ({
+      title: row.querySelector('[data-hard-position-title]')?.value.trim() || '',
+      name: row.querySelector('[data-hard-position-name]')?.value.trim() || ''
+    })).filter(item => item.title || item.name);
+    customFields = Array.from(document.querySelectorAll('[data-hard-field]')).map(row => {
+      const index = Number(row.dataset.hardField);
+      return {
+        id: customFields[index]?.id || uid('field'),
+        label: row.querySelector('[data-hard-field-label]')?.value.trim() || '',
+        value: row.querySelector('[data-hard-field-value]')?.value.trim() || '',
+        note: row.querySelector('[data-hard-field-note]')?.value.trim() || ''
+      };
+    }).filter(item => item.label || item.value || item.note);
+  }
+
+  function setVal(id, value){ const el = document.getElementById(id); if (el) el.value = value ?? ''; }
+
+  function openModal(regionId){
+    const app = getApp();
+    if (!app) return;
+    if (!app.state.adminMode) { app.showToast('Can bat che do quan tri de nhap thong tin khu pho.'); return; }
+    const region = app.state.data.regions.find(item => item.id === regionId);
+    if (!region) return;
+    currentRegionId = regionId;
+    const p = region.partyProfile || {};
+    const kt = region.inspectionSupervision || {};
+    document.getElementById('hardRegionInfoTitle').textContent = region.displayName || regionId;
+    setVal('hard-cell', p.partyCellName);
+    setVal('hard-official', p.officialPartyMembers);
+    setVal('hard-probation', p.probationaryPartyMembers);
+    setVal('hard-total', p.partyMembers);
+    setVal('hard-committee', p.committeeMembers);
+    setVal('hard-groups', p.partyGroups);
+    setVal('hard-schedule', p.meetingSchedule);
+    setVal('hard-address', p.address);
+    setVal('hard-kt-total', kt.totalItems);
+    setVal('hard-kt-done', kt.completedItems);
+    setVal('hard-kt-ongoing', kt.ongoingItems);
+    setVal('hard-kt-overdue', kt.overdueItems);
+    positions = Array.isArray(p.positions) && p.positions.length ? p.positions.map(item => ({ title: item.title || '', name: item.name || '' })) : [
+      { title: 'Bi thu chi bo', name: p.secretary || '' },
+      { title: 'Pho Bi thu chi bo', name: p.deputySecretary || '' },
+      { title: 'Truong khu pho', name: p.neighborhoodHead || '' },
+      { title: 'Truong ban cong tac Mat tran', name: p.frontCommitteeHead || '' }
+    ];
+    customFields = Array.isArray(region.customSupervisionFields) && region.customSupervisionFields.length
+      ? region.customSupervisionFields.map(item => ({ id: item.id || uid('field'), label: item.label || '', value: item.value || '', note: item.note || '' }))
+      : [{ id: uid('field'), label: 'Nhiem vu giam sat duoc giao', value: '', note: '' }];
+    renderPositions();
+    renderFields();
+    document.getElementById('hardRegionInfoModal').classList.add('is-open');
+    document.getElementById('hardRegionInfoModal').setAttribute('aria-hidden','false');
+    setTimeout(() => document.getElementById('hard-cell')?.focus(), 80);
+  }
+
+  function closeModal(){
+    document.getElementById('hardRegionInfoModal').classList.remove('is-open');
+    document.getElementById('hardRegionInfoModal').setAttribute('aria-hidden','true');
+    currentRegionId = null;
+  }
+
+  async function saveSupabaseRegion(region){
+    const sb = window._mapSB;
+    if (!sb) return;
+    const p = region.partyProfile || {};
+    await sb.from('theo_doi_co_so_khu_pho').upsert({
+      region_id: region.id,
+      display_name: region.displayName,
+      party_cell_name: p.partyCellName || '',
+      party_members_total: p.partyMembers || 0,
+      official_party_members: p.officialPartyMembers || 0,
+      probationary_party_members: p.probationaryPartyMembers || 0,
+      committee_members: p.committeeMembers || 0,
+      party_groups: p.partyGroups || 0,
+      meeting_schedule: p.meetingSchedule || '',
+      address: p.address || '',
+      positions: p.positions || [],
+      data: region,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'region_id' });
+    await sb.from('theo_doi_co_so_truong_giam_sat').delete().eq('region_id', region.id);
+    const rows = (region.customSupervisionFields || []).map((item, index) => ({
+      id: item.id || uid('field'),
+      region_id: region.id,
+      field_label: item.label || '',
+      field_value: item.value || '',
+      note: item.note || '',
+      sort_order: index + 1
+    }));
+    if (rows.length) await sb.from('theo_doi_co_so_truong_giam_sat').insert(rows);
+  }
+
+  async function saveForm(event){
+    event.preventDefault();
+    const app = getApp();
+    if (!app || !currentRegionId) return;
+    const region = app.state.data.regions.find(item => item.id === currentRegionId);
+    if (!region) return;
+    syncRows();
+    if (!region.partyProfile) region.partyProfile = {};
+    const p = region.partyProfile;
+    p.partyCellName = str('hard-cell');
+    p.officialPartyMembers = num('hard-official');
+    p.probationaryPartyMembers = num('hard-probation');
+    p.partyMembers = num('hard-total') || (p.officialPartyMembers + p.probationaryPartyMembers);
+    p.committeeMembers = num('hard-committee');
+    p.partyGroups = num('hard-groups');
+    p.meetingSchedule = str('hard-schedule');
+    p.address = str('hard-address');
+    p.positions = positions;
+    p.secretary = positions.find(item => item.title.toLowerCase().includes('bi thu') && !item.title.toLowerCase().includes('pho'))?.name || '';
+    p.deputySecretary = positions.find(item => item.title.toLowerCase().includes('pho'))?.name || '';
+    p.neighborhoodHead = positions.find(item => item.title.toLowerCase().includes('truong khu'))?.name || '';
+    p.frontCommitteeHead = positions.find(item => item.title.toLowerCase().includes('mat tran'))?.name || '';
+    if (!region.inspectionSupervision) region.inspectionSupervision = { totalItems:0, completedItems:0, ongoingItems:0, overdueItems:0, items:[] };
+    const kt = region.inspectionSupervision;
+    kt.totalItems = num('hard-kt-total');
+    kt.completedItems = num('hard-kt-done');
+    kt.ongoingItems = num('hard-kt-ongoing');
+    kt.overdueItems = num('hard-kt-overdue');
+    region.customSupervisionFields = customFields;
+    const ktStatus = kt.overdueItems > 0 ? 'alert' : kt.ongoingItems > 0 ? 'attention' : kt.completedItems > 0 ? 'completed' : 'normal';
+    const partyStatus = p.partyCellName && p.partyMembers > 0 ? 'completed' : (p.partyCellName || p.partyMembers > 0 ? 'attention' : 'normal');
+    const rank = { normal:0, completed:1, attention:2, alert:3 };
+    const customStatus = customFields.length ? 'attention' : 'normal';
+    region.statuses = {
+      overall: [ktStatus, customStatus, region.statuses?.reflections || 'normal', region.statuses?.reports || 'normal'].reduce((cur, val) => rank[val] > rank[cur] ? val : cur, 'normal'),
+      partyOrganization: partyStatus,
+      inspectionSupervision: ktStatus,
+      conclusionTracking: region.statuses?.conclusionTracking || 'normal',
+      reflections: region.statuses?.reflections || 'normal',
+      reports: region.statuses?.reports || 'normal'
+    };
+    region.lastUpdated = new Date().toISOString();
+    app.persistState();
+    try { await saveSupabaseRegion(region); } catch (err) { console.warn('Khong the luu bang Supabase rieng.', err); }
+    closeModal();
+    app.refreshAll();
+    app.showToast('Da luu thong tin khu pho.');
+  }
+
+  function bindHardModal(){
+    document.addEventListener('click', event => {
+      const trigger = event.target.closest('[data-edit-region]');
+      if (!trigger) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const id = getApp()?.state.selectedRegionId;
+      if (id) openModal(id);
+      else getApp()?.showToast('Vui long chon mot khu pho tren ban do truoc.');
+    }, true);
+    document.querySelectorAll('[data-hard-close]').forEach(button => button.addEventListener('click', closeModal));
+    document.getElementById('hardRegionInfoModal')?.addEventListener('click', event => { if (event.target === event.currentTarget) closeModal(); });
+    document.getElementById('hardRegionInfoForm')?.addEventListener('submit', saveForm);
+    document.getElementById('hardAddPosition')?.addEventListener('click', () => { syncRows(); positions.push({ title:'', name:'' }); renderPositions(); });
+    document.getElementById('hardAddField')?.addEventListener('click', () => { syncRows(); customFields.push({ id: uid('field'), label:'', value:'', note:'' }); renderFields(); });
+    document.getElementById('hardPositionList')?.addEventListener('click', event => {
+      const remove = event.target.closest('[data-hard-remove-position]');
+      if (!remove) return;
+      syncRows();
+      positions.splice(Number(remove.closest('[data-hard-position]').dataset.hardPosition), 1);
+      renderPositions();
+    });
+    document.getElementById('hardFieldList')?.addEventListener('click', event => {
+      const remove = event.target.closest('[data-hard-remove-field]');
+      if (!remove) return;
+      syncRows();
+      customFields.splice(Number(remove.closest('[data-hard-field]').dataset.hardField), 1);
+      renderFields();
+    });
+    ['hard-official','hard-probation'].forEach(id => document.getElementById(id)?.addEventListener('input', () => {
+      const total = num('hard-official') + num('hard-probation');
+      setVal('hard-total', total);
+    }));
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && document.getElementById('hardRegionInfoModal')?.classList.contains('is-open')) closeModal();
+    });
+    window.HardRegionInfoModal = { openModal, closeModal };
+    icons();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindHardModal);
+  else bindHardModal();
+})();
+</script>
 </body>
 </html>
