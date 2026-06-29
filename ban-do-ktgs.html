@@ -975,11 +975,7 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
         </div>
         <div class="section-heading"><h3>Khu phố cần xem trong chế độ hiện tại</h3><small>${escapeHtml(state.data.viewModes.find(mode => mode.id === state.mode)?.label || '')}</small></div>
         <div class="attention-list">
-          ${attentionRegions.length ? attentionRegions.map(region => `
-            <div class="attention-item">
-              <div><button type="button" data-select-region="${region.id}">${escapeHtml(region.displayName)}</button><br><small>${statusLabels[getStatus(region)]}</small></div>
-              <span class="status-badge ${getStatus(region)}">${statusLabels[getStatus(region)]}</span>
-            </div>`).join('') : '<div class="empty-state">Không có khu phố cần chú ý trong chế độ xem này.</div>'}
+          ${attentionRegions.length ? attentionRegions.map(region => '<div class="attention-item"><div><button type="button" data-select-region="' + region.id + '">' + escapeHtml(region.displayName) + '</button><br><small>' + statusLabels[getStatus(region)] + '</small></div><span class="status-badge ' + getStatus(region) + '">' + statusLabels[getStatus(region)] + '</span></div>').join('') : '<div class="empty-state">Không có khu phố cần chú ý trong chế độ xem này.</div>'}
         </div>
       </div>`;
     elements.overviewPanel.querySelectorAll('[data-select-region]').forEach(button => button.addEventListener('click', () => selectRegion(button.dataset.selectRegion)));
@@ -1029,8 +1025,8 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
       <div class="progress-track"><div class="progress-fill" style="width:${conclusionPercent}%"></div></div>
       <div class="section-heading"><h3>Thông tin cần chú ý</h3></div>
       <div class="record-list">
-        ${recordCard('Công tác kiểm tra, giám sát', `${region.inspectionSupervision.completedItems}/${region.inspectionSupervision.plannedItems} nội dung đã hoàn thành`, statusLabels[region.statuses.inspectionSupervision])}
-        ${recordCard('Phản ánh, kiến nghị', `${openReflections} nội dung đang theo dõi`, statusLabels[region.statuses.reflections])}
+        ${recordCard('Công tác kiểm tra, giám sát', region.inspectionSupervision.completedItems + '/' + (region.inspectionSupervision.plannedItems||0) + ' nội dung đã hoàn thành', statusLabels[region.statuses.inspectionSupervision])}
+        ${recordCard('Phản ánh, kiến nghị', openReflections + ' nội dung đang theo dõi', statusLabels[region.statuses.reflections])}
         ${recordCard('Báo cáo định kỳ', region.reports.currentPeriod, region.reports.status)}
       </div>`;
   }
@@ -1065,7 +1061,7 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
       <div class="section-heading"><h3>Tiến độ chung</h3><strong>${percent}%</strong></div>
       <div class="progress-track"><div class="progress-fill" style="width:${percent}%"></div></div>
       <div class="section-heading"><h3>Danh sách nội dung theo dõi</h3></div>
-      <div class="record-list">${d.records.map(item => recordCard(item.title, `${item.type} · ${item.period}`, item.status)).join('')}</div>`;
+      <div class="record-list">${d.records.map(item => recordCard(item.title, (item.type||'') + ' · ' + (item.period||''), item.status)).join('')}</div>`;
   }
 
   function renderConclusions(region) {
@@ -1079,7 +1075,7 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
       </div>
       <div class="section-heading"><h3>Nội dung theo dõi</h3></div>
       <div class="record-list">
-        ${d.items.length ? d.items.map(item => recordCard(item.content, `Hạn thực hiện: ${formatDate(item.deadline)} · ${item.evidence}`, item.status)).join('') : '<div class="empty-state">Chưa có nội dung phải theo dõi sau kết luận trong dữ liệu minh họa.</div>'}
+        ${d.items.length ? d.items.map(item => recordCard(item.content, 'Hạn thực hiện: ' + formatDate(item.deadline) + ' · ' + (item.evidence||''), item.status)).join('') : '<div class="empty-state">Chưa có nội dung phải theo dõi sau kết luận trong dữ liệu minh họa.</div>'}
       </div>`;
   }
 
@@ -1088,13 +1084,7 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
     return `
       <div class="section-heading"><h3>Phản ánh, kiến nghị và tình hình địa bàn</h3><small>${items.length} nội dung</small></div>
       <div class="record-list">
-        ${items.length ? items.map(item => `
-          <article class="record-card ${item.isNew ? 'is-new' : ''}">
-            <h4>${escapeHtml(item.content)}</h4>
-            <p>${escapeHtml(item.source)} · ${escapeHtml(item.category)}</p>
-            <p style="margin-top:7px"><strong>Đề xuất:</strong> ${escapeHtml(item.proposal || 'Chưa cập nhật')}</p>
-            <div class="record-meta"><span>${formatDate(item.date)}</span><strong>${escapeHtml(item.status)}</strong></div>
-          </article>`).join('') : '<div class="empty-state">Chưa có phản ánh, kiến nghị được ghi nhận.</div>'}
+        ${items.length ? items.map(item => '<article class="record-card ' + (item.isNew ? 'is-new' : '') + '"><h4>' + escapeHtml(item.content) + '</h4><p>' + escapeHtml(item.source) + ' · ' + escapeHtml(item.category) + '</p><p style="margin-top:7px"><strong>Đề xuất:</strong> ' + escapeHtml(item.proposal || 'Chưa cập nhật') + '</p><div class="record-meta"><span>' + formatDate(item.date) + '</span><strong>' + escapeHtml(item.status) + '</strong></div></article>').join('') : '<div class="empty-state">Chưa có phản ánh, kiến nghị được ghi nhận.</div>'}
       </div>`;
   }
 
@@ -1110,7 +1100,7 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
       <div class="section-heading"><h3>Nội dung tóm tắt</h3></div>
       <div class="record-card"><p>${escapeHtml(r.summary || 'Chưa có nội dung tóm tắt.')}</p></div>
       <div class="section-heading"><h3>Lịch sử kỳ báo cáo</h3></div>
-      <div class="timeline-list">${r.history.map(item => `<div class="timeline-item"><strong>${escapeHtml(item.period)}</strong><div class="record-meta"><span>${formatDate(item.updatedAt)}</span><span>${escapeHtml(item.status)}</span></div></div>`).join('')}</div>`;
+      <div class="timeline-list">${r.history.map(item => '<div class="timeline-item"><strong>' + escapeHtml(item.period) + '</strong><div class="record-meta"><span>' + formatDate(item.updatedAt) + '</span><span>' + escapeHtml(item.status) + '</span></div></div>').join('')}</div>`;
   }
 
   function saveReflection(formData) {
