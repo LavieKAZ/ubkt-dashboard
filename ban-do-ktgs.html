@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bản đồ KTGS — UBKT Phường Tân Mỹ</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script src="./config.js"></script>
   <style>
 
@@ -220,6 +221,106 @@ textarea { resize: vertical; min-height: 88px; }
 @media (max-width:768px) { html,body{overflow-x:hidden} .app-shell{padding:10px 10px 0} .map-stage{min-height:52svh;border-radius:16px;padding:6px} #wardMap{touch-action:none;-webkit-user-select:none;user-select:none} .detail-panel{position:fixed;inset:auto 0 0 0;height:72svh;border-radius:22px 22px 0 0;z-index:600;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;box-shadow:0 -12px 40px rgba(0,0,0,.18);padding-top:20px} .detail-panel::before{content:"";position:absolute;top:8px;left:50%;transform:translateX(-50%);width:36px;height:4px;background:rgba(0,0,0,.14);border-radius:2px} .tab-list{overflow-x:auto;flex-wrap:nowrap} .topbar{gap:6px} .brand-mark{width:36px!important;height:36px!important;border-radius:10px!important} .page-footer{padding-bottom:80px} .form-grid,.key-value-grid{grid-template-columns:1fr} }
 @media (max-width:480px) { .app-shell{padding:8px 8px 0} .brand-mark{width:34px!important;height:34px!important;display:grid!important} .detail-panel{height:76svh} h1{font-size:.95rem!important} }
 
+/* Professional UI pass */
+html, body { background:
+  linear-gradient(135deg, rgba(0,85,218,.08), rgba(0,198,141,.08) 42%, rgba(255,212,0,.07)),
+  #eef3f9;
+}
+.topbar {
+  position: sticky;
+  top: 12px;
+  z-index: 30;
+  padding: 13px 16px;
+  border: 1px solid rgba(220,228,239,.9);
+  border-radius: 20px;
+  background: rgba(255,255,255,.78);
+  backdrop-filter: blur(22px) saturate(1.25);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  box-shadow: 0 18px 45px rgba(16,32,58,.10);
+}
+.button, .icon-button, .text-button, .back-dashboard, .back-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.button { min-height: 40px; letter-spacing: 0; }
+.button svg, .icon-button svg, .text-button svg, .back-dashboard svg, .back-button svg, .admin-status-pill svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  stroke-width: 2.35;
+}
+.button-primary {
+  background: linear-gradient(135deg, #0055DA, #0089f2);
+  box-shadow: 0 10px 24px rgba(0,85,218,.22);
+}
+.button-primary:hover { box-shadow: 0 14px 30px rgba(0,85,218,.26); }
+.button-secondary.is-active, .button-secondary[aria-pressed="true"] {
+  background: #10203a;
+  color: #fff;
+  border-color: #10203a;
+  box-shadow: 0 12px 28px rgba(16,32,58,.20);
+}
+.back-dashboard {
+  padding: 8px 13px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.92);
+  color: #17304f;
+  font-size: .78rem;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: transform var(--motion-fast), box-shadow var(--motion-fast), background var(--motion-fast);
+}
+.back-dashboard:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(16,32,58,.10); }
+.admin-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgba(0,198,141,.12);
+  border: 1px solid rgba(0,198,141,.26);
+  color: #075f47;
+  font-size: .74rem;
+  font-weight: 850;
+  animation: panelIn .22s var(--easing);
+}
+.admin-guide {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: -4px 0 16px;
+  padding: 13px 14px;
+  border: 1px solid rgba(0,85,218,.16);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(0,85,218,.09), rgba(0,198,141,.09));
+  color: #17304f;
+}
+.admin-guide svg { width: 20px; height: 20px; color: var(--blue); flex: 0 0 auto; margin-top: 1px; }
+.admin-guide strong { display: block; margin-bottom: 2px; font-size: .88rem; }
+.admin-guide span { display: block; color: var(--muted); font-size: .78rem; line-height: 1.45; }
+.map-card, .detail-panel, .summary-card, .metric-card, .attention-item, .record-card, .timeline-item, .key-value {
+  transition: transform var(--motion-fast), box-shadow var(--motion-fast), border-color var(--motion-fast), background var(--motion-fast);
+}
+.summary-card:hover, .metric-card:hover, .attention-item:hover, .record-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0,85,218,.20);
+  box-shadow: 0 12px 28px rgba(16,32,58,.09);
+}
+.admin-actions:not([hidden]) { animation: panelIn .24s var(--easing); }
+.modal[open], .dynamic-field-backdrop[style*="flex"], #editRegionModal[style*="flex"] { animation: fadeIn .18s ease-out; }
+.modal[open] form, .dynamic-field-dialog, #editRegionModal > div { animation: modalRise .24s var(--easing); }
+.toast { animation: toastIn .22s var(--easing); }
+@keyframes panelIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalRise { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
   </style>
 </head>
 <body>
@@ -227,7 +328,7 @@ textarea { resize: vertical; min-height: 88px; }
   <noscript>Vui lòng bật JavaScript để xem bản đồ.</noscript>
   <div class="app-shell" id="appShell">
     <header class="topbar">
-    <button onclick="window.location.href='index.html'" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.9);backdrop-filter:blur(12px);color:#1a3a2a;font-size:.78rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:inherit;">← Dashboard</button>
+    <button class="back-dashboard" onclick="window.location.href='index.html'" type="button"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></button>
       <div class="brand-block">
         <div class="brand-mark" aria-hidden="true"><img src="assets/ubkt-logo.png" alt=""></div>
         <div>
@@ -245,8 +346,9 @@ textarea { resize: vertical; min-height: 88px; }
             <option>Năm 2026</option>
           </select>
         </label>
+        <span class="admin-status-pill" id="adminStatusPill" hidden><i data-lucide="shield-check"></i><span>Quản trị đang bật</span></span>
         <button class="button button-secondary" id="adminToggle" type="button" aria-pressed="false">
-          Chế độ quản trị
+          <i data-lucide="shield"></i><span>Chế độ quản trị</span>
         </button>
       </div>
     </header>
@@ -268,7 +370,7 @@ textarea { resize: vertical; min-height: 88px; }
               <input id="regionSearch" type="search" placeholder="Tìm khu phố" autocomplete="off" list="regionList">
               <datalist id="regionList"></datalist>
             </label>
-            <button class="icon-button" id="resetMap" type="button" title="Trở về toàn phường" aria-label="Trở về toàn phường">⌂</button>
+            <button class="icon-button" id="resetMap" type="button" title="Trở về toàn phường" aria-label="Trở về toàn phường"><i data-lucide="home"></i></button>
           </div>
         </div>
 
@@ -314,9 +416,9 @@ textarea { resize: vertical; min-height: 88px; }
             </div>
             <p class="detail-meta" id="regionMeta"></p>
             <div class="admin-actions" id="adminActions" hidden>
-              <button class="button button-primary" id="dynEditRegionBtn" type="button" data-edit-region>Nhập thông tin khu phố</button>
-              <button class="button button-primary" type="button" data-open-modal="reflectionModal">Thêm phản ánh, kiến nghị</button>
-              <button class="button button-secondary" type="button" data-open-modal="reportModal">Cập nhật báo cáo định kỳ</button>
+              <button class="button button-primary" id="dynEditRegionBtn" type="button" data-edit-region><i data-lucide="file-pen-line"></i><span>Nhập thông tin khu phố</span></button>
+              <button class="button button-primary" type="button" data-open-modal="reflectionModal"><i data-lucide="message-square-plus"></i><span>Thêm phản ánh, kiến nghị</span></button>
+              <button class="button button-secondary" type="button" data-open-modal="reportModal"><i data-lucide="clipboard-check"></i><span>Cập nhật báo cáo định kỳ</span></button>
             </div>
           </div>
           <div class="tab-list" id="tabList" role="tablist" aria-label="Nhóm thông tin khu phố"></div>
@@ -328,8 +430,8 @@ textarea { resize: vertical; min-height: 88px; }
     <footer class="page-footer">
       <p>Hệ thống theo dõi công tác kiểm tra, giám sát — UBKT Đảng ủy Phường Tân Mỹ.</p>
       <div class="footer-actions" id="adminFooterActions" hidden>
-        <button class="text-button" id="exportData" type="button">Xuất dữ liệu</button>
-        <button class="text-button danger" id="resetData" type="button">Khôi phục dữ liệu ban đầu</button>
+        <button class="text-button" id="exportData" type="button"><i data-lucide="download"></i><span>Xuất dữ liệu</span></button>
+        <button class="text-button danger" id="resetData" type="button"><i data-lucide="rotate-ccw"></i><span>Khôi phục dữ liệu ban đầu</span></button>
       </div>
     </footer>
   </div>
@@ -341,7 +443,7 @@ textarea { resize: vertical; min-height: 88px; }
           <p class="eyebrow">QUẢN TRỊ DỮ LIỆU</p>
           <h2 id="reflectionModalTitle">Thêm phản ánh, kiến nghị</h2>
         </div>
-        <button class="icon-button" type="button" value="cancel" data-close-dialog="reflectionModal" aria-label="Đóng">×</button>
+        <button class="icon-button" type="button" value="cancel" data-close-dialog="reflectionModal" aria-label="Đóng"><i data-lucide="x"></i></button>
       </div>
       <div class="form-grid">
         <label><span>Khu phố</span><select name="regionId" required></select></label>
@@ -387,8 +489,8 @@ textarea { resize: vertical; min-height: 88px; }
       </div>
       <div class="modal-note">Bản demo lưu dữ liệu trong trình duyệt hiện tại. Hệ thống chính thức phải lưu trên máy chủ và kiểm tra quyền trước khi trả dữ liệu.</div>
       <div class="modal-actions">
-        <button class="button button-secondary" type="button" value="cancel" data-close-dialog="reflectionModal">Hủy</button>
-        <button class="button button-primary" type="button" value="default" id="saveReflection">Lưu nội dung</button>
+        <button class="button button-secondary" type="button" value="cancel" data-close-dialog="reflectionModal"><i data-lucide="x"></i><span>Hủy</span></button>
+        <button class="button button-primary" type="button" value="default" id="saveReflection"><i data-lucide="save"></i><span>Lưu nội dung</span></button>
       </div>
     </form>
   </dialog>
@@ -400,7 +502,7 @@ textarea { resize: vertical; min-height: 88px; }
           <p class="eyebrow">QUẢN TRỊ DỮ LIỆU</p>
           <h2 id="reportModalTitle">Cập nhật báo cáo định kỳ</h2>
         </div>
-        <button class="icon-button" type="button" value="cancel" data-close-dialog="reportModal" aria-label="Đóng">×</button>
+        <button class="icon-button" type="button" value="cancel" data-close-dialog="reportModal" aria-label="Đóng"><i data-lucide="x"></i></button>
       </div>
       <div class="form-grid">
         <label><span>Khu phố</span><select name="regionId" required></select></label>
@@ -427,8 +529,8 @@ textarea { resize: vertical; min-height: 88px; }
       </div>
       <div class="modal-note">Bản demo chưa tải tệp lên máy chủ. Trong dự án chính thức, tệp đính kèm phải được kiểm tra loại tệp, dung lượng, quyền truy cập và nhật ký tải xuống.</div>
       <div class="modal-actions">
-        <button class="button button-secondary" type="button" value="cancel" data-close-dialog="reportModal">Hủy</button>
-        <button class="button button-primary" type="button" value="default" id="saveReport">Lưu báo cáo</button>
+        <button class="button button-secondary" type="button" value="cancel" data-close-dialog="reportModal"><i data-lucide="x"></i><span>Hủy</span></button>
+        <button class="button button-primary" type="button" value="default" id="saveReport"><i data-lucide="save"></i><span>Lưu báo cáo</span></button>
       </div>
     </form>
   </dialog>
@@ -531,6 +633,7 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
     tabList: document.getElementById('tabList'),
     tabContent: document.getElementById('tabContent'),
     adminToggle: document.getElementById('adminToggle'),
+    adminStatusPill: document.getElementById('adminStatusPill'),
     adminActions: document.getElementById('adminActions'),
     adminFooterActions: document.getElementById('adminFooterActions'),
     reflectionModal: document.getElementById('reflectionModal'),
@@ -572,10 +675,8 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
     populateFormRegions();
     bindEvents();
     refreshAll();
-    if (elements.adminToggle) {
-      elements.adminToggle.checked = !!isAdmin;
-      if (!isAdmin) elements.adminToggle.disabled = true;
-    }
+    setAdminMode(!!isAdmin, { silent: true });
+    refreshIcons();
   }
 
   function clone(value) {
@@ -709,6 +810,39 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
     elements.reportForm.elements.regionId.innerHTML = options;
   }
 
+  function refreshIcons() {
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  }
+
+  function setAdminMode(enabled, options = {}) {
+    state.adminMode = Boolean(enabled);
+    if (elements.adminToggle) {
+      elements.adminToggle.setAttribute('aria-pressed', String(state.adminMode));
+      elements.adminToggle.classList.toggle('is-active', state.adminMode);
+      elements.adminToggle.innerHTML = state.adminMode
+        ? '<i data-lucide="shield-check"></i><span>Thoát chế độ quản trị</span>'
+        : '<i data-lucide="shield"></i><span>Chế độ quản trị</span>';
+    }
+    if (elements.adminStatusPill) elements.adminStatusPill.hidden = !state.adminMode;
+    if (elements.adminActions) elements.adminActions.hidden = !state.adminMode || !state.selectedRegionId;
+    if (elements.adminFooterActions) elements.adminFooterActions.hidden = !state.adminMode;
+
+    if (options.refresh !== false) {
+      if (state.selectedRegionId) renderSelectedRegion();
+      else renderOverview();
+    }
+
+    if (!options.silent) {
+      const message = state.adminMode
+        ? (state.selectedRegionId ? 'Đã bật quản trị. Có thể nhập dữ liệu khu phố đang chọn.' : 'Đã bật quản trị. Chọn một khu phố trên bản đồ để nhập dữ liệu.')
+        : 'Đã tắt chế độ quản trị.';
+      showToast(message);
+    }
+    refreshIcons();
+  }
+
   function bindEvents() {
     elements.modeNavigation.addEventListener('click', event => {
       const button = event.target.closest('[data-mode]');
@@ -773,12 +907,7 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
     });
 
     elements.adminToggle.addEventListener('click', () => {
-      state.adminMode = !state.adminMode;
-      elements.adminToggle.setAttribute('aria-pressed', String(state.adminMode));
-      elements.adminToggle.textContent = state.adminMode ? 'Thoát chế độ quản trị' : 'Chế độ quản trị';
-      elements.adminActions.hidden = !state.adminMode || !state.selectedRegionId;
-      elements.adminFooterActions.hidden = !state.adminMode;
-      showToast(state.adminMode ? 'Đã bật chế độ quản trị trong bản demo.' : 'Đã tắt chế độ quản trị.');
+      setAdminMode(!state.adminMode);
     });
 
     document.addEventListener('click', event => {
@@ -922,7 +1051,7 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
     }
     elements.overviewPanel.hidden = true;
     elements.regionPanel.hidden = false;
-    elements.adminActions.hidden = !state.adminMode;
+    setAdminMode(state.adminMode, { silent: true, refresh: false });
     updateTabs();
     updateMapClasses();
     renderSelectedRegion();
@@ -932,8 +1061,12 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
   function resetSelection() {
     state.selectedRegionId = null;
     state.hoveredRegionId  = null;
+    elements.overviewPanel.hidden = false;
+    elements.regionPanel.hidden = true;
+    if (elements.adminActions) elements.adminActions.hidden = true;
     updateMapClasses();
     renderOverview();
+    setAdminMode(state.adminMode, { silent: true, refresh: false });
     animateViewBox(mapData.viewBox);
   }
 
@@ -972,6 +1105,14 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
       .filter(region => ['attention','alert'].includes(getStatus(region)))
       .sort((a,b) => getStatus(b).localeCompare(getStatus(a)))
       .slice(0,6);
+    const adminPrompt = state.adminMode ? `
+        <div class="admin-guide">
+          <i data-lucide="mouse-pointer-click"></i>
+          <div>
+            <strong>Quản trị đang bật</strong>
+            <span>Chọn một khu phố trên bản đồ để mở form nhập thông tin cơ bản, thêm phản ánh hoặc cập nhật báo cáo định kỳ.</span>
+          </div>
+        </div>` : '';
 
     elements.overviewPanel.innerHTML = `
       <div class="overview-content">
@@ -980,6 +1121,7 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
           <h2>Chọn một khu phố để mở hồ sơ theo địa bàn</h2>
           <p>Màu nền thể hiện trạng thái dữ liệu. Đường viền thể hiện khu phố đang được trỏ chuột hoặc đang được chọn. Bản đồ không dùng màu lựa chọn để tránh làm sai ý nghĩa nghiệp vụ.</p>
         </div>
+        ${adminPrompt}
         <div class="metric-grid">
           ${metricCard('22','Khu phố trên bản đồ')}
           ${metricCard(totalMembers,'Đảng viên trong dữ liệu minh họa')}
@@ -994,6 +1136,7 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
         </div>
       </div>`;
     elements.overviewPanel.querySelectorAll('[data-select-region]').forEach(button => button.addEventListener('click', () => selectRegion(button.dataset.selectRegion)));
+    refreshIcons();
   }
 
   function renderSelectedRegion() {
@@ -1005,6 +1148,7 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
     elements.regionStatus.textContent = statusLabels[status];
     elements.regionMeta.textContent = `Cập nhật gần nhất: ${formatDateTime(region.lastUpdated)} · Dữ liệu minh họa`;
     renderTabContent();
+    refreshIcons();
   }
 
   function updateTabs() {
@@ -1023,12 +1167,13 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
       reports: renderReports
     };
     elements.tabContent.innerHTML = (renderers[state.activeTab] || renderRegionOverview)(region);
+    refreshIcons();
   }
 
   function renderRegionOverview(region) {
     const openReflections = region.reflections.items.filter(item => !['Đã giải quyết','Kết thúc theo dõi'].includes(item.status)).length;
     const conclusionPercent = region.conclusionTracking.totalItems ? Math.round(region.conclusionTracking.completedItems / region.conclusionTracking.totalItems * 100) : 100;
-        const _editBtn = state.adminMode ? `<button onclick="openEditModal('${escapeHtml(region.id)}')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:11px;background:#0055DA;border:none;color:white;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(0,85,218,.25);margin-bottom:14px;width:100%;">Nhập thông tin khu phố</button>` : '';
+        const _editBtn = state.adminMode ? `<button class="button button-primary" type="button" data-edit-region style="margin-bottom:14px;width:100%;"><i data-lucide="file-pen-line"></i><span>Nhập thông tin khu phố</span></button>` : '';
     return _editBtn + `
       <div class="metric-grid">
         ${metricCard(region.partyProfile.partyMembers,'Tổng số đảng viên')}
@@ -1205,6 +1350,9 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
   function showToast(message) {
     elements.toast.textContent=message;
     elements.toast.hidden=false;
+    elements.toast.style.animation='none';
+    elements.toast.offsetHeight;
+    elements.toast.style.animation='';
     clearTimeout(showToast.timer);
     showToast.timer=setTimeout(() => { elements.toast.hidden=true; }, 2800);
   }
@@ -1577,12 +1725,10 @@ document.addEventListener('DOMContentLoaded',function(){
     btn.id = 'dynEditRegionBtn';
     btn.type = 'button';
     btn.className = 'button button-primary';
-    btn.textContent = '📝 Nhập dữ liệu khu phố';
-    btn.addEventListener('click', () => {
-      const id = app()?.state.selectedRegionId;
-      if (id) openRegionEditor(id);
-    });
+    btn.dataset.editRegion = '';
+    btn.innerHTML = '<i data-lucide="file-pen-line"></i><span>Nhập dữ liệu khu phố</span>';
     container.insertBefore(btn, container.firstChild);
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
   }
 
   function bind() {
