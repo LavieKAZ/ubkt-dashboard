@@ -1457,133 +1457,165 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
 
 </script>
 <script>
-/* Map touch/zoom/pan v2 */
+/* Map touch/zoom/pan v3 — momentum + better UX */
 (function(){
-  let vb0, touch0, panStart, isPan = false, tapTime = 0;
+  const MAX_W=1125, MAX_H=1790, MIN_W=120, MIN_H=180;
+  let vb0, touch0, panStart, isPan=false, tapTime=0;
 
-  /* Clamp viewBox trong bounds phường */
+  // Momentum
+  let velX=0, velY=0, lastPos=null, lastTime=0, rafId=null;
+
   function clamp(x,y,w,h){
-    const MAX_W=1125, MAX_H=1790, MIN_W=150, MIN_H=220;
-    w = Math.min(Math.max(w, MIN_W), MAX_W);
-    h = Math.min(Math.max(h, MIN_H), MAX_H);
-    x = Math.min(Math.max(x, 0), MAX_W - w);
-    y = Math.min(Math.max(y, 0), MAX_H - h);
-    return [x, y, w, h];
+    w=Math.min(Math.max(w,MIN_W),MAX_W);
+    h=Math.min(Math.max(h,MIN_H),MAX_H);
+    x=Math.min(Math.max(x,0),MAX_W-w);
+    y=Math.min(Math.max(y,0),MAX_H-h);
+    return[x,y,w,h];
   }
-  function setVB(svg, x,y,w,h){
-    const [a,b,c,d] = clamp(x,y,w,h);
-    svg.setAttribute('viewBox', a+' '+b+' '+c+' '+d);
+  function setVB(svg,x,y,w,h){
+    const[a,b,c,d]=clamp(x,y,w,h);
+    svg.setAttribute('viewBox',a+' '+b+' '+c+' '+d);
   }
-  function svgPoint(svg, cx, cy){
-    const r = svg.getBoundingClientRect(), v = svg.viewBox.baseVal;
-    return { x: (cx-r.left)/r.width*v.width + v.x,
-             y: (cy-r.top)/r.height*v.height + v.y };
+  function getVB(svg){ const v=svg.viewBox.baseVal; return[v.x,v.y,v.width,v.height]; }
+  function svgPt(svg,cx,cy){
+    const r=svg.getBoundingClientRect(),v=svg.viewBox.baseVal;
+    return{x:(cx-r.left)/r.width*v.width+v.x,y:(cy-r.top)/r.height*v.height+v.y};
   }
-  function dist(pts){ return Math.hypot(pts[1].x-pts[0].x, pts[1].y-pts[0].y); }
-  function mid(pts){ return {x:(pts[0].x+pts[1].x)/2, y:(pts[0].y+pts[1].y)/2}; }
-  function touches(e){ return Array.from(e.touches).map(t=>({x:t.clientX,y:t.clientY})); }
-
-  function resetView(svg){ svg.setAttribute('viewBox','0 0 1125 1790'); }
-
-  function zoomAt(svg, factor, cx, cy){
-    const v = svg.viewBox.baseVal;
-    const f = svgPoint(svg, cx, cy);
-    setVB(svg, f.x-(f.x-v.x)*factor, f.y-(f.y-v.y)*factor, v.width*factor, v.height*factor);
+  function dist(p){return Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y);}
+  function mid(p){return{x:(p[0].x+p[1].x)/2,y:(p[0].y+p[1].y)/2};}
+  function tpts(e){return Array.from(e.touches).map(t=>({x:t.clientX,y:t.clientY}));}
+  function resetView(svg){
+    cancelMomentum();
+    animateTo(svg,[0,0,1125,1790],380);
+  }
+  function zoomAt(svg,factor,cx,cy){
+    cancelMomentum();
+    const v=svg.viewBox.baseVal,f=svgPt(svg,cx,cy);
+    setVB(svg,f.x-(f.x-v.x)*factor,f.y-(f.y-v.y)*factor,v.width*factor,v.height*factor);
   }
 
-  document.addEventListener('DOMContentLoaded', function(){
-    const stage = document.querySelector('.map-stage');
-    if (!stage) return;
-    const svg = () => stage.querySelector('#wardMap');
+  // Animate viewBox to target (smooth zoom-to-region)
+  function animateTo(svg,target,dur){
+    const start=getVB(svg), t0=performance.now();
+    const ease=t=>1-Math.pow(1-t,4);
+    function step(now){
+      const p=Math.min(1,(now-t0)/dur), e=ease(p);
+      setVB(svg,start[0]+(target[0]-start[0])*e,start[1]+(target[1]-start[1])*e,
+            start[2]+(target[2]-start[2])*e,start[3]+(target[3]-start[3])*e);
+      if(p<1) rafId=requestAnimationFrame(step);
+    }
+    if(rafId) cancelAnimationFrame(rafId);
+    rafId=requestAnimationFrame(step);
+  }
 
-    /* ── Zoom buttons ── */
-    const zoomBar = document.createElement('div');
-    zoomBar.style.cssText = [
-      'position:absolute', 'right:12px', 'bottom:56px', 'z-index:20',
-      'display:flex', 'flex-direction:column', 'gap:6px'
-    ].join(';');
-    const btnStyle = [
-      'width:36px','height:36px','border-radius:10px',
-      'background:rgba(255,255,255,.92)','backdrop-filter:blur(12px)',
-      '-webkit-backdrop-filter:blur(12px)',
-      'border:1px solid rgba(0,0,0,.12)',
-      'font-size:1.2rem','font-weight:700','cursor:pointer',
-      'display:flex','align-items:center','justify-content:center',
-      'box-shadow:0 2px 8px rgba(0,0,0,.12)',
-      'color:#1a3a2a','line-height:1','transition:background .15s'
-    ].join(';');
-    const mkBtn = (label, fn) => {
-      const b = document.createElement('button');
-      b.type = 'button'; b.innerHTML = label; b.style.cssText = btnStyle;
-      b.addEventListener('mouseenter', ()=>b.style.background='rgba(255,255,255,1)');
-      b.addEventListener('mouseleave', ()=>b.style.background='rgba(255,255,255,.92)');
-      b.addEventListener('click', fn);
+  // Momentum scroll
+  function cancelMomentum(){ if(rafId){cancelAnimationFrame(rafId);rafId=null;} velX=velY=0; }
+  function startMomentum(svg){
+    if(Math.hypot(velX,velY)<0.5){ velX=velY=0; return; }
+    function step(){
+      const[x,y,w,h]=getVB(svg);
+      velX*=0.92; velY*=0.92;
+      setVB(svg,x+velX,y+velY,w,h);
+      if(Math.hypot(velX,velY)>0.3) rafId=requestAnimationFrame(step);
+      else { velX=velY=0; rafId=null; }
+    }
+    rafId=requestAnimationFrame(step);
+  }
+
+  document.addEventListener('DOMContentLoaded',function(){
+    const stage=document.querySelector('.map-stage');
+    if(!stage) return;
+    const svg=()=>stage.querySelector('#wardMap');
+
+    /* ── Zoom button bar (glassmorphism, mobile-friendly) ── */
+    const bar=document.createElement('div');
+    bar.style.cssText='position:absolute;right:12px;bottom:52px;z-index:20;display:flex;flex-direction:column;gap:5px;';
+    const bStyle='width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.9);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(0,0,0,.1);font-size:1.15rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.1);color:#1a3a2a;transition:all .15s;user-select:none;-webkit-user-select:none;';
+    const mk=(lbl,fn)=>{
+      const b=document.createElement('button');
+      b.type='button'; b.innerHTML=lbl; b.setAttribute('aria-label',lbl); b.style.cssText=bStyle;
+      b.addEventListener('pointerdown',()=>b.style.transform='scale(.92)');
+      b.addEventListener('pointerup',()=>b.style.transform='');
+      b.addEventListener('pointercancel',()=>b.style.transform='');
+      b.addEventListener('click',fn);
       return b;
     };
-    const sv = svg();
-    zoomBar.appendChild(mkBtn('+', () => { const s=svg(); if(s){ const r=s.getBoundingClientRect(); zoomAt(s,0.7,r.left+r.width/2,r.top+r.height/2); }}));
-    zoomBar.appendChild(mkBtn('−', () => { const s=svg(); if(s){ const r=s.getBoundingClientRect(); zoomAt(s,1.4,r.left+r.width/2,r.top+r.height/2); }}));
-    zoomBar.appendChild(mkBtn('⌂', () => { const s=svg(); if(s) resetView(s); }));
-    stage.style.position = 'relative';
-    stage.appendChild(zoomBar);
+    bar.appendChild(mk('+',()=>{ const s=svg();if(s){const r=s.getBoundingClientRect();zoomAt(s,.72,r.left+r.width/2,r.top+r.height/2);}}));
+    bar.appendChild(mk('−',()=>{ const s=svg();if(s){const r=s.getBoundingClientRect();zoomAt(s,1.38,r.left+r.width/2,r.top+r.height/2);}}));
+    bar.appendChild(mk('⌂',()=>{ const s=svg();if(s)resetView(s);}));
+    stage.appendChild(bar);
 
-    /* ── Touch pan ── */
-    stage.addEventListener('touchstart', function(e){
-      const s = svg(); if (!s) return;
-      const v = s.viewBox.baseVal;
-      vb0 = [v.x, v.y, v.width, v.height];
-      if (e.touches.length === 1){
-        panStart = touches(e)[0];
-        isPan = false; // chưa xác định là pan hay tap
-        touch0 = null;
-      } else if (e.touches.length === 2){
-        isPan = false;
-        touch0 = touches(e);
+    /* ── Touch start ── */
+    stage.addEventListener('touchstart',function(e){
+      cancelMomentum();
+      const s=svg(); if(!s) return;
+      vb0=getVB(s);
+      if(e.touches.length===1){
+        panStart=tpts(e)[0]; isPan=false; touch0=null;
+        lastPos=panStart; lastTime=Date.now(); velX=velY=0;
+      } else if(e.touches.length===2){
+        isPan=false; touch0=tpts(e); panStart=null;
       }
-    }, {passive:true});
+    },{passive:true});
 
-    stage.addEventListener('touchmove', function(e){
-      const s = svg(); if (!s || !vb0) return;
+    /* ── Touch move: pan + pinch ── */
+    stage.addEventListener('touchmove',function(e){
+      const s=svg(); if(!s||!vb0) return;
       e.preventDefault();
-      if (e.touches.length === 1 && panStart){
-        const cur = touches(e)[0];
-        const dx = cur.x - panStart.x, dy = cur.y - panStart.y;
-        // Chỉ bắt đầu pan nếu đã di chuyển > 6px (phân biệt tap vs drag)
-        if (!isPan && Math.hypot(dx,dy) < 6) return;
-        isPan = true;
-        const r = s.getBoundingClientRect();
-        setVB(s, vb0[0]-dx*vb0[2]/r.width, vb0[1]-dy*vb0[3]/r.height, vb0[2], vb0[3]);
-      } else if (e.touches.length === 2 && touch0){
-        const cur = touches(e);
-        const scale = dist(touch0) / dist(cur);
-        const center = mid(cur);
-        const f = svgPoint(s, center.x, center.y);
-        setVB(s, f.x-(f.x-vb0[0])*scale, f.y-(f.y-vb0[1])*scale, vb0[2]*scale, vb0[3]*scale);
+      const now=Date.now();
+      if(e.touches.length===1&&panStart){
+        const cur=tpts(e)[0];
+        const dx=cur.x-panStart.x, dy=cur.y-panStart.y;
+        if(!isPan&&Math.hypot(dx,dy)<6) return;
+        isPan=true;
+        const r=s.getBoundingClientRect();
+        const svgDx=dx*vb0[2]/r.width, svgDy=dy*vb0[3]/r.height;
+        setVB(s,vb0[0]-svgDx,vb0[1]-svgDy,vb0[2],vb0[3]);
+        // Track velocity
+        if(lastPos){
+          const dt=Math.max(now-lastTime,1);
+          const[cx,cy,cw,ch]=getVB(s);
+          velX=(cx-(vb0[0]-svgDx))*(1000/dt)*0.15;
+          velY=(cy-(vb0[1]-svgDy))*(1000/dt)*0.15;
+        }
+        lastPos=cur; lastTime=now;
+      } else if(e.touches.length===2&&touch0){
+        const cur=tpts(e);
+        const scale=dist(touch0)/dist(cur);
+        const center=mid(cur);
+        const f=svgPt(s,center.x,center.y);
+        setVB(s,f.x-(f.x-vb0[0])*scale,f.y-(f.y-vb0[1])*scale,vb0[2]*scale,vb0[3]*scale);
       }
-    }, {passive:false});
+    },{passive:false});
 
-    stage.addEventListener('touchend', function(e){
-      if (e.touches.length === 0){
-        // Nếu không pan → là tap → để selectRegion xử lý bình thường
-        isPan = false; vb0 = null; touch0 = null; panStart = null;
+    /* ── Touch end: trigger momentum ── */
+    stage.addEventListener('touchend',function(e){
+      if(e.touches.length===0){
+        const s=svg();
+        if(isPan&&s) startMomentum(s);
+        isPan=false; vb0=null; touch0=null; panStart=null; lastPos=null;
       }
-    }, {passive:true});
+    },{passive:true});
 
     /* ── Double-tap reset ── */
-    stage.addEventListener('touchend', function(e){
-      const now = Date.now();
-      if (now - tapTime < 280 && e.changedTouches.length===1 && !isPan){
-        const s = svg(); if(s) resetView(s);
+    stage.addEventListener('touchend',function(e){
+      const now=Date.now();
+      if(now-tapTime<280&&e.changedTouches.length===1&&!isPan){
+        const s=svg(); if(s) resetView(s);
       }
-      tapTime = now;
-    }, {passive:true});
+      tapTime=now;
+    },{passive:true});
 
-    /* ── Mouse wheel zoom ── */
-    stage.addEventListener('wheel', function(e){
+    /* ── Mouse wheel zoom (desktop) ── */
+    stage.addEventListener('wheel',function(e){
       e.preventDefault();
-      const s = svg(); if (!s) return;
-      zoomAt(s, e.deltaY > 0 ? 1.15 : 0.87, e.clientX, e.clientY);
-    }, {passive:false});
+      const s=svg(); if(!s) return;
+      zoomAt(s,e.deltaY>0?1.14:.88,e.clientX,e.clientY);
+    },{passive:false});
+
+    /* ── Expose animateTo for app ── */
+    window._mapAnimateTo=animateTo;
+    window._mapSvg=svg;
   });
 })();
 </script>
