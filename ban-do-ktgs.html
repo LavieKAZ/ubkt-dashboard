@@ -74,7 +74,7 @@ textarea { resize: vertical; min-height: 88px; }
 .map-tools { display: flex; gap: 8px; align-items: center; }
 .search-control input { width: 180px; }
 .icon-button { width: 40px; height: 40px; border: 1px solid var(--border); border-radius: 12px; background: white; color: var(--ink); font-size: 1.2rem; display: grid; place-items: center; }
-.map-stage { position: relative; flex: 1 1 auto; min-height: 640px; margin: 0 12px; overflow: hidden; border-radius: 20px; background:
+.map-stage { position: relative; flex: 1 1 auto; min-height: 640px; margin: 0 12px; overflow: visible; border-radius: 20px; background:
   radial-gradient(circle at 25% 15%, rgba(0,198,141,.10), transparent 35%),
   radial-gradient(circle at 85% 80%, rgba(0,85,218,.10), transparent 42%),
   linear-gradient(160deg, #f8fbff, #edf4fb);
@@ -218,7 +218,7 @@ textarea { resize: vertical; min-height: 88px; }
 .mode-navigation button:hover { background:rgba(255,255,255,.35);color:rgba(0,0,0,.7); }
 .mode-navigation button[aria-pressed="true"] { background:rgba(255,255,255,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#0d2417;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.12),0 0.5px 0 rgba(255,255,255,.8) inset; }
 @media (max-width:900px) { .workspace{grid-template-columns:1fr!important;gap:10px} .map-stage{min-height:52svh} .topbar{flex-wrap:wrap;gap:8px} .top-actions{width:100%;justify-content:space-between;flex-wrap:wrap;gap:8px} .mode-navigation,.summary-strip{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none;flex-wrap:nowrap!important} .mode-navigation::-webkit-scrollbar,.summary-strip::-webkit-scrollbar{display:none} }
-@media (max-width:768px) { html,body{overflow-x:hidden} .app-shell{padding:10px 10px 0} .map-stage{min-height:52svh;border-radius:16px;padding:6px} #wardMap{touch-action:none;-webkit-user-select:none;user-select:none} .detail-panel{position:fixed;inset:auto 0 0 0;height:72svh;border-radius:22px 22px 0 0;z-index:600;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;box-shadow:0 -12px 40px rgba(0,0,0,.18);padding-top:20px} .detail-panel::before{content:"";position:absolute;top:8px;left:50%;transform:translateX(-50%);width:36px;height:4px;background:rgba(0,0,0,.14);border-radius:2px} .tab-list{overflow-x:auto;flex-wrap:nowrap} .topbar{gap:6px} .brand-mark{width:36px!important;height:36px!important;border-radius:10px!important} .page-footer{padding-bottom:80px} .form-grid,.key-value-grid{grid-template-columns:1fr} }
+@media (max-width:768px) { html,body{overflow-x:hidden} .app-shell{padding:10px 10px 0} .map-stage{min-height:52svh;border-radius:16px;padding:6px} #wardMap{touch-action: manipulation;-webkit-user-select:none;user-select:none} .detail-panel{position:fixed;inset:auto 0 0 0;height:72svh;border-radius:22px 22px 0 0;z-index:600;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;box-shadow:0 -12px 40px rgba(0,0,0,.18);padding-top:20px} .detail-panel::before{content:"";position:absolute;top:8px;left:50%;transform:translateX(-50%);width:36px;height:4px;background:rgba(0,0,0,.14);border-radius:2px} .tab-list{overflow-x:auto;flex-wrap:nowrap} .topbar{gap:6px} .brand-mark{width:36px!important;height:36px!important;border-radius:10px!important} .page-footer{padding-bottom:80px} .form-grid,.key-value-grid{grid-template-columns:1fr} }
 @media (max-width:480px) { .app-shell{padding:8px 8px 0} .brand-mark{width:34px!important;height:34px!important;display:grid!important} .detail-panel{height:76svh} h1{font-size:.95rem!important} }
 
 /* Professional UI pass */
@@ -354,7 +354,7 @@ html, body { background:
     padding: 6px;
     border-radius: 14px;
   }
-  #wardMap { touch-action: none; }
+  #wardMap { touch-action: manipulation; }
   .map-hint { left: 8px; right: 8px; bottom: 8px; width: auto; border-radius: 12px; line-height: 1.35; }
   .legend { grid-template-columns: 1fr 1fr; padding: 10px 12px 12px; }
   .detail-panel {
@@ -979,6 +979,15 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
     });
 
     document.addEventListener('click', event => {
+      // Handler cho nút "Nhập thông tin khu phố"
+      const editRegionBtn = event.target.closest('[data-edit-region]');
+      if (editRegionBtn && state.selectedRegionId) {
+        if (typeof window.openEditModal === 'function') {
+          window.openEditModal(state.selectedRegionId);
+        }
+        return;
+      }
+
       const closeDialog = event.target.closest('[data-close-dialog]');
       if (closeDialog) {
         const modal = document.getElementById(closeDialog.dataset.closeDialog);
@@ -1442,14 +1451,142 @@ function showMapToast(msg,type='info'){let t=document.getElementById('_mapToast'
   function formatDateTime(value) { if (!value) return 'Chưa cập nhật'; return new Intl.DateTimeFormat('vi-VN',{dateStyle:'short',timeStyle:'short'}).format(new Date(value)); }
   function sameViewBox(a,b) { return a.every((value,index) => Math.abs(value-b[index])<.01); }
   function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char])); }
+  // Bridge
+  window.TanMyMapApp = { state, persistState, refreshAll, getRegion, showToast };
 })();
 
 </script>
-<script>(function(){let sVB,sTch,pSt,pan=false;function co(e){return e.touches?Array.from(e.touches).map(t=>({x:t.clientX,y:t.clientY})):[{x:e.clientX,y:e.clientY}];}function md(p){return{x:(p[0].x+p[1].x)/2,y:(p[0].y+p[1].y)/2};}function ds(p){return Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y);}function sp(svg,cx,cy){const r=svg.getBoundingClientRect(),v=svg.viewBox.baseVal;return{x:(cx-r.left)/r.width*v.width+v.x,y:(cy-r.top)/r.height*v.height+v.y};}function cl(x,y,w,h){w=Math.max(200,Math.min(w,1125));h=Math.max(300,Math.min(h,1790));x=Math.max(0,Math.min(x,1125-w));y=Math.max(0,Math.min(y,1790-h));return[x,y,w,h];}function sv(svg,x,y,w,h){const[a,b,c,d]=cl(x,y,w,h);svg.setAttribute('viewBox',a+' '+b+' '+c+' '+d);}
-document.addEventListener('DOMContentLoaded',function(){const st=document.querySelector('.map-stage');if(!st)return;st.addEventListener('touchstart',function(e){const svg=st.querySelector('#wardMap');if(!svg)return;const v=svg.viewBox.baseVal;sVB=[v.x,v.y,v.width,v.height];if(e.touches.length===1){pan=true;pSt=co(e)[0];}else if(e.touches.length===2){pan=false;sTch=co(e);}},{passive:true});st.addEventListener('touchmove',function(e){const svg=st.querySelector('#wardMap');if(!svg||!sVB)return;e.preventDefault();if(e.touches.length===1&&pan){const c=co(e)[0],r=svg.getBoundingClientRect();sv(svg,sVB[0]-(c.x-pSt.x)*sVB[2]/r.width,sVB[1]-(c.y-pSt.y)*sVB[3]/r.height,sVB[2],sVB[3]);}else if(e.touches.length===2&&sTch){const cur=co(e),sc=ds(sTch)/ds(cur),f=sp(svg,md(cur).x,md(cur).y);sv(svg,f.x-(f.x-sVB[0])*sc,f.y-(f.y-sVB[1])*sc,sVB[2]*sc,sVB[3]*sc);}},{passive:false});st.addEventListener('touchend',function(e){if(e.touches.length===0){pan=false;sVB=null;sTch=null;pSt=null;}},{passive:true});let lt=0;st.addEventListener('touchend',function(e){const n=Date.now();if(n-lt<300&&e.changedTouches.length===1){const svg=st.querySelector('#wardMap');if(svg)svg.setAttribute('viewBox','0 0 1125 1790');}lt=n;},{passive:true});st.addEventListener('wheel',function(e){e.preventDefault();const svg=st.querySelector('#wardMap');if(!svg)return;const v=svg.viewBox.baseVal,d=e.deltaY>0?1.12:.89,f=sp(svg,e.clientX,e.clientY);sv(svg,f.x-(f.x-v.x)*d,f.y-(f.y-v.y)*d,v.width*d,v.height*d);},{passive:false});});
-  // Public bridge for edit modal and dynamic fields
-  window.TanMyMapApp = { state, persistState, refreshAll, getRegion, showToast };
-})();</script>
+<script>
+/* Map touch/zoom/pan v2 */
+(function(){
+  let vb0, touch0, panStart, isPan = false, tapTime = 0;
+
+  /* Clamp viewBox trong bounds phường */
+  function clamp(x,y,w,h){
+    const MAX_W=1125, MAX_H=1790, MIN_W=150, MIN_H=220;
+    w = Math.min(Math.max(w, MIN_W), MAX_W);
+    h = Math.min(Math.max(h, MIN_H), MAX_H);
+    x = Math.min(Math.max(x, 0), MAX_W - w);
+    y = Math.min(Math.max(y, 0), MAX_H - h);
+    return [x, y, w, h];
+  }
+  function setVB(svg, x,y,w,h){
+    const [a,b,c,d] = clamp(x,y,w,h);
+    svg.setAttribute('viewBox', a+' '+b+' '+c+' '+d);
+  }
+  function svgPoint(svg, cx, cy){
+    const r = svg.getBoundingClientRect(), v = svg.viewBox.baseVal;
+    return { x: (cx-r.left)/r.width*v.width + v.x,
+             y: (cy-r.top)/r.height*v.height + v.y };
+  }
+  function dist(pts){ return Math.hypot(pts[1].x-pts[0].x, pts[1].y-pts[0].y); }
+  function mid(pts){ return {x:(pts[0].x+pts[1].x)/2, y:(pts[0].y+pts[1].y)/2}; }
+  function touches(e){ return Array.from(e.touches).map(t=>({x:t.clientX,y:t.clientY})); }
+
+  function resetView(svg){ svg.setAttribute('viewBox','0 0 1125 1790'); }
+
+  function zoomAt(svg, factor, cx, cy){
+    const v = svg.viewBox.baseVal;
+    const f = svgPoint(svg, cx, cy);
+    setVB(svg, f.x-(f.x-v.x)*factor, f.y-(f.y-v.y)*factor, v.width*factor, v.height*factor);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    const stage = document.querySelector('.map-stage');
+    if (!stage) return;
+    const svg = () => stage.querySelector('#wardMap');
+
+    /* ── Zoom buttons ── */
+    const zoomBar = document.createElement('div');
+    zoomBar.style.cssText = [
+      'position:absolute', 'right:12px', 'bottom:56px', 'z-index:20',
+      'display:flex', 'flex-direction:column', 'gap:6px'
+    ].join(';');
+    const btnStyle = [
+      'width:36px','height:36px','border-radius:10px',
+      'background:rgba(255,255,255,.92)','backdrop-filter:blur(12px)',
+      '-webkit-backdrop-filter:blur(12px)',
+      'border:1px solid rgba(0,0,0,.12)',
+      'font-size:1.2rem','font-weight:700','cursor:pointer',
+      'display:flex','align-items:center','justify-content:center',
+      'box-shadow:0 2px 8px rgba(0,0,0,.12)',
+      'color:#1a3a2a','line-height:1','transition:background .15s'
+    ].join(';');
+    const mkBtn = (label, fn) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.innerHTML = label; b.style.cssText = btnStyle;
+      b.addEventListener('mouseenter', ()=>b.style.background='rgba(255,255,255,1)');
+      b.addEventListener('mouseleave', ()=>b.style.background='rgba(255,255,255,.92)');
+      b.addEventListener('click', fn);
+      return b;
+    };
+    const sv = svg();
+    zoomBar.appendChild(mkBtn('+', () => { const s=svg(); if(s){ const r=s.getBoundingClientRect(); zoomAt(s,0.7,r.left+r.width/2,r.top+r.height/2); }}));
+    zoomBar.appendChild(mkBtn('−', () => { const s=svg(); if(s){ const r=s.getBoundingClientRect(); zoomAt(s,1.4,r.left+r.width/2,r.top+r.height/2); }}));
+    zoomBar.appendChild(mkBtn('⌂', () => { const s=svg(); if(s) resetView(s); }));
+    stage.style.position = 'relative';
+    stage.appendChild(zoomBar);
+
+    /* ── Touch pan ── */
+    stage.addEventListener('touchstart', function(e){
+      const s = svg(); if (!s) return;
+      const v = s.viewBox.baseVal;
+      vb0 = [v.x, v.y, v.width, v.height];
+      if (e.touches.length === 1){
+        panStart = touches(e)[0];
+        isPan = false; // chưa xác định là pan hay tap
+        touch0 = null;
+      } else if (e.touches.length === 2){
+        isPan = false;
+        touch0 = touches(e);
+      }
+    }, {passive:true});
+
+    stage.addEventListener('touchmove', function(e){
+      const s = svg(); if (!s || !vb0) return;
+      e.preventDefault();
+      if (e.touches.length === 1 && panStart){
+        const cur = touches(e)[0];
+        const dx = cur.x - panStart.x, dy = cur.y - panStart.y;
+        // Chỉ bắt đầu pan nếu đã di chuyển > 6px (phân biệt tap vs drag)
+        if (!isPan && Math.hypot(dx,dy) < 6) return;
+        isPan = true;
+        const r = s.getBoundingClientRect();
+        setVB(s, vb0[0]-dx*vb0[2]/r.width, vb0[1]-dy*vb0[3]/r.height, vb0[2], vb0[3]);
+      } else if (e.touches.length === 2 && touch0){
+        const cur = touches(e);
+        const scale = dist(touch0) / dist(cur);
+        const center = mid(cur);
+        const f = svgPoint(s, center.x, center.y);
+        setVB(s, f.x-(f.x-vb0[0])*scale, f.y-(f.y-vb0[1])*scale, vb0[2]*scale, vb0[3]*scale);
+      }
+    }, {passive:false});
+
+    stage.addEventListener('touchend', function(e){
+      if (e.touches.length === 0){
+        // Nếu không pan → là tap → để selectRegion xử lý bình thường
+        isPan = false; vb0 = null; touch0 = null; panStart = null;
+      }
+    }, {passive:true});
+
+    /* ── Double-tap reset ── */
+    stage.addEventListener('touchend', function(e){
+      const now = Date.now();
+      if (now - tapTime < 280 && e.changedTouches.length===1 && !isPan){
+        const s = svg(); if(s) resetView(s);
+      }
+      tapTime = now;
+    }, {passive:true});
+
+    /* ── Mouse wheel zoom ── */
+    stage.addEventListener('wheel', function(e){
+      e.preventDefault();
+      const s = svg(); if (!s) return;
+      zoomAt(s, e.deltaY > 0 ? 1.15 : 0.87, e.clientX, e.clientY);
+    }, {passive:false});
+  });
+})();
+</script>
 <script>
 let _eid=null;
 function openEditModal(id){
