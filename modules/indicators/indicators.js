@@ -5,7 +5,7 @@
   document.documentElement.classList.add('macos-dock-ui');
   var link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = baseHref + '?v=responsive-20260630';
+  link.href = baseHref + '?v=mobile-overlay-fix-20260630';
   link.dataset.uiOnly = 'macos-dock-dashboard';
   document.head.appendChild(link);
 })();
