@@ -37,11 +37,17 @@
     return text(taskGet(task, 'unit') || taskGet(task, 'leadUnit') || 'Chưa rõ');
   }
 
+  function taskSource(){
+    if(Array.isArray(window.localState && window.localState.tasks)) return window.localState.tasks;
+    if(Array.isArray(window.tasks)) return window.tasks;
+    try{
+      if(typeof tasks !== 'undefined' && Array.isArray(tasks)) return tasks;
+    }catch(_err){}
+    return [];
+  }
+
   function activeTasks(){
-    var source = Array.isArray(window.localState && window.localState.tasks)
-      ? window.localState.tasks
-      : (Array.isArray(window.tasks) ? window.tasks : []);
-    return source.filter(function(task){
+    return taskSource().filter(function(task){
       var deleted = taskGet(task, 'is_deleted', false);
       return !(deleted === true || String(deleted).toLowerCase() === 'true');
     });
@@ -214,5 +220,6 @@
 
   document.addEventListener('DOMContentLoaded', injectPanel);
   window.addEventListener('load', injectPanel);
+  if(document.readyState !== 'loading') setTimeout(injectPanel, 0);
   window.runOnePageReportAi = run;
 })();
