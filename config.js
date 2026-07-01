@@ -27,7 +27,8 @@ window.UBKT_TASK_SYSTEM_APP_URL = "https://ubkt-dashboard-qycx.vercel.app";
       background:rgba(248,250,252,.72);backdrop-filter:blur(10px);
       color:#0f172a;font-weight:800;font-size:16px;letter-spacing:.01em;
     }
-    .ubkt-task-system-embed{margin-bottom:18px}
+    .ubkt-task-system-embed{margin:18px 0}
+    .ubkt-task-system-toolbar{display:flex;justify-content:flex-end;margin-bottom:10px}
     .ubkt-task-system-frame{height:min(72vh,760px);min-height:520px;border-radius:24px;overflow:hidden;border:1px solid #e2e8f0;background:#fff}
     .ubkt-task-system-frame iframe{width:100%;height:100%;border:0;background:#fff}
   `;
@@ -48,20 +49,20 @@ window.UBKT_TASK_SYSTEM_APP_URL = "https://ubkt-dashboard-qycx.vercel.app";
     const dashboard = document.getElementById("page-dashboard");
     if(!dashboard || document.getElementById("ubktTaskSystemEmbed")) return;
 
-    dashboard.insertAdjacentHTML("afterbegin", `
+    const calendarMarkup = `
       <div id="ubktTaskSystemEmbed" class="card rounded-3xl p-4 reveal ubkt-task-system-embed">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
-          <div>
-            <h3 class="font-extrabold text-lg">${TASK_SYSTEM_TITLE}</h3>
-            <p class="text-sm text-slate-500 mt-1">Theo dõi lịch công tác, nhắc việc và điều phối nhiệm vụ trên hệ thống tích hợp.</p>
-          </div>
+        <div class="ubkt-task-system-toolbar">
           <a href="${TASK_SYSTEM_APP_URL}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost py-2 px-4 text-sm">Mở hệ thống</a>
         </div>
         <div class="ubkt-task-system-frame">
           <iframe src="${TASK_SYSTEM_URL}" title="${TASK_SYSTEM_TITLE} tích hợp" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
         </div>
       </div>
-    `);
+    `;
+
+    const firstDashboardBlock = dashboard.querySelector(":scope > .bento");
+    if(firstDashboardBlock) firstDashboardBlock.insertAdjacentHTML("afterend", calendarMarkup);
+    else dashboard.insertAdjacentHTML("beforeend", calendarMarkup);
   }
 
   function installSwitchPagePatch(){
