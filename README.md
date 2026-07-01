@@ -1,6 +1,6 @@
 # UBKT Dashboard - Lịch công tác cơ quan
 
-Next.js App Router chuyển từ prototype React sang ứng dụng production-ready: Supabase Auth Google OAuth, Supabase database, API Gemini server-side, lưu lịch công tác và hỗ trợ gửi email.
+Next.js App Router chuyển từ prototype React sang ứng dụng production-ready: Supabase Auth bằng email magic link, Supabase database, API Gemini server-side, lưu lịch công tác và hỗ trợ gửi email.
 
 ## Biến môi trường Vercel
 
@@ -14,6 +14,28 @@ SMTP_PASSWORD=...
 ```
 
 `SMTP_PASSWORD` là Gmail App Password. Nếu chưa có, ứng dụng vẫn lưu lịch và có nút gửi email thủ công bằng `mailto:`.
+
+## Auth không dùng Google Cloud
+
+Ứng dụng dùng Supabase Email Magic Link, không cần Google Cloud OAuth.
+
+Trong Supabase Dashboard:
+
+1. Vào `Authentication > Providers > Email`.
+2. Bật Email provider.
+3. Vào `Authentication > URL Configuration`.
+4. Đặt Site URL:
+
+```text
+https://ubkt-dashboard-qycx.vercel.app
+```
+
+5. Thêm Redirect URLs:
+
+```text
+https://ubkt-dashboard-qycx.vercel.app/**
+http://localhost:3000/**
+```
 
 ## Database
 
