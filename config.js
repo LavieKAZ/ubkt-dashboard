@@ -31,6 +31,8 @@ window.UBKT_TASK_SYSTEM_APP_URL = "https://ubkt-dashboard-qycx.vercel.app";
     .ubkt-task-system-toolbar{display:flex;justify-content:flex-end;margin-bottom:10px}
     .ubkt-task-system-frame{height:min(72vh,760px);min-height:520px;border-radius:24px;overflow:hidden;border:1px solid #e2e8f0;background:#fff}
     .ubkt-task-system-frame iframe{width:100%;height:100%;border:0;background:#fff}
+    #pendingTableCard.ubkt-collapsed .ubkt-pending-body{display:none!important}
+    #pendingTableCard .ubkt-pending-toggle{white-space:nowrap}
   `;
   document.head.appendChild(style);
 
@@ -65,6 +67,40 @@ window.UBKT_TASK_SYSTEM_APP_URL = "https://ubkt-dashboard-qycx.vercel.app";
     else dashboard.insertAdjacentHTML("beforeend", calendarMarkup);
   }
 
+  function patchPendingSection(){
+    const card = document.getElementById("pendingTableCard");
+    if(!card) return false;
+
+    const title = Array.from(card.querySelectorAll(".bento-hd")).find((el)=>/Nhiệm vụ tồn đọng/i.test(el.textContent || ""));
+    if(!title) return false;
+
+    if(!card.dataset.ubktPendingPatched){
+      Array.from(card.children).forEach((child, index)=>{
+        if(index > 0) child.classList.add("ubkt-pending-body");
+      });
+
+      const actionWrap = card.querySelector(".bento-hd-row > div:last-child");
+      if(actionWrap && !card.querySelector(".ubkt-pending-toggle")){
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn btn-primary py-1 px-3 text-sm ubkt-pending-toggle";
+        button.textContent = "Xem chi tiết";
+        button.addEventListener("click",()=>{
+          const collapsed = card.classList.toggle("ubkt-collapsed");
+          button.textContent = collapsed ? "Xem chi tiết" : "Ẩn chi tiết";
+        });
+        actionWrap.prepend(button);
+      }
+
+      card.dataset.ubktPendingPatched = "1";
+      card.classList.add("ubkt-collapsed");
+    }
+
+    const toggle = card.querySelector(".ubkt-pending-toggle");
+    if(toggle) toggle.textContent = card.classList.contains("ubkt-collapsed") ? "Xem chi tiết" : "Ẩn chi tiết";
+    return true;
+  }
+
   function installSwitchPagePatch(){
     if(window.__ubktSwitchPagePatchInstalled) return true;
     if(typeof window.switchPage !== "function") return false;
@@ -73,6 +109,7 @@ window.UBKT_TASK_SYSTEM_APP_URL = "https://ubkt-dashboard-qycx.vercel.app";
       const result = originalSwitchPage.apply(this, arguments);
       setTimeout(patchDashboardShell, 0);
       setTimeout(patchDashboardShell, 80);
+      setTimeout(patchPendingSection, 120);
       return result;
     };
     window.__ubktSwitchPagePatchInstalled = true;
@@ -92,6 +129,7 @@ window.UBKT_TASK_SYSTEM_APP_URL = "https://ubkt-dashboard-qycx.vercel.app";
       }finally{
         if(shouldWaitForDatabase) document.documentElement.classList.remove("ubkt-db-booting");
         patchDashboardShell();
+        patchPendingSection();
       }
     };
 
@@ -101,8 +139,10 @@ window.UBKT_TASK_SYSTEM_APP_URL = "https://ubkt-dashboard-qycx.vercel.app";
 
   document.addEventListener("DOMContentLoaded",()=>{
     patchDashboardShell();
+    patchPendingSection();
     const installTimer = setInterval(()=>{
       patchDashboardShell();
+      patchPendingSection();
       const okLogin = installDataBootPatch();
       const okSwitch = installSwitchPagePatch();
       if(okLogin && okSwitch) clearInterval(installTimer);
