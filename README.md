@@ -1,58 +1,29 @@
-# UBKT Dashboard - Lịch công tác cơ quan
+# UBKT Dashboard - Supabase Ready
 
-Next.js App Router chuyển từ prototype React sang ứng dụng production-ready: Supabase Auth bằng email magic link, Supabase database, API Gemini server-side, lưu lịch công tác và hỗ trợ gửi email.
+## Các file
 
-## Biến môi trường Vercel
+- `index.html`: giao diện hệ thống đã gắn Supabase client.
+- `config.js`: điền Supabase URL, anon key, chế độ đăng nhập.
+- `supabase_schema.sql`: chạy trong Supabase SQL Editor để tạo database.
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://hbygfheibcrqaqzoaass.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...
-GEMINI_API_KEY=...
-SMTP_EMAIL=...
-SMTP_PASSWORD=...
+## Chế độ vận hành
+
+### 1. Chạy cục bộ chưa nối Supabase
+Giữ `UBKT_AUTH_MODE = "local"` trong `config.js`.
+Dữ liệu lưu ở trình duyệt bằng localStorage.
+
+### 2. Chạy chính thức có Supabase
+Trong `config.js`:
+
+```js
+window.UBKT_SUPABASE_URL = "https://xxxxx.supabase.co";
+window.UBKT_SUPABASE_ANON_KEY = "ey...";
+window.UBKT_AUTH_MODE = "supabase";
 ```
 
-`SMTP_PASSWORD` là Gmail App Password. Nếu chưa có, ứng dụng vẫn lưu lịch và có nút gửi email thủ công bằng `mailto:`.
+Sau đó tạo user trong Supabase Authentication. Người dùng đăng nhập bằng email + mật khẩu đã tạo.
 
-## Auth không dùng Google Cloud
+## Ghi chú bảo mật
 
-Ứng dụng dùng Supabase Email Magic Link, không cần Google Cloud OAuth.
-
-Trong Supabase Dashboard:
-
-1. Vào `Authentication > Providers > Email`.
-2. Bật Email provider.
-3. Vào `Authentication > URL Configuration`.
-4. Đặt Site URL:
-
-```text
-https://ubkt-dashboard-qycx.vercel.app
-```
-
-5. Thêm Redirect URLs:
-
-```text
-https://ubkt-dashboard-qycx.vercel.app/**
-http://localhost:3000/**
-```
-
-## Database
-
-Database Supabase cần 2 bảng:
-
-- `contacts`: `id`, `name`, `email`
-- `events`: `id`, `title`, `date`, `time`, `attendees uuid[]`
-
-Schema nằm trong `supabase/schema.sql`.
-
-## Chạy local
-
-```bash
-npm install
-npm run dev
-```
-
-## Deploy
-
-Import repo trên Vercel, chọn framework Next.js và nhập env ở trên.
+Không đưa `service_role key` vào `config.js` hoặc `index.html`.
+Chỉ dùng `anon public key` ở frontend.
