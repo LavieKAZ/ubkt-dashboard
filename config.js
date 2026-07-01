@@ -9,12 +9,14 @@ window.UBKT_SUPABASE_ANON_KEY = "sb_publishable_jGSrZLhYPIwvpVZ_j4yo5g_LuVhs0Jh"
 // Chạy chính thức bằng Supabase Auth
 window.UBKT_AUTH_MODE = "supabase";
 
-// Hệ thống lịch/nhiệm vụ tích hợp hiển thị trong tab Dashboard cũ.
-window.UBKT_TASK_SYSTEM_URL = "https://ubkt-dashboard-qycx.vercel.app";
+// Lịch công tác hiển thị trực tiếp trong tab Dashboard cũ.
+window.UBKT_TASK_SYSTEM_URL = "https://calendar.google.com/calendar/embed?height=600&wkst=1&ctz=Asia%2FHo_Chi_Minh&hl=vi&src=MDQwNDAxMjQwMDgyQHN0LmJ1aC5lZHUudm4&src=Y19mYmIxYzcwNDFlYmRiNmFkYTI5M2U4NjIxNGU3N2U2MDU2NWE3MTE0MTJiMTU5NmQwMzkzYWMyMGIyOTg2MzNiQGdyb3VwLmNhbGVuZGFyLmdvb2dsZS5jb20&src=Y19jbGFzc3Jvb20yNzYxM2RmYUBncm91cC5jYWxlbmRhci5nb29nbGUuY29t&src=ZW4udmlldG5hbWVzZSNob2xpZGF5QGdyb3VwLnYuY2FsZW5kYXIuZ29vZ2xlLmNvbQ&src=dmkudmlldG5hbWVzZSNob2xpZGF5QGdyb3VwLnYuY2FsZW5kYXIuZ29vZ2xlLmNvbQ&color=%23039be5&color=%23ef6c00&color=%23137333&color=%230b8043&color=%230b8043";
+window.UBKT_TASK_SYSTEM_APP_URL = "https://ubkt-dashboard-qycx.vercel.app";
 
 (function installDashboardIntegration(){
   const TASK_SYSTEM_TITLE = "Hệ thống theo dõi nhiệm vụ";
   const TASK_SYSTEM_URL = window.UBKT_TASK_SYSTEM_URL;
+  const TASK_SYSTEM_APP_URL = window.UBKT_TASK_SYSTEM_APP_URL || TASK_SYSTEM_URL;
 
   const style = document.createElement("style");
   style.textContent = `
@@ -53,7 +55,7 @@ window.UBKT_TASK_SYSTEM_URL = "https://ubkt-dashboard-qycx.vercel.app";
             <h3 class="font-extrabold text-lg">${TASK_SYSTEM_TITLE}</h3>
             <p class="text-sm text-slate-500 mt-1">Theo dõi lịch công tác, nhắc việc và điều phối nhiệm vụ trên hệ thống tích hợp.</p>
           </div>
-          <a href="${TASK_SYSTEM_URL}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost py-2 px-4 text-sm">Mở toàn màn hình</a>
+          <a href="${TASK_SYSTEM_APP_URL}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost py-2 px-4 text-sm">Mở hệ thống</a>
         </div>
         <div class="ubkt-task-system-frame">
           <iframe src="${TASK_SYSTEM_URL}" title="${TASK_SYSTEM_TITLE} tích hợp" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
