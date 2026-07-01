@@ -36,7 +36,7 @@ window.UBKT_TASK_SYSTEM_URL = "https://ubkt-dashboard-qycx.vercel.app";
     if(navLabel) navLabel.textContent = TASK_SYSTEM_TITLE;
 
     const pageTitle = document.getElementById("pageTitle");
-    if(pageTitle && /dashboard|chốt kỳ|giám sát|kiểm tra/i.test(pageTitle.textContent || "")){
+    if(pageTitle && /dashboard|chốt kỳ|giám sát|kiểm tra|hệ thống/i.test(pageTitle.textContent || "")){
       pageTitle.textContent = TASK_SYSTEM_TITLE;
     }
 
@@ -60,6 +60,20 @@ window.UBKT_TASK_SYSTEM_URL = "https://ubkt-dashboard-qycx.vercel.app";
         </div>
       </div>
     `);
+  }
+
+  function installSwitchPagePatch(){
+    if(window.__ubktSwitchPagePatchInstalled) return true;
+    if(typeof window.switchPage !== "function") return false;
+    const originalSwitchPage = window.switchPage;
+    window.switchPage = function patchedSwitchPage(page){
+      const result = originalSwitchPage.apply(this, arguments);
+      setTimeout(patchDashboardShell, 0);
+      setTimeout(patchDashboardShell, 80);
+      return result;
+    };
+    window.__ubktSwitchPagePatchInstalled = true;
+    return true;
   }
 
   function installDataBootPatch(){
@@ -86,7 +100,9 @@ window.UBKT_TASK_SYSTEM_URL = "https://ubkt-dashboard-qycx.vercel.app";
     patchDashboardShell();
     const installTimer = setInterval(()=>{
       patchDashboardShell();
-      if(installDataBootPatch()) clearInterval(installTimer);
+      const okLogin = installDataBootPatch();
+      const okSwitch = installSwitchPagePatch();
+      if(okLogin && okSwitch) clearInterval(installTimer);
     }, 120);
     setTimeout(()=>clearInterval(installTimer), 6000);
   });
