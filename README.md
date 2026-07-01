@@ -1,29 +1,36 @@
-# UBKT Dashboard - Supabase Ready
+# UBKT Dashboard - Lịch công tác cơ quan
 
-## Các file
+Next.js App Router chuyển từ prototype React sang ứng dụng production-ready: Supabase Auth Google OAuth, Supabase database, API Gemini server-side, lưu lịch công tác và hỗ trợ gửi email.
 
-- `index.html`: giao diện hệ thống đã gắn Supabase client.
-- `config.js`: điền Supabase URL, anon key, chế độ đăng nhập.
-- `supabase_schema.sql`: chạy trong Supabase SQL Editor để tạo database.
+## Biến môi trường Vercel
 
-## Chế độ vận hành
-
-### 1. Chạy cục bộ chưa nối Supabase
-Giữ `UBKT_AUTH_MODE = "local"` trong `config.js`.
-Dữ liệu lưu ở trình duyệt bằng localStorage.
-
-### 2. Chạy chính thức có Supabase
-Trong `config.js`:
-
-```js
-window.UBKT_SUPABASE_URL = "https://xxxxx.supabase.co";
-window.UBKT_SUPABASE_ANON_KEY = "ey...";
-window.UBKT_AUTH_MODE = "supabase";
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://hbygfheibcrqaqzoaass.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+GEMINI_API_KEY=...
+SMTP_EMAIL=...
+SMTP_PASSWORD=...
 ```
 
-Sau đó tạo user trong Supabase Authentication. Người dùng đăng nhập bằng email + mật khẩu đã tạo.
+`SMTP_PASSWORD` là Gmail App Password. Nếu chưa có, ứng dụng vẫn lưu lịch và có nút gửi email thủ công bằng `mailto:`.
 
-## Ghi chú bảo mật
+## Database
 
-Không đưa `service_role key` vào `config.js` hoặc `index.html`.
-Chỉ dùng `anon public key` ở frontend.
+Database Supabase cần 2 bảng:
+
+- `contacts`: `id`, `name`, `email`
+- `events`: `id`, `title`, `date`, `time`, `attendees uuid[]`
+
+Schema nằm trong `supabase/schema.sql`.
+
+## Chạy local
+
+```bash
+npm install
+npm run dev
+```
+
+## Deploy
+
+Import repo trên Vercel, chọn framework Next.js và nhập env ở trên.
