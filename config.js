@@ -19,34 +19,31 @@ window.UBKT_TASK_SYSTEM_APP_URL = "https://ubkt-dashboard-qycx.vercel.app";
     .ubkt-task-system-embed{margin:18px 0}.ubkt-task-system-toolbar{display:flex;justify-content:flex-end;margin-bottom:10px}.ubkt-task-system-frame{height:min(72vh,760px);min-height:520px;border-radius:24px;overflow:hidden;border:1px solid #e2e8f0;background:#fff}.ubkt-task-system-frame iframe{width:100%;height:100%;border:0;background:#fff}
     #pendingTableCard.ubkt-collapsed .ubkt-pending-body{display:none!important}#pendingTableCard .ubkt-pending-toggle{white-space:nowrap}
 
-    /* Light liquid glass, close to the original compact KPI cards. */
+    /* KPI compact reset: smaller cards, even text rhythm, no oversized progress pills. */
+    #page-dashboard>.bento:first-of-type{align-items:start!important;gap:12px!important}
     #page-dashboard>.bento>.kpi-bento.card,
     #page-dashboard>.bento>.card.b-span-3.reveal:not(.bento-card){
-      min-height:0!important;
-      height:auto!important;
-      border-radius:20px!important;
-      background:rgba(255,255,255,.62)!important;
-      border:1px solid rgba(255,255,255,.78)!important;
-      box-shadow:0 8px 18px rgba(31,42,68,.06),inset 0 1px 0 rgba(255,255,255,.86)!important;
-      backdrop-filter:blur(9px) saturate(1.02)!important;
-      -webkit-backdrop-filter:blur(9px) saturate(1.02)!important;
-      overflow:hidden!important;
+      height:118px!important;min-height:118px!important;max-height:118px!important;
+      border-radius:18px!important;background:rgba(255,255,255,.68)!important;
+      border:1px solid rgba(255,255,255,.82)!important;
+      box-shadow:0 8px 18px rgba(31,42,68,.055),inset 0 1px 0 rgba(255,255,255,.9)!important;
+      backdrop-filter:blur(8px) saturate(1.02)!important;-webkit-backdrop-filter:blur(8px) saturate(1.02)!important;
+      overflow:hidden!important;transform:none!important;
     }
-    #page-dashboard>.bento>.kpi-bento.card::before,
-    #page-dashboard>.bento>.kpi-bento.card::after,
-    #page-dashboard>.bento>.card.b-span-3.reveal:not(.bento-card)::before,
-    #page-dashboard>.bento>.card.b-span-3.reveal:not(.bento-card)::after{display:none!important}
-    #page-dashboard .kpi-bento{padding:12px 14px!important;gap:1px!important;text-align:center!important;justify-content:center!important}
-    #page-dashboard .kb-label,#page-dashboard .km-label{font-size:10px!important;color:#8da1ba!important;font-weight:850!important;letter-spacing:.04em!important;line-height:1.15!important}
-    #page-dashboard .kb-val{font-size:30px!important;line-height:1!important;font-weight:900!important;text-shadow:none!important;margin:4px 0!important}
-    #page-dashboard .kb-sub,#page-dashboard .km-sub{font-size:10px!important;color:#a7b4c6!important;font-weight:700!important;line-height:1.15!important}
-    #page-dashboard .kb-bar{height:3px!important;margin-top:6px!important;background:rgba(226,232,240,.58)!important}.kb-bar-fill{box-shadow:none!important}
-    #page-dashboard .kb-glow{display:none!important}
-    #page-dashboard>.bento>.card.b-span-3.reveal:not(.bento-card){display:grid!important;grid-template-rows:auto auto!important;padding:0!important;align-content:stretch!important}
-    #page-dashboard>.bento>.card.b-span-3.reveal:not(.bento-card)>button.kpi-mini{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;text-align:center!important;padding:8px 10px 6px!important;gap:1px!important;min-height:52px!important;width:100%!important}
-    #page-dashboard>.bento>.card.b-span-3.reveal:not(.bento-card)>div{display:grid!important;grid-template-columns:1fr 1fr!important;border-top:1px solid rgba(226,232,240,.64)!important;min-height:48px!important;background:rgba(255,255,255,.12)!important}
-    #page-dashboard>.bento>.card.b-span-3.reveal:not(.bento-card)>div>button.kpi-mini{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;text-align:center!important;padding:6px 5px!important;gap:1px!important;width:100%!important}
-    #page-dashboard .km-val{font-size:22px!important;line-height:1!important;font-weight:900!important;margin:2px 0!important}#page-dashboard>.bento>.card.b-span-3.reveal:not(.bento-card)>div .km-val{font-size:16px!important}
+    #page-dashboard>.bento>.kpi-bento.card:hover,
+    #page-dashboard>.bento>.card.b-span-3.reveal:not(.bento-card):hover{transform:none!important;box-shadow:0 9px 20px rgba(31,42,68,.07),inset 0 1px 0 rgba(255,255,255,.9)!important}
+    #page-dashboard>.bento>.kpi-bento.card::before,#page-dashboard>.bento>.kpi-bento.card::after,#page-dashboard>.bento>.card.b-span-3.reveal:not(.bento-card)::before,#page-dashboard>.bento>.card.b-span-3.reveal:not(.bento-card)::after{display:none!important}
+    #page-dashboard .kpi-bento{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;padding:10px 14px!important;gap:0!important;text-align:center!important}
+    #page-dashboard .kb-label,#page-dashboard .km-label{display:block!important;margin:0!important;font-size:10px!important;line-height:1.15!important;color:#8da1ba!important;font-weight:850!important;letter-spacing:.035em!important;text-transform:uppercase!important;text-align:center!important}
+    #page-dashboard .kb-val{display:block!important;margin:7px 0 6px!important;font-size:30px!important;line-height:1!important;font-weight:900!important;letter-spacing:-.025em!important;text-align:center!important;text-shadow:none!important}
+    #page-dashboard .kb-sub,#page-dashboard .km-sub{display:block!important;margin:0!important;font-size:10px!important;line-height:1.15!important;color:#a7b4c6!important;font-weight:700!important;text-align:center!important}
+    #page-dashboard .kb-bar,#page-dashboard .kb-bar-fill,#page-dashboard .kb-glow{display:none!important;width:0!important;height:0!important;margin:0!important;padding:0!important;opacity:0!important;overflow:hidden!important}
+    #page-dashboard>.bento>.card.b-span-3.reveal:not(.bento-card){display:grid!important;grid-template-rows:58px 60px!important;padding:0!important;align-content:stretch!important}
+    #page-dashboard>.bento>.card.b-span-3.reveal:not(.bento-card)>button.kpi-mini{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;width:100%!important;height:58px!important;min-height:58px!important;padding:7px 8px!important;gap:0!important;text-align:center!important}
+    #page-dashboard>.bento>.card.b-span-3.reveal:not(.bento-card)>div{display:grid!important;grid-template-columns:1fr 1fr!important;height:60px!important;min-height:60px!important;border-top:1px solid rgba(226,232,240,.68)!important;background:rgba(255,255,255,.16)!important}
+    #page-dashboard>.bento>.card.b-span-3.reveal:not(.bento-card)>div>button.kpi-mini{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;width:100%!important;height:60px!important;min-height:60px!important;padding:6px 4px!important;gap:0!important;text-align:center!important}
+    #page-dashboard .km-val{display:block!important;margin:4px 0 4px!important;font-size:22px!important;line-height:1!important;font-weight:900!important;letter-spacing:-.02em!important;text-align:center!important}
+    #page-dashboard>.bento>.card.b-span-3.reveal:not(.bento-card)>div .km-val{font-size:16px!important;margin:3px 0!important}
     #page-dashboard .ai-digest-icon{background:linear-gradient(135deg,rgba(66,133,244,.18),rgba(52,168,83,.16))!important;color:#1a73e8!important}.ai-badge{background:rgba(66,133,244,.10)!important;color:#1a73e8!important;border-color:rgba(66,133,244,.22)!important}
   `;
   document.head.appendChild(style);
