@@ -19,11 +19,6 @@ window.UBKT_TASK_SYSTEM_APP_URL = "https://ubkt-dashboard-qycx.vercel.app";
     .ubkt-task-system-embed{margin:18px 0}.ubkt-task-system-toolbar{display:flex;justify-content:flex-end;margin-bottom:10px}.ubkt-task-system-frame{height:min(72vh,760px);min-height:520px;border-radius:24px;overflow:hidden;border:1px solid #e2e8f0;background:#fff}.ubkt-task-system-frame iframe{width:100%;height:100%;border:0;background:#fff}
     #pendingTableCard.ubkt-collapsed .ubkt-pending-body{display:none!important}#pendingTableCard .ubkt-pending-toggle{white-space:nowrap}
     #page-dashboard .ai-digest-icon{background:linear-gradient(135deg,rgba(66,133,244,.18),rgba(52,168,83,.16))!important;color:#1a73e8!important}.ai-badge{background:rgba(66,133,244,.10)!important;color:#1a73e8!important;border-color:rgba(66,133,244,.22)!important}
-    .ubkt-bottom-hotzone{position:fixed;left:0;right:0;bottom:0;height:34px;z-index:79;pointer-events:auto;background:transparent}
-    .module-toast{will-change:transform,opacity;transition:opacity .28s cubic-bezier(.22,1,.36,1),transform .34s cubic-bezier(.22,1,.36,1),filter .28s cubic-bezier(.22,1,.36,1)!important}
-    .module-toast.ubkt-toast-hidden{opacity:0!important;transform:translateY(calc(100% + 26px)) scale(.96)!important;filter:blur(8px);pointer-events:none!important}
-    .module-toast.ubkt-toast-peek{opacity:.18!important;transform:translateY(calc(100% - 10px)) scale(.98)!important;filter:blur(1px);pointer-events:none!important}
-    .module-toast.ubkt-toast-visible{opacity:1!important;transform:translateY(0) scale(1)!important;filter:none!important;pointer-events:auto!important}
   `;
   document.head.appendChild(style);
 
@@ -55,35 +50,6 @@ window.UBKT_TASK_SYSTEM_APP_URL = "https://ubkt-dashboard-qycx.vercel.app";
 
   function patchAiDigestUi(){const keyInput=document.getElementById('aiApiKey');if(keyInput){const item=keyInput.closest('.ai-config-item');const label=item?.querySelector('.ai-config-label');if(label) label.textContent='Gemini API Key';keyInput.placeholder='AIza...';keyInput.setAttribute('autocomplete','off');}document.querySelectorAll('.ai-badge').forEach((el)=>{el.textContent='✦ Gemini AI';});}
 
-  function installBottomToastAutoHide(){
-    if(window.__ubktBottomToastAutoHideInstalled) return true;
-    const hotzone=document.createElement('div');
-    hotzone.className='ubkt-bottom-hotzone';
-    hotzone.setAttribute('aria-hidden','true');
-    document.body.appendChild(hotzone);
-    let hideTimer=null;
-    const toast=()=>document.querySelector('.module-toast');
-    const setState=(state)=>{const el=toast();if(!el) return false;el.classList.remove('ubkt-toast-hidden','ubkt-toast-peek','ubkt-toast-visible');el.classList.add(state);return true;};
-    const scheduleHide=(delay=5200)=>{clearTimeout(hideTimer);hideTimer=setTimeout(()=>{const el=toast();if(el&&el.classList.contains('show')) setState('ubkt-toast-hidden');},delay);};
-    const showToast=()=>{const el=toast();if(!el) return; if(el.classList.contains('show')){setState('ubkt-toast-visible');scheduleHide(5200);}};
-    const hideToast=()=>{const el=toast();if(el&&el.classList.contains('show')) setState('ubkt-toast-hidden');};
-    const peekToast=()=>{const el=toast();if(el&&el.classList.contains('show')) setState('ubkt-toast-peek');};
-    hotzone.addEventListener('mouseenter',showToast);
-    hotzone.addEventListener('mousemove',showToast);
-    hotzone.addEventListener('touchstart',showToast,{passive:true});
-    document.addEventListener('mousemove',(event)=>{if(window.innerHeight-event.clientY<=26) showToast();}, {passive:true});
-    document.addEventListener('click',(event)=>{const el=toast();if(el&&el.contains(event.target)) hideToast();}, true);
-    document.addEventListener('keydown',(event)=>{if(event.key==='Escape') hideToast();});
-    const observer=new MutationObserver(()=>{const el=toast();if(!el) return;if(el.classList.contains('show')){showToast();}else{clearTimeout(hideTimer);el.classList.remove('ubkt-toast-hidden','ubkt-toast-peek','ubkt-toast-visible');}});
-    observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
-    setInterval(()=>{const el=toast();if(el&&el.classList.contains('show')&&!el.classList.contains('ubkt-toast-visible')&&!el.classList.contains('ubkt-toast-hidden')) scheduleHide(4200);},1200);
-    window.ubktShowBottomBar=showToast;
-    window.ubktHideBottomBar=hideToast;
-    window.ubktPeekBottomBar=peekToast;
-    window.__ubktBottomToastAutoHideInstalled=true;
-    return true;
-  }
-
   function installGeminiDigestPatch(){
     if(window.__ubktGeminiDigestPatchInstalled) return true;
     if(typeof window.buildDigestPrompt!=='function'||typeof window.runAIDigest!=='function') return false;
@@ -100,6 +66,6 @@ window.UBKT_TASK_SYSTEM_APP_URL = "https://ubkt-dashboard-qycx.vercel.app";
   }
 
   function installSwitchPagePatch(){if(window.__ubktSwitchPagePatchInstalled) return true;if(typeof window.switchPage!=="function") return false;const originalSwitchPage=window.switchPage;window.switchPage=function patchedSwitchPage(page){const result=originalSwitchPage.apply(this,arguments);setTimeout(patchDashboardShell,0);setTimeout(patchDashboardShell,80);setTimeout(patchPendingSection,120);setTimeout(patchAiDigestUi,140);return result;};window.__ubktSwitchPagePatchInstalled=true;return true;}
-  function installDataBootPatch(){if(window.__ubktDataBootPatchInstalled) return true;if(typeof window.login!=="function") return false;const originalLogin=window.login;window.login=async function patchedLogin(){const shouldWaitForDatabase=typeof window.isSupabaseConfigured==="function"&&window.isSupabaseConfigured();if(shouldWaitForDatabase) document.documentElement.classList.add("ubkt-db-booting");try{return await originalLogin.apply(this,arguments);}finally{if(shouldWaitForDatabase) document.documentElement.classList.remove("ubkt-db-booting");patchDashboardShell();patchPendingSection();patchAiDigestUi();installGeminiDigestPatch();installBottomToastAutoHide();}};window.__ubktDataBootPatchInstalled=true;return true;}
-  document.addEventListener("DOMContentLoaded",()=>{patchDashboardShell();patchPendingSection();patchAiDigestUi();installBottomToastAutoHide();const installTimer=setInterval(()=>{patchDashboardShell();patchPendingSection();patchAiDigestUi();installBottomToastAutoHide();const okLogin=installDataBootPatch();const okSwitch=installSwitchPagePatch();const okGemini=installGeminiDigestPatch();if(okLogin&&okSwitch&&okGemini) clearInterval(installTimer);},120);setTimeout(()=>clearInterval(installTimer),7000);});
+  function installDataBootPatch(){if(window.__ubktDataBootPatchInstalled) return true;if(typeof window.login!=="function") return false;const originalLogin=window.login;window.login=async function patchedLogin(){const shouldWaitForDatabase=typeof window.isSupabaseConfigured==="function"&&window.isSupabaseConfigured();if(shouldWaitForDatabase) document.documentElement.classList.add("ubkt-db-booting");try{return await originalLogin.apply(this,arguments);}finally{if(shouldWaitForDatabase) document.documentElement.classList.remove("ubkt-db-booting");patchDashboardShell();patchPendingSection();patchAiDigestUi();installGeminiDigestPatch();}};window.__ubktDataBootPatchInstalled=true;return true;}
+  document.addEventListener("DOMContentLoaded",()=>{patchDashboardShell();patchPendingSection();patchAiDigestUi();const installTimer=setInterval(()=>{patchDashboardShell();patchPendingSection();patchAiDigestUi();const okLogin=installDataBootPatch();const okSwitch=installSwitchPagePatch();const okGemini=installGeminiDigestPatch();if(okLogin&&okSwitch&&okGemini) clearInterval(installTimer);},120);setTimeout(()=>clearInterval(installTimer),7000);});
 })();
