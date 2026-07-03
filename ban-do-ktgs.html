@@ -3,22 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bản đồ KTGS - Dữ liệu hành chính Việt Nam</title>
+  <title>Bản đồ GIS KTGS - Phường Tân Mỹ, TP.HCM</title>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    :root{
-      --ink:#172033;--muted:#66748a;--line:#dde6f1;--bg:#eef5fb;--card:rgba(255,255,255,.84);
-      --blue:#0a63ff;--green:#19b982;--amber:#f5b700;--red:#ef476f;--violet:#6d5dfc;
-      --shadow:0 18px 48px rgba(31,42,68,.12);--soft:0 10px 28px rgba(31,42,68,.08);
-      --ease:cubic-bezier(.22,1,.36,1);font-family:"Be Vietnam Pro",Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-    }
-    *{box-sizing:border-box}html,body{margin:0;min-height:100%;color:var(--ink);background:radial-gradient(circle at 10% 0%,rgba(10,99,255,.14),transparent 28rem),radial-gradient(circle at 90% 14%,rgba(25,185,130,.15),transparent 26rem),linear-gradient(180deg,#f8fbff 0%,#eef5fb 55%,#f7fbff 100%)}
-    button,input,select{font:inherit}button{cursor:pointer}.app{min-height:100vh;padding:20px}.shell{max-width:1720px;margin:0 auto}.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}.brand{display:flex;align-items:center;gap:13px;min-width:0}.brand-mark{width:52px;height:52px;border-radius:17px;display:grid;place-items:center;background:linear-gradient(135deg,#0a63ff,#19b982);color:#fff;box-shadow:0 14px 30px rgba(10,99,255,.22)}.brand h1{font-size:clamp(22px,2.4vw,34px);line-height:1.05;margin:0;letter-spacing:-.03em}.brand p{margin:6px 0 0;color:var(--muted);font-size:13px}.top-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.btn{border:1px solid var(--line);background:rgba(255,255,255,.82);color:var(--ink);min-height:40px;border-radius:13px;padding:9px 13px;font-weight:800;display:inline-flex;align-items:center;gap:8px;text-decoration:none;transition:transform .18s var(--ease),box-shadow .18s var(--ease),background .18s var(--ease)}.btn:hover{transform:translateY(-1px);box-shadow:var(--soft)}.btn-primary{background:#12233d;color:white;border-color:#12233d}.btn svg{width:17px;height:17px}.notice{border:1px solid rgba(10,99,255,.18);background:rgba(255,255,255,.62);border-radius:18px;padding:11px 14px;color:#42526a;font-size:13px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;backdrop-filter:blur(14px)}
-    .stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:14px}.stat{background:var(--card);border:1px solid rgba(221,230,241,.82);border-radius:18px;padding:14px;box-shadow:var(--soft);backdrop-filter:blur(16px);min-width:0}.stat span{display:block;color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}.stat strong{display:block;font-size:28px;line-height:1;margin-top:8px;letter-spacing:-.03em}.toolbar{display:grid;grid-template-columns:minmax(240px,1fr) 220px 180px auto;gap:10px;margin-bottom:14px}.field{width:100%;border:1px solid var(--line);background:rgba(255,255,255,.9);border-radius:14px;min-height:44px;padding:10px 12px;color:var(--ink);outline:none}.field:focus{border-color:rgba(10,99,255,.5);box-shadow:0 0 0 4px rgba(10,99,255,.1)}
-    .workspace{display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:14px;align-items:start}.panel{background:var(--card);border:1px solid rgba(221,230,241,.88);border-radius:24px;box-shadow:var(--shadow);backdrop-filter:blur(18px);overflow:hidden}.panel-hd{padding:16px 18px;border-bottom:1px solid rgba(221,230,241,.75);display:flex;justify-content:space-between;gap:12px;align-items:center}.panel-hd h2{margin:0;font-size:18px}.panel-hd p{margin:4px 0 0;color:var(--muted);font-size:12px}.map-wrap{padding:16px}.province-map{display:grid;grid-template-columns:repeat(6,minmax(112px,1fr));gap:10px;align-items:stretch}.province-tile{border:1px solid rgba(221,230,241,.9);background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(248,251,255,.78));border-radius:18px;min-height:104px;padding:12px;text-align:left;position:relative;overflow:hidden;transition:transform .18s var(--ease),box-shadow .18s var(--ease),border-color .18s var(--ease),background .18s var(--ease)}.province-tile:hover{transform:translateY(-2px);box-shadow:0 16px 32px rgba(31,42,68,.12);border-color:rgba(10,99,255,.28)}.province-tile.active{background:linear-gradient(135deg,#102441,#1559d6);color:white;border-color:#1559d6;box-shadow:0 20px 44px rgba(10,99,255,.22)}.province-tile.dim{opacity:.28}.province-code{font-size:11px;font-weight:900;color:var(--blue)}.province-tile.active .province-code{color:#bcd4ff}.province-name{display:block;margin-top:7px;font-weight:900;line-height:1.22;font-size:14px}.province-count{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:11px;color:var(--muted);font-size:12px;font-weight:750}.province-tile.active .province-count{color:#e9f2ff}.density{height:5px;border-radius:99px;background:#e6edf7;margin-top:10px;overflow:hidden}.density i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--green),var(--blue));width:0}.province-tile.active .density{background:rgba(255,255,255,.22)}.detail{position:sticky;top:14px}.detail-body{padding:18px}.selected-title{font-size:28px;line-height:1.06;letter-spacing:-.04em;margin:0}.selected-meta{color:var(--muted);font-size:13px;margin:8px 0 0}.chips{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.chip{border:1px solid var(--line);border-radius:999px;padding:7px 10px;background:white;color:#42526a;font-size:12px;font-weight:800}.mini-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}.mini{border:1px solid var(--line);border-radius:16px;background:#f8fbff;padding:11px}.mini span{display:block;color:var(--muted);font-size:11px;font-weight:850}.mini strong{display:block;font-size:22px;line-height:1;margin-top:6px}.ward-list{display:grid;gap:7px;max-height:52vh;overflow:auto;padding-right:3px}.ward{border:1px solid var(--line);border-radius:14px;background:white;padding:10px 11px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.ward b{font-size:13px}.ward small{display:block;color:var(--muted);margin-top:3px}.ward code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#eef5ff;color:#0b58d0;border-radius:9px;padding:4px 7px;font-size:12px}.empty{border:1px dashed #bfcede;border-radius:18px;background:#f8fbff;color:var(--muted);padding:26px;text-align:center}.loading{padding:44px;text-align:center;color:var(--muted)}.spinner{width:34px;height:34px;border-radius:50%;border:3px solid #d8e4f2;border-top-color:var(--blue);animation:spin .8s linear infinite;margin:0 auto 14px}@keyframes spin{to{transform:rotate(360deg)}}
-    .source{margin-top:14px;color:var(--muted);font-size:12px;line-height:1.5}.source a{color:var(--blue);font-weight:800}.page-footer{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:12px;margin-top:14px}.toast{position:fixed;right:20px;bottom:20px;background:#102441;color:white;border-radius:14px;padding:12px 14px;box-shadow:0 18px 42px rgba(16,36,65,.26);z-index:20;max-width:360px}.hidden{display:none!important}
-    @media(max-width:1180px){.workspace{grid-template-columns:1fr}.detail{position:static}.province-map{grid-template-columns:repeat(4,minmax(0,1fr))}.toolbar{grid-template-columns:1fr 1fr}.stats{grid-template-columns:repeat(3,1fr)}}
-    @media(max-width:680px){.app{padding:12px}.topbar{align-items:flex-start;flex-direction:column}.top-actions{width:100%}.top-actions .btn{flex:1;justify-content:center}.stats{grid-template-columns:repeat(2,1fr)}.toolbar{grid-template-columns:1fr}.province-map{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.province-tile{min-height:96px}.mini-stats{grid-template-columns:1fr}.page-footer{flex-direction:column}.selected-title{font-size:24px}}
+    :root{--ink:#172033;--muted:#65748a;--line:#dce6f1;--blue:#0a63ff;--green:#1ab981;--amber:#f4b400;--red:#ef476f;--violet:#6d5dfc;--card:rgba(255,255,255,.86);--shadow:0 18px 50px rgba(25,38,66,.13);--soft:0 10px 28px rgba(25,38,66,.08);--ease:cubic-bezier(.22,1,.36,1);font-family:"Be Vietnam Pro",Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}*{box-sizing:border-box}html,body{margin:0;min-height:100%;color:var(--ink);background:radial-gradient(circle at 10% 4%,rgba(10,99,255,.15),transparent 28rem),radial-gradient(circle at 94% 10%,rgba(26,185,129,.16),transparent 26rem),linear-gradient(180deg,#f9fbff 0,#eef5fb 58%,#f7fbff 100%)}button,input,select,textarea{font:inherit}button{cursor:pointer}.app{min-height:100vh;padding:20px}.shell{max-width:1680px;margin:0 auto}.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}.brand{display:flex;align-items:center;gap:13px;min-width:0}.brand-mark{width:52px;height:52px;border-radius:17px;display:grid;place-items:center;background:linear-gradient(135deg,#0a63ff,#1ab981);color:#fff;box-shadow:0 14px 30px rgba(10,99,255,.22)}.brand h1{font-size:clamp(22px,2.4vw,34px);line-height:1.05;margin:0;letter-spacing:-.03em}.brand p{margin:6px 0 0;color:var(--muted);font-size:13px}.top-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.btn{border:1px solid var(--line);background:rgba(255,255,255,.84);color:var(--ink);min-height:40px;border-radius:13px;padding:9px 13px;font-weight:850;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;transition:transform .18s var(--ease),box-shadow .18s var(--ease),background .18s var(--ease)}.btn:hover{transform:translateY(-1px);box-shadow:var(--soft)}.btn-primary{background:#12233d;color:white;border-color:#12233d}.btn-danger{background:#fff1f4;color:#b42347;border-color:#ffd4dd}.btn svg{width:17px;height:17px}.notice{border:1px solid rgba(10,99,255,.18);background:rgba(255,255,255,.62);border-radius:18px;padding:11px 14px;color:#42526a;font-size:13px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;backdrop-filter:blur(14px)}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}.stat{background:var(--card);border:1px solid rgba(220,230,241,.82);border-radius:18px;padding:14px;box-shadow:var(--soft);backdrop-filter:blur(16px);min-width:0}.stat span{display:block;color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}.stat strong{display:block;font-size:26px;line-height:1;margin-top:8px;letter-spacing:-.03em}.workspace{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:14px;align-items:start}.panel{background:var(--card);border:1px solid rgba(220,230,241,.88);border-radius:24px;box-shadow:var(--shadow);backdrop-filter:blur(18px);overflow:hidden}.panel-hd{padding:16px 18px;border-bottom:1px solid rgba(220,230,241,.76);display:flex;justify-content:space-between;gap:12px;align-items:center}.panel-hd h2{margin:0;font-size:18px}.panel-hd p{margin:4px 0 0;color:var(--muted);font-size:12px}.map-wrap{padding:16px}.map-stage{position:relative;min-height:680px;border:1px solid #dfe9f4;border-radius:22px;overflow:hidden;background:radial-gradient(circle at 20% 20%,rgba(10,99,255,.10),transparent 30%),radial-gradient(circle at 85% 85%,rgba(26,185,129,.12),transparent 34%),linear-gradient(160deg,#f7fbff,#eaf4fb)}#wardMap{width:100%;height:680px;display:block}.ward-boundary{fill:rgba(10,99,255,.14);stroke:#0a63ff;stroke-width:3.5;vector-effect:non-scaling-stroke;filter:drop-shadow(0 18px 28px rgba(10,99,255,.16))}.ward-outline{fill:none;stroke:rgba(255,255,255,.88);stroke-width:1.4;vector-effect:non-scaling-stroke}.bbox{fill:none;stroke:rgba(23,32,51,.2);stroke-width:1.2;stroke-dasharray:6 5;vector-effect:non-scaling-stroke}.label-chip{position:absolute;left:16px;top:16px;background:rgba(255,255,255,.88);border:1px solid rgba(220,230,241,.9);border-radius:999px;padding:8px 12px;font-size:12px;font-weight:900;color:#23324a;box-shadow:var(--soft);backdrop-filter:blur(12px)}.map-hint{position:absolute;left:16px;bottom:16px;right:16px;display:flex;gap:8px;flex-wrap:wrap}.hint{background:rgba(255,255,255,.9);border:1px solid rgba(220,230,241,.9);border-radius:999px;padding:8px 11px;color:var(--muted);font-size:12px;font-weight:800;box-shadow:var(--soft);backdrop-filter:blur(12px)}.marker{cursor:pointer}.marker circle{stroke:white;stroke-width:3;filter:drop-shadow(0 8px 12px rgba(23,32,51,.24))}.marker text{font-size:11px;font-weight:900;fill:white;text-anchor:middle;dominant-baseline:central;pointer-events:none}.marker.is-selected circle{stroke:#111827;stroke-width:4}.side{position:sticky;top:14px}.form{display:grid;gap:10px;padding:18px}.field{width:100%;border:1px solid var(--line);background:rgba(255,255,255,.92);border-radius:14px;min-height:42px;padding:10px 12px;color:var(--ink);outline:none}.field:focus{border-color:rgba(10,99,255,.5);box-shadow:0 0 0 4px rgba(10,99,255,.1)}textarea.field{min-height:86px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.coord{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#31516f;font-size:12px;background:#f2f7fd;border:1px solid #dfe9f4;border-radius:12px;padding:9px 10px}.records{display:grid;gap:8px;max-height:440px;overflow:auto;padding:0 18px 18px}.record{border:1px solid var(--line);background:white;border-radius:16px;padding:12px;display:grid;gap:8px}.record.active{border-color:rgba(10,99,255,.55);box-shadow:0 0 0 4px rgba(10,99,255,.09)}.record-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.record h3{font-size:14px;margin:0;line-height:1.35}.record p{margin:0;color:var(--muted);font-size:12px;line-height:1.45}.badge{display:inline-flex;align-items:center;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:900;border:1px solid transparent;white-space:nowrap}.badge.pending{background:#fff8df;color:#8a6500;border-color:#ffe7a3}.badge.process{background:#eaf4ff;color:#0a58ca;border-color:#bfdcff}.badge.done{background:#e8fbf3;color:#087a52;border-color:#bdf0da}.badge.urgent{background:#fff0f4;color:#b42347;border-color:#ffcbd8}.record-actions{display:flex;gap:8px;flex-wrap:wrap}.small{min-height:32px;padding:6px 9px;border-radius:10px;font-size:12px}.empty{border:1px dashed #bfcede;border-radius:18px;background:#f8fbff;color:var(--muted);padding:24px;text-align:center}.source{color:var(--muted);font-size:12px;line-height:1.5;padding:0 18px 18px}.source a{color:var(--blue);font-weight:850}.toast{position:fixed;right:20px;bottom:20px;background:#102441;color:white;border-radius:14px;padding:12px 14px;box-shadow:0 18px 42px rgba(16,36,65,.26);z-index:20;max-width:360px}.hidden{display:none!important}@media(max-width:1100px){.workspace{grid-template-columns:1fr}.side{position:static}.stats{grid-template-columns:repeat(2,1fr)}#wardMap{height:560px}.map-stage{min-height:560px}}@media(max-width:680px){.app{padding:12px}.topbar{align-items:flex-start;flex-direction:column}.top-actions{width:100%}.top-actions .btn{flex:1}.stats{grid-template-columns:1fr 1fr}.row{grid-template-columns:1fr}.panel-hd{align-items:flex-start;flex-direction:column}.brand h1{font-size:23px}#wardMap{height:480px}.map-stage{min-height:480px}.map-hint{position:static;padding:12px}.label-chip{position:static;margin:12px 12px 0;display:inline-flex}}
   </style>
 </head>
 <body>
@@ -26,195 +14,94 @@
     <div class="shell">
       <header class="topbar">
         <div class="brand">
-          <div class="brand-mark"><i data-lucide="map"></i></div>
+          <div class="brand-mark"><i data-lucide="map-pinned"></i></div>
           <div>
-            <h1>Bản đồ KTGS hành chính</h1>
-            <p>Tra cứu 34 tỉnh/thành và 3.321 phường, xã, đặc khu theo Vietnamese Provinces Database.</p>
+            <h1>Bản đồ GIS KTGS Phường Tân Mỹ</h1>
+            <p>Ranh giới GIS Phường Tân Mỹ, Thành phố Hồ Chí Minh - mã đơn vị 27487.</p>
           </div>
         </div>
         <div class="top-actions">
           <a class="btn" href="index.html"><i data-lucide="arrow-left"></i>Về Dashboard</a>
-          <button class="btn" id="refreshBtn"><i data-lucide="refresh-cw"></i>Tải lại dữ liệu</button>
-          <button class="btn btn-primary" id="exportBtn"><i data-lucide="download"></i>Xuất CSV</button>
+          <button class="btn" id="importBtn"><i data-lucide="upload"></i>Nhập JSON</button>
+          <button class="btn btn-primary" id="exportBtn"><i data-lucide="download"></i>Xuất JSON</button>
         </div>
       </header>
 
-      <div class="notice"><i data-lucide="database"></i><div>Dữ liệu được tải trực tiếp từ repo <b>thanglequoc/vietnamese-provinces-database</b>. Trang có cache cục bộ để mở nhanh hơn, nhưng nút “Tải lại dữ liệu” luôn lấy bản mới từ GitHub.</div></div>
+      <div class="notice"><i data-lucide="database"></i><div>Ranh giới được trích từ GIS Dataset của <b>Vietnamese Provinces Database</b>, WGS84/SRID 4326. Nội dung phát sinh theo khu phố được lưu cục bộ trên trình duyệt và có thể xuất/nhập JSON để sao lưu.</div></div>
 
-      <section class="stats" aria-label="Thống kê tổng quan">
-        <div class="stat"><span>Tỉnh / thành</span><strong id="provinceTotal">-</strong></div>
-        <div class="stat"><span>Phường / xã / đặc khu</span><strong id="wardTotal">-</strong></div>
-        <div class="stat"><span>Phường</span><strong id="wardTypeTotal">-</strong></div>
-        <div class="stat"><span>Xã</span><strong id="communeTypeTotal">-</strong></div>
-        <div class="stat"><span>Đặc khu</span><strong id="specialTypeTotal">-</strong></div>
-      </section>
-
-      <section class="toolbar" aria-label="Bộ lọc dữ liệu">
-        <input class="field" id="globalSearch" placeholder="Tìm tỉnh/thành, phường/xã, mã đơn vị...">
-        <select class="field" id="provinceSelect"><option value="">Tất cả tỉnh/thành</option></select>
-        <select class="field" id="unitFilter"><option value="all">Tất cả loại đơn vị</option><option value="Phường">Phường</option><option value="Xã">Xã</option><option value="Đặc khu">Đặc khu</option></select>
-        <button class="btn" id="clearBtn"><i data-lucide="x"></i>Xóa lọc</button>
+      <section class="stats">
+        <div class="stat"><span>Đơn vị</span><strong>Tân Mỹ</strong></div>
+        <div class="stat"><span>Mã phường</span><strong>27487</strong></div>
+        <div class="stat"><span>Diện tích GIS</span><strong>6,45 km²</strong></div>
+        <div class="stat"><span>Nội dung phát sinh</span><strong id="recordTotal">0</strong></div>
       </section>
 
       <section class="workspace">
         <section class="panel">
           <div class="panel-hd">
-            <div><h2>Lưới tỉnh/thành</h2><p>Mỗi ô là một đơn vị cấp tỉnh. Màu thanh thể hiện số lượng đơn vị cấp xã trực thuộc.</p></div>
-            <span class="chip" id="visibleCount">Đang tải</span>
+            <div><h2>Ranh giới GIS phường</h2><p>Bấm vào bên trong ranh giới để đặt điểm nội dung phát sinh theo khu phố.</p></div>
+            <button class="btn" id="fitBtn"><i data-lucide="maximize"></i>Canh bản đồ</button>
           </div>
           <div class="map-wrap">
-            <div id="mapGrid" class="province-map"><div class="loading"><div class="spinner"></div>Đang tải dữ liệu hành chính...</div></div>
+            <div class="map-stage" id="mapStage">
+              <span class="label-chip">Phường Tân Mỹ - TP.HCM</span>
+              <svg id="wardMap" role="img" aria-label="Bản đồ GIS Phường Tân Mỹ"></svg>
+              <div class="map-hint"><span class="hint">Click trong ranh để thêm điểm</span><span class="hint">Kéo danh sách bên phải để quản lý</span><span class="hint">Dữ liệu lưu trên máy của bạn</span></div>
+            </div>
           </div>
         </section>
 
-        <aside class="panel detail">
-          <div class="panel-hd"><div><h2>Chi tiết đơn vị</h2><p id="detailHint">Chọn một tỉnh/thành hoặc tìm kiếm để xem danh sách trực thuộc.</p></div></div>
-          <div class="detail-body" id="detailBody">
-            <div class="empty">Chưa chọn tỉnh/thành. Bạn có thể bấm vào một ô trên bản đồ hoặc dùng ô tìm kiếm.</div>
-          </div>
+        <aside class="panel side">
+          <div class="panel-hd"><div><h2>Nội dung phát sinh khu phố</h2><p>Thêm vụ việc, nhiệm vụ, phản ánh hoặc điểm cần theo dõi.</p></div></div>
+          <form class="form" id="recordForm">
+            <div class="row"><input class="field" id="quarterInput" placeholder="Khu phố / tổ / tuyến"><select class="field" id="statusInput"><option value="pending">Cần theo dõi</option><option value="process">Đang xử lý</option><option value="done">Đã xử lý</option><option value="urgent">Khẩn / nổi cộm</option></select></div>
+            <input class="field" id="titleInput" placeholder="Tiêu đề nội dung phát sinh">
+            <textarea class="field" id="noteInput" placeholder="Ghi chú, diễn biến, đơn vị phụ trách, thời hạn..."></textarea>
+            <div class="coord" id="coordText">Chưa chọn vị trí. Bấm vào bản đồ để lấy tọa độ.</div>
+            <div class="row"><button class="btn btn-primary" type="submit"><i data-lucide="plus"></i>Lưu điểm</button><button class="btn" type="button" id="clearFormBtn"><i data-lucide="rotate-ccw"></i>Làm mới</button></div>
+          </form>
+          <div class="records" id="records"></div>
+          <p class="source">Nguồn GIS: <a href="https://github.com/thanglequoc/vietnamese-provinces-database" target="_blank" rel="noopener noreferrer">thanglequoc/vietnamese-provinces-database</a>. Nếu sau này bạn có ranh khu phố riêng, mình có thể thay lớp điểm bằng polygon khu phố.</p>
         </aside>
       </section>
-
-      <footer class="page-footer">
-        <span>Nguồn: Vietnamese Provinces Database, MIT License.</span>
-        <span id="updatedText">Chưa tải dữ liệu.</span>
-      </footer>
     </div>
   </main>
+  <input id="importFile" type="file" accept="application/json" class="hidden">
   <div id="toast" class="toast hidden"></div>
 
   <script>
-    const DATA_URL = 'https://raw.githubusercontent.com/thanglequoc/vietnamese-provinces-database/master/json/vn_only_simplified_json_generated_data_vn_units_minified.json';
-    const CACHE_KEY = 'ubkt_vn_units_cache_v1';
-    const state = { provinces: [], selectedCode: '', search: '', unit: 'all' };
-    const $ = (id) => document.getElementById(id);
-    const fmt = (n) => Number(n || 0).toLocaleString('vi-VN');
-    const normalize = (text) => String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d');
-    const unitType = (name) => String(name || '').split(' ')[0] || 'Khác';
-    const toast = (msg) => { const el = $('toast'); el.textContent = msg; el.classList.remove('hidden'); clearTimeout(window.__toastTimer); window.__toastTimer = setTimeout(() => el.classList.add('hidden'), 2600); };
-
-    async function loadData(force = false){
-      $('mapGrid').innerHTML = '<div class="loading"><div class="spinner"></div>Đang tải dữ liệu hành chính...</div>';
-      try{
-        if(!force){
-          const cached = localStorage.getItem(CACHE_KEY);
-          if(cached){
-            const parsed = JSON.parse(cached);
-            if(Array.isArray(parsed.data) && parsed.data.length){
-              applyData(parsed.data, parsed.time, true);
-              refreshFromNetwork(false);
-              return;
-            }
-          }
-        }
-        await refreshFromNetwork(true);
-      }catch(error){
-        console.error(error);
-        $('mapGrid').innerHTML = '<div class="empty">Không tải được dữ liệu. Vui lòng kiểm tra kết nối hoặc thử lại.</div>';
-        toast('Không tải được dữ liệu từ GitHub.');
-      }
-    }
-
-    async function refreshFromNetwork(showToast){
-      const response = await fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' });
-      if(!response.ok) throw new Error('HTTP ' + response.status);
-      const data = await response.json();
-      const time = new Date().toISOString();
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ data, time }));
-      applyData(data, time, false);
-      if(showToast) toast('Đã tải dữ liệu mới từ GitHub.');
-    }
-
-    function applyData(data, time, fromCache){
-      state.provinces = data.map((p) => ({...p, Wards: Array.isArray(p.Wards) ? p.Wards : []}));
-      $('updatedText').textContent = (fromCache ? 'Cache cục bộ: ' : 'Dữ liệu GitHub: ') + new Date(time).toLocaleString('vi-VN');
-      buildProvinceSelect();
-      renderAll();
-    }
-
-    function buildProvinceSelect(){
-      const select = $('provinceSelect');
-      select.innerHTML = '<option value="">Tất cả tỉnh/thành</option>' + state.provinces.map((p) => `<option value="${p.Code}">${p.FullName}</option>`).join('');
-    }
-
-    function currentWards(province){
-      const q = normalize(state.search);
-      return province.Wards.filter((w) => {
-        const typeOk = state.unit === 'all' || unitType(w.FullName) === state.unit;
-        if(!typeOk) return false;
-        if(!q) return true;
-        return normalize(w.FullName).includes(q) || normalize(w.Code).includes(q) || normalize(province.FullName).includes(q) || normalize(province.Code).includes(q);
-      });
-    }
-
-    function filteredProvinces(){
-      const q = normalize(state.search);
-      return state.provinces.filter((p) => {
-        if(state.selectedCode && p.Code !== state.selectedCode) return false;
-        if(state.unit !== 'all' && !p.Wards.some((w) => unitType(w.FullName) === state.unit)) return false;
-        if(!q) return true;
-        return normalize(p.FullName).includes(q) || normalize(p.Code).includes(q) || p.Wards.some((w) => normalize(w.FullName).includes(q) || normalize(w.Code).includes(q));
-      });
-    }
-
-    function renderStats(){
-      const wards = state.provinces.flatMap((p) => p.Wards);
-      $('provinceTotal').textContent = fmt(state.provinces.length);
-      $('wardTotal').textContent = fmt(wards.length);
-      $('wardTypeTotal').textContent = fmt(wards.filter((w) => unitType(w.FullName) === 'Phường').length);
-      $('communeTypeTotal').textContent = fmt(wards.filter((w) => unitType(w.FullName) === 'Xã').length);
-      $('specialTypeTotal').textContent = fmt(wards.filter((w) => unitType(w.FullName) === 'Đặc').length + wards.filter((w) => unitType(w.FullName) === 'Đặc khu').length);
-    }
-
-    function renderMap(){
-      const list = filteredProvinces();
-      const max = Math.max(...state.provinces.map((p) => p.Wards.length), 1);
-      $('visibleCount').textContent = `${fmt(list.length)} tỉnh/thành đang hiển thị`;
-      if(!list.length){ $('mapGrid').innerHTML = '<div class="empty">Không tìm thấy đơn vị phù hợp.</div>'; return; }
-      $('mapGrid').innerHTML = list.map((p) => {
-        const pct = Math.max(8, Math.round((p.Wards.length / max) * 100));
-        const active = p.Code === state.selectedCode ? ' active' : '';
-        return `<button class="province-tile${active}" data-code="${p.Code}" title="${p.FullName}"><span class="province-code">Mã ${p.Code}</span><b class="province-name">${p.FullName}</b><span class="province-count"><span>${fmt(p.Wards.length)} đơn vị</span><span>${Math.round(pct)}%</span></span><span class="density"><i style="width:${pct}%"></i></span></button>`;
-      }).join('');
-      document.querySelectorAll('.province-tile').forEach((btn) => btn.addEventListener('click', () => selectProvince(btn.dataset.code)));
-    }
-
-    function renderDetail(){
-      const province = state.provinces.find((p) => p.Code === state.selectedCode) || filteredProvinces()[0];
-      if(!province){ $('detailBody').innerHTML = '<div class="empty">Không có dữ liệu phù hợp bộ lọc.</div>'; return; }
-      if(!state.selectedCode && state.search) state.selectedCode = province.Code;
-      const wards = currentWards(province);
-      const byType = wards.reduce((acc,w) => { const t = unitType(w.FullName); acc[t] = (acc[t] || 0) + 1; return acc; }, {});
-      $('detailHint').textContent = `${province.FullName} - mã ${province.Code}`;
-      $('detailBody').innerHTML = `
-        <h3 class="selected-title">${province.FullName}</h3>
-        <p class="selected-meta">Mã tỉnh/thành: <b>${province.Code}</b>. Hiển thị ${fmt(wards.length)} / ${fmt(province.Wards.length)} đơn vị trực thuộc.</p>
-        <div class="chips"><span class="chip">${fmt(byType['Phường'] || 0)} phường</span><span class="chip">${fmt(byType['Xã'] || 0)} xã</span><span class="chip">${fmt((byType['Đặc'] || 0) + (byType['Đặc khu'] || 0))} đặc khu</span></div>
-        <div class="mini-stats"><div class="mini"><span>Tổng trực thuộc</span><strong>${fmt(province.Wards.length)}</strong></div><div class="mini"><span>Đang lọc</span><strong>${fmt(wards.length)}</strong></div><div class="mini"><span>Tỷ lệ</span><strong>${province.Wards.length ? Math.round(wards.length / province.Wards.length * 100) : 0}%</strong></div></div>
-        <div class="ward-list">${wards.length ? wards.map((w) => `<div class="ward"><div><b>${w.FullName}</b><small>${province.FullName}</small></div><code>${w.Code}</code></div>`).join('') : '<div class="empty">Không có phường/xã phù hợp trong tỉnh này.</div>'}</div>
-        <p class="source">Nguồn dữ liệu: <a href="https://github.com/thanglequoc/vietnamese-provinces-database" target="_blank" rel="noopener noreferrer">Vietnamese Provinces Database</a>.</p>`;
-    }
-
-    function renderAll(){ renderStats(); renderMap(); renderDetail(); if(window.lucide) lucide.createIcons(); }
-    function selectProvince(code){ state.selectedCode = code; $('provinceSelect').value = code; renderAll(); }
-    function clearFilters(){ state.search = ''; state.unit = 'all'; state.selectedCode = ''; $('globalSearch').value = ''; $('unitFilter').value = 'all'; $('provinceSelect').value = ''; renderAll(); }
-    function exportCsv(){
-      const rows = [['province_code','province_full_name','ward_code','ward_full_name']];
-      filteredProvinces().forEach((p) => currentWards(p).forEach((w) => rows.push([p.Code,p.FullName,w.Code,w.FullName])));
-      const csv = rows.map((r) => r.map((cell) => '"' + String(cell).replace(/"/g,'""') + '"').join(',')).join('\n');
-      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'ubkt-ban-do-hanh-chinh.csv'; a.click(); URL.revokeObjectURL(url);
-    }
-
-    $('globalSearch').addEventListener('input', (event) => { state.search = event.target.value.trim(); renderAll(); });
-    $('provinceSelect').addEventListener('change', (event) => { state.selectedCode = event.target.value; renderAll(); });
-    $('unitFilter').addEventListener('change', (event) => { state.unit = event.target.value; renderAll(); });
-    $('clearBtn').addEventListener('click', clearFilters);
-    $('refreshBtn').addEventListener('click', () => loadData(true));
-    $('exportBtn').addEventListener('click', exportCsv);
-    if(window.lucide) lucide.createIcons();
-    loadData(false);
+    const WARD = {
+      code:'27487', name:'Phường Tân Mỹ', province:'Thành phố Hồ Chí Minh', areaKm2:6.45,
+      bbox:[[106.712364,10.697826],[106.737866,10.738427]],
+      coords:[[106.715928,10.738346],[106.716651,10.738292],[106.719564,10.738134],[106.721628,10.738038],[106.722042,10.738006],[106.722142,10.738000],[106.722319,10.737989],[106.722495,10.737979],[106.722649,10.737969],[106.725535,10.737784],[106.728123,10.737638],[106.729779,10.737557],[106.730459,10.737508],[106.730664,10.735835],[106.730906,10.734178],[106.731104,10.733316],[106.731979,10.730757],[106.732834,10.728372],[106.733215,10.727338],[106.735247,10.723438],[106.736280,10.721356],[106.736499,10.720819],[106.736566,10.720609],[106.736640,10.720158],[106.736765,10.718235],[106.736792,10.717607],[106.736868,10.715890],[106.736936,10.714403],[106.736941,10.714315],[106.737299,10.707302],[106.737866,10.704907],[106.737825,10.703597],[106.736642,10.703534],[106.735867,10.703260],[106.735302,10.702873],[106.734833,10.702069],[106.734561,10.701375],[106.734156,10.699317],[106.733984,10.698873],[106.733602,10.698443],[106.732910,10.697988],[106.732036,10.697826],[106.731065,10.697845],[106.729842,10.698061],[106.728283,10.698487],[106.726740,10.699303],[106.726348,10.699708],[106.726340,10.699727],[106.726154,10.700196],[106.726019,10.701311],[106.725855,10.702133],[106.724982,10.704601],[106.724845,10.705158],[106.724834,10.705785],[106.724965,10.706466],[106.725539,10.708508],[106.725627,10.709092],[106.725648,10.710220],[106.725456,10.711125],[106.725178,10.711795],[106.724986,10.712065],[106.724661,10.712521],[106.723739,10.713682],[106.723279,10.714394],[106.723169,10.714826],[106.723172,10.715369],[106.723217,10.715953],[106.723460,10.716578],[106.723858,10.717188],[106.724609,10.718256],[106.724910,10.719089],[106.725040,10.719742],[106.724959,10.720286],[106.724737,10.720816],[106.724387,10.721263],[106.723756,10.721698],[106.722380,10.722137],[106.721437,10.722240],[106.720875,10.722243],[106.719378,10.723456],[106.718939,10.723906],[106.718663,10.724355],[106.718548,10.724666],[106.718390,10.725379],[106.718071,10.726437],[106.717887,10.726886],[106.717450,10.727612],[106.716609,10.728857],[106.715882,10.729654],[106.715223,10.730220],[106.714738,10.730763],[106.714139,10.731616],[106.713701,10.732147],[106.713262,10.732608],[106.712707,10.733071],[106.712535,10.733393],[106.712364,10.733992],[106.712366,10.734336],[106.712425,10.734508],[106.712682,10.734691],[106.712973,10.734873],[106.713464,10.735444],[106.714119,10.736256],[106.714400,10.736691],[106.714604,10.737131],[106.714656,10.737275],[106.714792,10.737902],[106.714857,10.738427],[106.715117,10.738407],[106.715928,10.738346]]
+    };
+    const STORE='ubkt_tan_my_gis_records_v1';
+    const svg=document.getElementById('wardMap');
+    const state={records:[],draft:null,selected:null};
+    const statusMeta={pending:['Cần theo dõi','pending','#f4b400'],process:['Đang xử lý','process','#0a63ff'],done:['Đã xử lý','done','#1ab981'],urgent:['Khẩn / nổi cộm','urgent','#ef476f']};
+    const $=(id)=>document.getElementById(id); const fmt=(n,d=6)=>Number(n).toFixed(d);
+    function toast(msg){const el=$('toast');el.textContent=msg;el.classList.remove('hidden');clearTimeout(window.__t);window.__t=setTimeout(()=>el.classList.add('hidden'),2500)}
+    function project([lon,lat]){const [[minLon,minLat],[maxLon,maxLat]]=WARD.bbox;const pad=42,w=1000,h=760;const x=pad+(lon-minLon)/(maxLon-minLon)*(w-pad*2);const y=h-pad-(lat-minLat)/(maxLat-minLat)*(h-pad*2);return [x,y]}
+    function unproject(x,y){const [[minLon,minLat],[maxLon,maxLat]]=WARD.bbox;const pad=42,w=1000,h=760;const lon=minLon+(x-pad)/(w-pad*2)*(maxLon-minLon);const lat=minLat+(h-pad-y)/(h-pad*2)*(maxLat-minLat);return [lon,lat]}
+    function pointInPolygon(point, polygon){let x=point[0],y=point[1],inside=false;for(let i=0,j=polygon.length-1;i<polygon.length;j=i++){let xi=polygon[i][0],yi=polygon[i][1],xj=polygon[j][0],yj=polygon[j][1];let intersect=((yi>y)!=(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi);if(intersect) inside=!inside}return inside}
+    function pathFrom(coords){return coords.map((p,i)=>{const [x,y]=project(p);return `${i?'L':'M'}${x.toFixed(2)} ${y.toFixed(2)}`}).join(' ')+' Z'}
+    function renderMap(){svg.setAttribute('viewBox','0 0 1000 760');svg.innerHTML=`<defs><linearGradient id="fill" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#0a63ff" stop-opacity=".24"/><stop offset="1" stop-color="#1ab981" stop-opacity=".28"/></linearGradient></defs><rect class="bbox" x="42" y="42" width="916" height="676" rx="18"/><path class="ward-boundary" d="${pathFrom(WARD.coords)}" fill="url(#fill)"></path><path class="ward-outline" d="${pathFrom(WARD.coords)}"></path><g id="markerLayer"></g>`;renderMarkers()}
+    function renderMarkers(){const layer=document.getElementById('markerLayer');if(!layer)return;layer.innerHTML=state.records.map((r,i)=>{const [x,y]=project([r.lon,r.lat]);const color=statusMeta[r.status]?.[2]||'#0a63ff';const active=state.selected===r.id?' is-selected':'';return `<g class="marker${active}" data-id="${r.id}" transform="translate(${x.toFixed(2)} ${y.toFixed(2)})"><circle r="15" fill="${color}"></circle><text y="1">${i+1}</text></g>`}).join('')+(state.draft?(()=>{const [x,y]=project([state.draft.lon,state.draft.lat]);return `<g class="marker" transform="translate(${x.toFixed(2)} ${y.toFixed(2)})"><circle r="13" fill="#111827"></circle><text y="1">+</text></g>`})():'');layer.querySelectorAll('.marker[data-id]').forEach(el=>el.addEventListener('click',(ev)=>{ev.stopPropagation();selectRecord(el.dataset.id)}))}
+    function load(){try{state.records=JSON.parse(localStorage.getItem(STORE)||'[]')}catch{state.records=[]}renderMap();renderRecords();updateStats();if(window.lucide)lucide.createIcons()}
+    function save(){localStorage.setItem(STORE,JSON.stringify(state.records));renderMarkers();renderRecords();updateStats()}
+    function updateStats(){document.getElementById('recordTotal').textContent=state.records.length.toLocaleString('vi-VN')}
+    function setDraft(lon,lat){state.draft={lon,lat};$('coordText').textContent=`Tọa độ: ${fmt(lat)}, ${fmt(lon)} (lat, lon)`;renderMarkers()}
+    function clearForm(){state.draft=null;state.selected=null;$('quarterInput').value='';$('titleInput').value='';$('noteInput').value='';$('statusInput').value='pending';$('coordText').textContent='Chưa chọn vị trí. Bấm vào bản đồ để lấy tọa độ.';renderMarkers();renderRecords()}
+    function selectRecord(id){state.selected=id;const r=state.records.find(x=>x.id===id);if(!r)return;$('quarterInput').value=r.quarter||'';$('titleInput').value=r.title||'';$('noteInput').value=r.note||'';$('statusInput').value=r.status||'pending';state.draft={lon:r.lon,lat:r.lat,id:r.id};$('coordText').textContent=`Đang sửa điểm: ${fmt(r.lat)}, ${fmt(r.lon)} (lat, lon)`;renderMarkers();renderRecords()}
+    function renderRecords(){const wrap=$('records');if(!state.records.length){wrap.innerHTML='<div class="empty">Chưa có nội dung phát sinh. Bấm vào bản đồ để đặt điểm đầu tiên.</div>';return}wrap.innerHTML=state.records.map((r,i)=>{const meta=statusMeta[r.status]||statusMeta.pending;return `<article class="record ${state.selected===r.id?'active':''}"><div class="record-head"><div><h3>${i+1}. ${escapeHtml(r.title||'Nội dung chưa đặt tên')}</h3><p>${escapeHtml(r.quarter||'Chưa nhập khu phố/tổ/tuyến')}</p></div><span class="badge ${meta[1]}">${meta[0]}</span></div><p>${escapeHtml(r.note||'Chưa có ghi chú.')}</p><p>Lat ${fmt(r.lat,5)} - Lon ${fmt(r.lon,5)}</p><div class="record-actions"><button class="btn small" onclick="selectRecord('${r.id}')">Sửa</button><button class="btn small btn-danger" onclick="deleteRecord('${r.id}')">Xóa</button></div></article>`}).join('')}
+    function escapeHtml(s){return String(s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+    window.selectRecord=selectRecord; window.deleteRecord=(id)=>{state.records=state.records.filter(r=>r.id!==id);if(state.selected===id)clearForm();save();toast('Đã xóa điểm phát sinh.')}
+    svg.addEventListener('click',(event)=>{const pt=svg.createSVGPoint();pt.x=event.clientX;pt.y=event.clientY;const p=pt.matrixTransform(svg.getScreenCTM().inverse());const [lon,lat]=unproject(p.x,p.y);if(!pointInPolygon([lon,lat],WARD.coords)){toast('Vị trí nằm ngoài ranh Phường Tân Mỹ.');return}setDraft(lon,lat)});
+    $('recordForm').addEventListener('submit',(event)=>{event.preventDefault();if(!state.draft){toast('Bạn cần bấm lên bản đồ để chọn vị trí.');return}const item={id:state.draft.id||String(Date.now()),lon:state.draft.lon,lat:state.draft.lat,quarter:$('quarterInput').value.trim(),title:$('titleInput').value.trim(),note:$('noteInput').value.trim(),status:$('statusInput').value,updatedAt:new Date().toISOString()};const idx=state.records.findIndex(r=>r.id===item.id);if(idx>=0)state.records[idx]=item;else state.records.push(item);state.selected=item.id;state.draft={lon:item.lon,lat:item.lat,id:item.id};save();toast('Đã lưu nội dung phát sinh.')});
+    $('clearFormBtn').addEventListener('click',clearForm);$('fitBtn').addEventListener('click',()=>{renderMap();toast('Đã canh lại ranh giới phường.')});
+    $('exportBtn').addEventListener('click',()=>{const payload={ward:WARD,records:state.records,exportedAt:new Date().toISOString()};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='ban-do-ktgs-tan-my.json';a.click();URL.revokeObjectURL(url)});
+    $('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',async(e)=>{const file=e.target.files?.[0];if(!file)return;try{const text=await file.text();const data=JSON.parse(text);if(!Array.isArray(data.records))throw new Error('Sai định dạng');state.records=data.records;save();clearForm();toast('Đã nhập dữ liệu JSON.')}catch(err){toast('Không đọc được file JSON.')}e.target.value=''});
+    if(window.lucide)lucide.createIcons();load();
   </script>
 </body>
 </html>
