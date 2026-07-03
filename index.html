@@ -1711,11 +1711,12 @@ body{
                       <option value="detail">Chi tiết đầy đủ</option>
                     </select>
                   </div>
-                  <div class="ai-config-item" style="flex:1">
-                    <label class="ai-config-label">API Key Claude (Anthropic)</label>
-                    <input id="aiApiKey" type="password" class="field" style="font-size:12px;padding:6px 10px;width:100%" placeholder="sk-ant-..." oninput="saveApiKey(this.value)">
-                  </div>
+                 <div class="ai-config-item" style="flex:1">
+                <label class="ai-config-label">AI đang dùng</label>
+                <div class="field" style="font-size:12px;padding:6px 10px;width:100%;background:#f8fafc;color:#1d5fbf;font-weight:800">
+                Gemini qua Vercel — không cần nhập API key trên giao diện
                 </div>
+              </div>
 
                 <!-- Output -->
                 <div id="aiDigestOutput" class="ai-output" style="display:none">
@@ -5789,8 +5790,8 @@ function setActionFilter(filter){
     }
 
     // ══ AI DIGEST ══
-    function saveApiKey(v){ try{localStorage.setItem('ubkt_ai_key',v)}catch(e){} }
-    function loadApiKey(){ try{return localStorage.getItem('ubkt_ai_key')||''}catch(e){return''} }
+    function saveApiKey(v){}
+    function loadApiKey(){return''}
 
     function buildDigestPrompt(){
       const type=document.getElementById('aiDigestType')?.value||'weekly';
@@ -5849,108 +5850,114 @@ IV. NHIỆM VỤ TRỌNG TÂM TUẦN TỚI
 
 Chỉ viết nội dung, không giải thích thêm. Dùng số liệu thực tế từ dữ liệu trên.`;
     }
+async function runAIDigest(){
+  const btn=document.getElementById('aiDigestBtn');
+  const status=document.getElementById('aiDigestStatus');
+  const statusText=document.getElementById('aiDigestStatusText');
+  const typingWrap=document.getElementById('aiTypingWrap');
+  const typingMsg=document.getElementById('aiTypingMsg');
+  const output=document.getElementById('aiDigestOutput');
+  const streamBox=document.getElementById('aiStreamBox');
+  const progressFill=document.getElementById('aiProgressFill');
+  const copyBtn=document.getElementById('aiCopyBtn');
+  const resetBtn=document.getElementById('aiResetBtn');
 
-    async function runAIDigest(){
-      const key=document.getElementById('aiApiKey')?.value||loadApiKey();
-      if(!key||!key.startsWith('sk-ant-')){
-        alert('Vui lòng nhập API Key Claude hợp lệ (bắt đầu bằng sk-ant-)');
-        document.getElementById('aiApiKey')?.focus();
+  btn.disabled=true;
+  output.style.display='none';
+  typingWrap.style.display='block';
+  streamBox.textContent='';
+  status.className='ai-status-chip ai-status-running';
+  statusText.textContent='Đang tạo...';
+
+  const msgs=[
+    'Gemini đang đọc dữ liệu...',
+    'Gemini đang phân tích tiến độ đơn vị...',
+    'Gemini đang xác định điểm tồn đọng...',
+    'Gemini đang soạn thảo tóm tắt...'
+  ];
+
+  let mi=0;
+  const progInterval=setInterval(()=>{
+    typingMsg.textContent=msgs[mi%msgs.length];
+    mi++;
+    progressFill.style.width=Math.min(85,parseInt(progressFill.style.width||0)+Math.random()*18)+'%';
+  },900);
+
+  try{
+    const prompt=buildDigestPrompt();
+
+    const resp=await fetch('/api/gemini-meeting-summary',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({
+        meetingText:prompt,
+        dashboardContext:'Dữ liệu được tổng hợp trực tiếp từ dashboard UBKT Tân Mỹ.'
+      })
+    });
+
+    clearInterval(progInterval);
+    progressFill.style.width='100%';
+
+    const data=await resp.json().catch(()=>({}));
+
+    if(!resp.ok){
+      throw new Error(data?.error||`HTTP ${resp.status}`);
+    }
+
+    const text=data?.summary||'Gemini chưa trả về nội dung tổng hợp.';
+
+    typingMsg.textContent='Hoàn tất!';
+    await new Promise(r=>setTimeout(r,400));
+    typingWrap.style.display='none';
+
+    output.style.display='block';
+
+    const contentEl=document.getElementById('aiDigestContent');
+    const meta=document.getElementById('aiDigestMeta');
+    const words=text.split(' ');
+
+    contentEl.textContent='';
+
+    let i=0;
+    const typeInterval=setInterval(()=>{
+      if(i>=words.length){
+        clearInterval(typeInterval);
         return;
       }
-      saveApiKey(key);
 
-      // UI: loading state
-      const btn=document.getElementById('aiDigestBtn');
-      const status=document.getElementById('aiDigestStatus');
-      const statusText=document.getElementById('aiDigestStatusText');
-      const typingWrap=document.getElementById('aiTypingWrap');
-      const typingMsg=document.getElementById('aiTypingMsg');
-      const output=document.getElementById('aiDigestOutput');
-      const streamBox=document.getElementById('aiStreamBox');
-      const progressFill=document.getElementById('aiProgressFill');
-      const copyBtn=document.getElementById('aiCopyBtn');
-      const resetBtn=document.getElementById('aiResetBtn');
+      const chunk=words.slice(i,i+4).join(' ');
+      contentEl.textContent+=(i===0?'':' ')+chunk;
+      i+=4;
+      contentEl.scrollTop=contentEl.scrollHeight;
+    },30);
 
-      btn.disabled=true;
-      output.style.display='none';
-      typingWrap.style.display='block';
-      streamBox.textContent='';
-      status.className='ai-status-chip ai-status-running';
-      statusText.textContent='Đang tạo...';
+    const now=new Date().toLocaleString('vi-VN');
+    const total=Array.isArray(window.tasks)?window.tasks.length:0;
 
-      // Animate progress
-      const msgs=['AI đang đọc dữ liệu...','Phân tích tiến độ đơn vị...','Xác định điểm tồn đọng...','Soạn thảo tóm tắt...'];
-      let mi=0;
-      const progInterval=setInterval(()=>{
-        typingMsg.textContent=msgs[mi%msgs.length]; mi++;
-        progressFill.style.width=Math.min(85,parseInt(progressFill.style.width||0)+Math.random()*18)+'%';
-      },900);
+    meta.textContent=`Tạo lúc ${now} · ${total} nhiệm vụ · Gemini`;
+    status.className='ai-status-chip ai-status-done';
+    statusText.textContent='Đã tạo xong';
+    copyBtn.style.display='';
+    resetBtn.style.display='';
 
-      try{
-        const prompt=buildDigestPrompt();
-        const resp=await fetch('https://api.anthropic.com/v1/messages',{
-          method:'POST',
-          headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
-          body:JSON.stringify({
-            model:'claude-sonnet-4-20250514',
-            max_tokens:1200,
-            messages:[{role:'user',content:prompt}]
-          })
-        });
+    window._aiDigestText=text;
 
-        clearInterval(progInterval);
-        progressFill.style.width='100%';
+  }catch(err){
+    clearInterval(progInterval);
+    typingWrap.style.display='none';
+    status.className='ai-status-chip ai-status-idle';
+    statusText.textContent='Lỗi';
+    btn.disabled=false;
 
-        if(!resp.ok){
-          const err=await resp.json().catch(()=>({}));
-          throw new Error(err?.error?.message||`HTTP ${resp.status}`);
-        }
-
-        const data=await resp.json();
-        const text=data?.content?.[0]?.text||'Không có phản hồi.';
-
-        // Typewriter effect
-        typingMsg.textContent='Hoàn tất!';
-        await new Promise(r=>setTimeout(r,400));
-        typingWrap.style.display='none';
-
-        // Render output with typing animation
-        output.style.display='block';
-        const contentEl=document.getElementById('aiDigestContent');
-        const meta=document.getElementById('aiDigestMeta');
-        const words=text.split(' ');
-        contentEl.textContent='';
-        let i=0;
-        const typeInterval=setInterval(()=>{
-          if(i>=words.length){clearInterval(typeInterval);return;}
-          const chunk=words.slice(i,i+4).join(' ');
-          contentEl.textContent+=(i===0?'':' ')+chunk;
-          i+=4;
-          contentEl.scrollTop=contentEl.scrollHeight;
-        },30);
-
-        const now=new Date().toLocaleString('vi-VN');
-        meta.textContent=`Tạo lúc ${now} · ${total} nhiệm vụ · ${data?.usage?.output_tokens||'?'} tokens`;
-        status.className='ai-status-chip ai-status-done';
-        statusText.textContent='Đã tạo xong';
-        copyBtn.style.display='';
-        resetBtn.style.display='';
-
-        // Store for copy
-        window._aiDigestText=text;
-
-      }catch(err){
-        clearInterval(progInterval);
-        typingWrap.style.display='none';
-        status.className='ai-status-chip ai-status-idle';
-        statusText.textContent='Lỗi';
-        btn.disabled=false;
-        const errMsg=err.message||String(err);
-        alert('Lỗi khi gọi Claude API:\n'+errMsg+'\n\nKiểm tra lại API Key và kết nối mạng.');
-        console.error('[AI Digest]',err);
-      }finally{
-        btn.disabled=false;
-      }
+    const errMsg=err.message||String(err);
+    alert('Lỗi khi gọi Gemini qua Vercel:\n'+errMsg+'\n\nKiểm tra lại file api/gemini-meeting-summary.js và biến GEMINI_API_KEY trên Vercel.');
+    console.error('[AI Digest Gemini]',err);
+  }finally{
+    btn.disabled=false;
+  }
+}
     }
 
     function copyAIDigest(){
@@ -5973,12 +5980,7 @@ Chỉ viết nội dung, không giải thích thêm. Dùng số liệu thực t�
       window._aiDigestText='';
     }
 
-    // Load saved key on init
-    document.addEventListener('DOMContentLoaded',()=>{
-      const k=loadApiKey();
-      const el=document.getElementById('aiApiKey');
-      if(el&&k) el.value=k;
-    });
+    // Gemini dùng GEMINI_API_KEY trên Vercel, không nạp API key từ trình duyệt.
 
 
     function addAudit(action, task, details=""){
