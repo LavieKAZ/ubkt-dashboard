@@ -24,6 +24,9 @@ window.UBKT_TASK_SYSTEM_APP_URL = "https://ubkt-dashboard-qycx.vercel.app";
     #page-dashboard .tool-strip{display:flex!important;align-items:center;gap:10px;flex-wrap:wrap;padding:8px;border-radius:24px;background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(248,250,252,.72));border:1px solid rgba(226,232,240,.84);box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
     #page-dashboard .tool-btn{display:inline-flex!important;align-items:center;justify-content:center;gap:8px;min-height:38px;line-height:1.15;white-space:nowrap}.tool-btn .ubkt-sf-icon{width:17px;height:17px}.btn .ubkt-sf-icon{width:16px;height:16px}.icon-btn .ubkt-sf-icon{width:18px;height:18px}
     .ubkt-icon-tile{font-size:22px!important}.ubkt-icon-tile .ubkt-sf-icon{width:24px;height:24px}.tool-card .ubkt-sf-icon{opacity:1!important;filter:none!important;visibility:visible!important}
+    .modal{z-index:5000!important;padding:1rem 1rem calc(1rem + env(safe-area-inset-bottom,0px))!important}.modal.open{display:flex!important}.modal-card{max-height:calc(100vh - 2rem - env(safe-area-inset-bottom,0px))!important}
+    #taskModal.modal{align-items:flex-start!important;overflow-y:auto!important;padding-top:18px!important;padding-bottom:132px!important}#taskModal .modal-card{max-height:calc(100vh - 150px)!important;margin-bottom:108px!important}#taskModal .modal-card>.p-5.border-t{position:sticky;bottom:0;z-index:5;background:rgba(255,255,255,.96);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 -12px 28px rgba(15,23,42,.08)}
+    @media(min-width:768px){#taskModal.modal{padding-bottom:96px!important}#taskModal .modal-card{max-height:calc(100vh - 114px)!important;margin-bottom:72px!important}}
   `;
   document.head.appendChild(style);
 
