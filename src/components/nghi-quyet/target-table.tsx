@@ -116,7 +116,17 @@ export function TargetTable({ initialTree, currentUserRole, currentSectorId, tar
     return () => { void supabase.removeChannel(channel); };
   }, [targetsTableName]);
 
-  function toggleProgram(programId: string) { setExpandedProgramIds((current) => { const next = new Set(current); next.has(programId) ? next.delete(programId) : next.add(programId); return next; }); }
+  function toggleProgram(programId: string) {
+    setExpandedProgramIds((current) => {
+      const next = new Set(current);
+      if (next.has(programId)) {
+        next.delete(programId);
+      } else {
+        next.add(programId);
+      }
+      return next;
+    });
+  }
   function canManageSector(sectorId: string | null) { return currentUserRole === "executive" || Boolean(currentSectorId && sectorId === currentSectorId); }
   function openCreateDialog(program: ProgramNode) { setAddProgramId(program.id); setNewTargetForm(emptyTargetForm); }
   async function handleCreateTarget(event: FormEvent<HTMLFormElement>) {
