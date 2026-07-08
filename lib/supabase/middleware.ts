@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseBrowserKey, getSupabaseUrl } from "@/lib/supabase/env";
 
-const PUBLIC_PATH_PREFIXES = ["/login", "/auth"];
+const PUBLIC_PATH_PREFIXES = ["/login", "/auth", "/nghi-quyet"];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
