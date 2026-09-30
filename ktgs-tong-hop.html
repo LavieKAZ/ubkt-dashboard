@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-auth-role="admin">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>UBKT · Tổng hợp báo cáo PTDL</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="./assets/vendor/supabase.2.117.2.js"></script>
+<script src="./config.js?v=20260930security1"></script>
+<script src="./auth-guard.js?v=20260930security1"></script>
 <style>
 :root{
   --red:#FF0052;--blue:#0055DA;--teal:#00C68D;--gold:#FFD400;
@@ -365,22 +366,17 @@ button,input,select{font-family:var(--font)}
 <div class="toast" id="toast"></div>
 
 <script>
-const SB='https://hbygfheibcrqaqzoaass.supabase.co';
-const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhieWdmaGVpYmNycWFxem9hYXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDg0MTcsImV4cCI6MjA5NDA4NDQxN30.AM-uMmKKuRIPZLtVyV-N0aj5EXuBIrOoyFL-gotb_Qg';
-// REST API helper (không cần supabase-js SDK)
-const _H={'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY};
-const sbGet=(tbl,qs)=>fetch(SB+'/rest/v1/'+tbl+(qs?'?'+qs:''),{headers:_H}).then(r=>r.json());
-const sbFrom=(tbl)=>({
-  select:function(cols){this._sel=cols;this._eq=[];this._ord=null;return this;},
-  eq:function(k,v){this._eq.push(k+'=eq.'+encodeURIComponent(v));return this;},
-  order:function(col,opts){this._ord=col+(opts&&!opts.ascending?'.desc':'.asc');return this;},
-  then:function(cb){
-    const qs=[this._sel?'select='+encodeURIComponent(this._sel):''].concat(this._eq).filter(Boolean);
-    if(this._ord) qs.push('order='+this._ord);
-    return fetch(SB+'/rest/v1/'+tbl+'?'+qs.join('&'),{headers:_H}).then(r=>r.json()).then(data=>cb({data})).catch(e=>cb({data:null,error:e}));
-  }
-});
-const sb={from:sbFrom,auth:{getSession:()=>Promise.resolve({data:{session:null}}),signOut:()=>Promise.resolve()}};
+const SB=(window.UBKT_SUPABASE_URL||'').trim();
+const KEY=(window.UBKT_SUPABASE_ANON_KEY||'').trim();
+async function sbGet(tbl,qs){
+  const token=window.__UBKT_AUTH_SESSION__?.access_token;
+  if(!token) throw new Error('Phiên đăng nhập không hợp lệ.');
+  const response=await fetch(SB+'/rest/v1/'+tbl+(qs?'?'+qs:''),{
+    headers:{'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+token}
+  });
+  if(!response.ok) throw new Error('Không thể đọc dữ liệu ('+response.status+').');
+  return response.json();
+}
 
 function esc(s){return String(s??'').replace(/[&<>"]/g,function(x){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[x];});}
 const fmtDt=s=>{try{return new Date(s).toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});}catch{return'—';}};
@@ -389,40 +385,24 @@ const sv=(...ks)=>r=>ks.reduce((s,k)=>s+Number(r[k]||0),0);
 
 let orgs=[],reports=[],curYear=new Date().getFullYear(),activeKpi=null,curTab='org';
 
-/* ── LOCAL AUTH ── */
-const LOCAL_USERS=[
-  {u:'admin',p:'123456',name:'Quản trị UBKT'},
-  {u:'ubkt',p:'ubkt2026',name:'UBKT Tân Mỹ'},
-];
-const LS_AUTH='ubkt_tong_hop_auth';
-
 function init(){
-  const saved=sessionStorage.getItem(LS_AUTH);
-  if(saved){try{const d=JSON.parse(saved);showApp(d);}catch(e){showLoginPage();}}
-  else showLoginPage();
+  const open=()=>showApp({
+    name:window.__UBKT_AUTH_PROFILE__?.full_name||window.__UBKT_AUTH_PROFILE__?.email||'Quản trị UBKT',
+    u:window.__UBKT_AUTH_PROFILE__?.email||''
+  });
+  if(window.__UBKT_AUTH_READY__) open();
+  else window.addEventListener('ubkt-auth-ready',open,{once:true});
 }
 function showLoginPage(){
-  document.getElementById('authPage').classList.remove('hidden');
-  document.getElementById('appMain').classList.add('hidden');
-  // Auto focus password nếu user đã điền
-  setTimeout(()=>{const u=document.getElementById('aUser');if(u&&!u.value)u.focus();
-    else{const p=document.getElementById('aPass');if(p)p.focus();}},100);
+  location.href='index.html?next=ktgs-tong-hop.html';
 }
 function doLogin(){
-  const btn=document.getElementById('btnLogin');
-  const u=document.getElementById('aUser').value.trim().toLowerCase();
-  const p=document.getElementById('aPass').value;
-  const match=LOCAL_USERS.find(x=>x.u===u&&x.p===p);
-  if(!match){
-    document.getElementById('aMsg').innerHTML='<div class="alert-err">❌ Sai tên đăng nhập hoặc mật khẩu.</div>';
-    btn.textContent='Đăng nhập';btn.classList.remove('btn-dis');
-    document.getElementById('aPass').value='';
-    return;
-  }
-  sessionStorage.setItem(LS_AUTH,JSON.stringify({name:match.name,u:match.u}));
-  showApp({name:match.name,u:match.u});
+  showLoginPage();
 }
-function doLogout(){sessionStorage.removeItem(LS_AUTH);location.reload();}
+async function doLogout(){
+  await window.__UBKT_SUPABASE_CLIENT__?.auth.signOut();
+  location.href='index.html';
+}
 async function showApp(s){
   document.getElementById('authPage').classList.add('hidden');
   document.getElementById('appMain').classList.remove('hidden');

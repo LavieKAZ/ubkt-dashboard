@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-auth-role="admin">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <title>Báo cáo KTGS — Chi bộ Khu phố · v3.1</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=Be+Vietnam+Pro:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="./assets/vendor/supabase.2.117.2.js"></script>
+<script src="./config.js?v=20260930security1"></script>
+<script src="./auth-guard.js?v=20260930security1"></script>
 <style>
 
 /* ════════════════════════════════
@@ -484,10 +485,10 @@ button,input,select,textarea{font-family:inherit}
 //  CONFIG
 // ═══════════════════════════════════════════
 // ── SUPABASE ──
-const SB='https://hbygfheibcrqaqzoaass.supabase.co';
-const SBKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhieWdmaGVpYmNycWFxem9hYXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDg0MTcsImV4cCI6MjA5NDA4NDQxN30.AM-uMmKKuRIPZLtVyV-N0aj5EXuBIrOoyFL-gotb_Qg';
-const sbH={'Content-Type':'application/json','apikey':SBKEY,'Authorization':'Bearer '+SBKEY};
-const sbQ=(p,o={})=>fetch(`${SB}/rest/v1/${p}`,{headers:sbH,...o}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
+const SB=(window.UBKT_SUPABASE_URL||'').trim();
+const SBKEY=(window.UBKT_SUPABASE_ANON_KEY||'').trim();
+const sbH=()=>({'Content-Type':'application/json','apikey':SBKEY,'Authorization':'Bearer '+(window.__UBKT_AUTH_SESSION__?.access_token||'')});
+const sbQ=(p,o={})=>fetch(`${SB}/rest/v1/${p}`,{...o,headers:{...sbH(),...(o.headers||{})}}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
 let baseOrgs=[];
 let submittedCode=null; // mã sau khi nộp
 let maxStep=1; // step cao nhất đã được validate qua
@@ -614,7 +615,8 @@ const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>
 const val = k => fd[k] ?? '';
 const num = k => { const n=parseInt(fd[k]||0,10); return isFinite(n)?n:0; };
 const txt = (s,def='Không phát sinh.') => esc((s||'').trim()||def).replace(/\n/g,'<br>');
-const fmtDate = v => { if(!v)return '……'; const d=new Date(v+'T00:00:00'); return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`; };
+const fmtDate = v => { if(!v)return '……'; const d=new Date(v+'T00:00:00'); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; };
+const localTodayISO = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const ordinal = n => { const s=['nhất','hai','ba','bốn','năm','sáu','bảy','tám','chín','mười']; return n<=10?s[n-1]:n; };
 
 let saveTimer;
@@ -641,7 +643,7 @@ function loadLocal(){
 }
 
 function setDefaults(){
-  if(!fd.reportDate) fd.reportDate = new Date().toISOString().split('T')[0];
+  if(!fd.reportDate) fd.reportDate = localTodayISO();
   // Period loaded from Supabase in loadBaseOrgs
   if(!fd.nextTasks) fd.nextTasks = DEFAULT_TASKS;
   // sup has_issue defaults already false
@@ -1415,7 +1417,7 @@ async function submitToUBKT(){
     };
     const res=await fetch(`${SB}/rest/v1/ubkt_ktgs_reports`,{
       method:'POST',
-      headers:{...sbH,'Prefer':'return=representation'},
+      headers:{...sbH(),'Prefer':'return=representation'},
       body:JSON.stringify(payload)
     });
     if(!res.ok) throw new Error(await res.text());
@@ -1636,7 +1638,7 @@ function resetForm(){
 // ═══════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════
-(function init(){
+function initSecureKtgsReport(){
   // Verify mode: ?verify=CODE → show read-only report
   const params=new URLSearchParams(location.search);
   const verifyCode=params.get('verify');
@@ -1647,7 +1649,9 @@ function resetForm(){
   loadBaseOrgs().then(()=>render());
   render();
   if(had) setTimeout(()=>showAlert('Đã khôi phục bản nháp từ lần nhập trước. <a href="#" onclick="resetForm();return false" style="color:#0055DA;font-weight:800;text-decoration:underline">Xóa và nhập mới →</a>','info'),200);
-})();
+}
+if(window.__UBKT_AUTH_READY__) initSecureKtgsReport();
+else window.addEventListener('ubkt-auth-ready',initSecureKtgsReport,{once:true});
 
 async function loadVerifyMode(code){
   document.getElementById('app').innerHTML=`
