@@ -1281,6 +1281,7 @@ body{
   <link rel="stylesheet" href="./assets/antd-command-center.css?v=20260728pm5">
   <link rel="stylesheet" href="./assets/tailwind-compiled.css?v=20260725">
   <link rel="stylesheet" href="./assets/project-manager-v3.css?v=20260806save1">
+  <link rel="stylesheet" href="./assets/resolution-tracker.css?v=20261001">
 </head>
 <body class="sidebar-collapsed">
   <!-- LANDING -->
@@ -1332,6 +1333,9 @@ body{
           <button class="nav-item" data-page="projects" data-admin-only onclick="switchPage('projects')" title="Dự án / Chương trình"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M20.25 7.5v9.75a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6.75A2.25 2.25 0 0 1 6 4.5h4.5l2.25 3h5.25a2.25 2.25 0 0 1 2.25 2.25Z"/></svg></span><span class="nav-label">Dự án / Chương trình</span></button>
           <button class="nav-item" data-page="tasks" onclick="switchPage('tasks')" title="Nhiệm vụ"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M16.5 4.478V6.75A2.25 2.25 0 0 1 14.25 9h-4.5A2.25 2.25 0 0 1 7.5 6.75V4.478m9 0A2.25 2.25 0 0 0 14.25 2.25h-4.5A2.25 2.25 0 0 0 7.5 4.478m9 0c.86.074 1.72.167 2.575.279A2.25 2.25 0 0 1 21 6.987v12.263A2.25 2.25 0 0 1 18.75 21H5.25A2.25 2.25 0 0 1 3 18.75V6.987a2.25 2.25 0 0 1 1.925-2.23A48.54 48.54 0 0 1 7.5 4.478M9 12.75h6m-6 3h6"/></svg></span><span class="nav-label">Nhiệm vụ</span></button>
           <button class="nav-item" data-page="roadmap" data-admin-only onclick="switchPage('roadmap')" title="Roadmap"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M6.75 3v2.25M17.25 3v2.25M3.75 9h16.5M5.25 4.5h13.5A1.5 1.5 0 0 1 20.25 6v13.5A1.5 1.5 0 0 1 18.75 21H5.25a1.5 1.5 0 0 1-1.5-1.5V6a1.5 1.5 0 0 1 1.5-1.5Z"/></svg></span><span class="nav-label">Roadmap</span></button>
+
+          <div class="pm-nav-section"><span class="pm-nav-label">THEO DÕI NGHỊ QUYẾT</span></div>
+          <button class="nav-item" data-page="resolutions" onclick="switchPage('resolutions')" title="Theo dõi 11 Nghị quyết"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M7 3.75h7.5L18.5 8v12.25H7z"/><path d="M14.5 3.75V8h4"/><path d="M9.75 12h6"/><path d="M9.75 15.5h6"/><path d="M9.75 19h4"/></svg></span><span class="nav-label">Theo dõi 11 Nghị quyết</span></button>
 
           <div class="pm-nav-section" data-admin-only><span class="pm-nav-label">NGHIỆP VỤ UBKT</span></div>
           <button class="nav-item" data-page="opinion" data-admin-only onclick="switchPage('opinion')" title="Tổ Công tác 1374"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.142-4.03 7.5-9 7.5a10.4 10.4 0 0 1-4.097-.81L3 20.25l1.658-3.316A6.744 6.744 0 0 1 3 12c0-4.142 4.03-7.5 9-7.5s9 3.358 9 7.5Z"/></svg></span><span class="nav-label">Tổ Công tác 1374</span></button>
@@ -1679,6 +1683,40 @@ body{
     <div id="pmManagementTimeline" class="pm-gantt-shell"></div>
   </div>
 </section>
+
+          <!-- RESOLUTIONS PAGE -->
+<section id="page-resolutions" class="page hidden space-y-5">
+  <div class="rq-hero">
+    <div>
+      <span class="rq-eyebrow">Theo dõi chương trình hành động</span>
+      <h3>Tiến độ thực hiện 11 Nghị quyết</h3>
+      <p>Google Sheets là nơi nhập liệu. Dashboard chỉ lấy bản dữ liệu mới khi Admin bấm đồng bộ, không chạy tự động theo phút.</p>
+      <div id="resolutionSyncState" class="rq-sync-state"><i></i><span id="resolutionSyncText">Chưa có bản đồng bộ từ Google Sheets</span></div>
+    </div>
+    <div class="rq-actions">
+      <a id="resolutionSheetLink" class="btn btn-ghost" href="#" target="_blank" rel="noopener noreferrer">Mở Google Sheets</a>
+      <button id="resolutionSyncButton" type="button" class="btn btn-primary" data-admin-only onclick="syncResolutionTracker()">Đồng bộ từ Google Sheets</button>
+    </div>
+  </div>
+
+  <div class="rq-kpis">
+    <article class="rq-kpi"><span>Nghị quyết theo dõi</span><b id="resolutionKpiCount">0</b></article>
+    <article class="rq-kpi"><span>Tổng nội dung</span><b id="resolutionKpiItems">0</b></article>
+    <article class="rq-kpi"><span>Đã cập nhật trong kỳ</span><b id="resolutionKpiUpdated">0</b></article>
+    <article class="rq-kpi"><span>Đã hoàn thành</span><b id="resolutionKpiDone">0</b></article>
+  </div>
+
+  <div class="rq-toolbar">
+    <label class="rq-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input type="search" placeholder="Tìm theo số hoặc tên Nghị quyết..." oninput="setResolutionQuery(this.value)"></label>
+    <select id="resolutionPeriodFilter" onchange="setResolutionPeriod(this.value)" aria-label="Chọn kỳ báo cáo"><option value="">Chưa có kỳ</option></select>
+  </div>
+  <div id="resolutionGrid" class="rq-grid"><div class="rq-empty"><b>Chưa có dữ liệu đồng bộ</b><p>Admin mở Google Sheets để nhập dữ liệu, sau đó quay lại đây và bấm “Đồng bộ từ Google Sheets”.</p></div></div>
+</section>
+
+<dialog id="resolutionDetailDialog" class="rq-dialog" onclick="if(event.target===this)closeResolutionDetail()">
+  <div class="rq-dialog-head"><div><h3 id="resolutionDialogTitle">Chi tiết Nghị quyết</h3><p id="resolutionDialogSubtitle"></p></div><button type="button" class="rq-dialog-close" onclick="closeResolutionDetail()" aria-label="Đóng">×</button></div>
+  <div class="rq-table-wrap"><table class="rq-table"><thead><tr><th>Mã</th><th>Nội dung thực hiện</th><th>Đơn vị cập nhật</th><th>Trạng thái</th><th>Kết quả, số liệu</th><th>Minh chứng</th></tr></thead><tbody id="resolutionDialogBody"></tbody></table></div>
+</dialog>
 
           <!-- TASKS PAGE -->
 <section id="page-tasks" class="page hidden space-y-5">
@@ -4554,7 +4592,7 @@ body{
 
 
     function switchPage(page){
-      if(isUnitUser()&&page!=="tasks"){
+      if(isUnitUser()&&!(["tasks","resolutions"].includes(page))){
         showModuleToast("Chỉ truy cập nhiệm vụ của đơn vị","Tài khoản đơn vị không được mở các khu vực quản trị hoặc dữ liệu khác.");
         page="tasks";
       }
@@ -4571,6 +4609,7 @@ body{
   projects:"Dự án và chương trình",
   tasks:"Quản lý nhiệm vụ",
   roadmap:"Roadmap",
+  resolutions:"Theo dõi 11 Nghị quyết",
   opinion:"Tổ Công tác 1374",
   conclusions:"Giám sát KL Thanh tra, Kiểm tra",
   dossiers:"Hồ sơ sau kiểm tra, giám sát",
@@ -4583,6 +4622,7 @@ body{
         projects:"Quản lý / Dự án",
         tasks:"Quản lý / Nhiệm vụ",
         roadmap:"Quản lý / Roadmap",
+        resolutions:"Theo dõi / Nghị quyết",
         opinion:"Nghiệp vụ / Tổ 1374",
         conclusions:"Nghiệp vụ / Kết luận",
         dossiers:"Nghiệp vụ / Hồ sơ",
@@ -4596,6 +4636,12 @@ body{
 if(taskBtn){
   taskBtn.style.display = isAdminUser() && ["dashboard","projects","tasks","roadmap"].includes(page) ? "" : "none";
 }
+      if(page==="resolutions" && typeof loadResolutionSnapshot==="function"){
+        if(!window.__ubktResolutionSnapshotRequested){
+          window.__ubktResolutionSnapshotRequested=true;
+          loadResolutionSnapshot();
+        }
+      }
       if(page==="opinion"){
         showModuleToast("Tab Tổ Công tác 1374", "Đây là khu vực ghi nhận thông tin ban đầu từ họp chi bộ, cử tri, báo chí, mạng xã hội. Nội dung chỉ phục vụ theo dõi, chưa phải kết luận khi chưa xác minh.");
       }
@@ -6600,6 +6646,8 @@ function render(){
     renderTaskListFull();
   }else if(page==="roadmap"){
     renderManagementRoadmap();
+  }else if(page==="resolutions"){
+    if(typeof renderResolutionTracker==="function")renderResolutionTracker();
   }else if(page==="opinion"){
     renderOpinion();
   }else if(page==="conclusions"){
@@ -10027,6 +10075,7 @@ window.addEventListener("resize", ()=>{
 
 setTimeout(initLiquidScrollIndicators, 300);
   </script>
+  <script src="./assets/resolution-tracker.js?v=20261001"></script>
   <div id="moduleToast" class="module-toast" role="status" aria-live="polite" aria-atomic="true" data-tone="info">
     <div class="module-toast-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01"/><circle cx="12" cy="12" r="9"/></svg>
