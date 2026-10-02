@@ -192,30 +192,44 @@
 
   function createLogModal(){
     if(document.getElementById("taskLogModal"))return;
-    document.body.insertAdjacentHTML("beforeend",`<div id="taskLogModal" class="modal task-log-modal"><div class="modal-card card w-full">
-      <div class="pm-modal-heading"><div><div class="antd-modal-kicker">ACTIVITY LOG</div><h3 id="taskLogTitle">Kết quả thực hiện</h3><p>Nhật ký chỉ được thêm mới, không sửa hoặc xóa lịch sử đã ghi.</p></div><button type="button" class="pm-modal-close" onclick="closeTaskLogModal()">✕</button></div>
+    document.body.insertAdjacentHTML("beforeend",`<div id="taskLogModal" class="modal task-log-modal" role="dialog" aria-modal="true" aria-labelledby="taskLogTitle"><div class="modal-card card w-full">
+      <div class="pm-modal-heading task-log-heading">
+        <div class="pm-modal-heading-icon task-log-heading-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 6h10M8 11h10M8 16h6"/><path d="M4 6h.01M4 11h.01M4 16h.01"/></svg></div>
+        <div class="task-log-heading-copy"><div class="antd-modal-kicker">NHẬT KÝ TIẾN ĐỘ</div><h3 id="taskLogTitle">Cập nhật kết quả thực hiện</h3><p>Ghi thêm một lần báo cáo mới. Lịch sử đã lưu được giữ nguyên để bảo đảm dấu vết cập nhật.</p></div>
+        <button type="button" class="pm-modal-close" onclick="closeTaskLogModal()" aria-label="Đóng cửa sổ">✕</button>
+      </div>
+      <div class="task-log-context" aria-label="Nhiệm vụ đang cập nhật"><div><span>Số văn bản</span><strong id="taskLogDocument">—</strong></div><p id="taskLogConclusion">—</p></div>
       <div class="task-log-body"><form class="task-log-form" onsubmit="submitTaskProgressLog(event,this)">
-        <label>Kết quả thực hiện *<textarea id="taskLogContent" class="field" rows="6" maxlength="10000" required placeholder="Nội dung đã thực hiện, sản phẩm hoặc khó khăn cần báo cáo"></textarea></label>
-        <label>Tự đánh giá của đơn vị tham mưu<select id="taskLogSelfAssessment" class="field">${options(SELF_OPTIONS,"Đang thực hiện")}</select></label>
-        <label>Ghi chú tự đánh giá<textarea id="taskLogAssessmentNote" class="field" rows="3" placeholder="Giải trình ngắn cho trạng thái tự đánh giá"></textarea></label>
-        <label>Link minh chứng<input id="taskLogEvidenceUrl" class="field" type="url" placeholder="https://..."></label>
-        <label>Tệp minh chứng<input id="taskLogEvidenceFile" class="field" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"></label>
-        <div class="pm-modal-footer"><button type="button" class="btn btn-ghost" onclick="closeTaskLogModal()">Hủy</button><button class="btn btn-primary" type="submit">Lưu cập nhật</button></div>
-      </form><section class="task-log-history"><h4>Lịch sử cập nhật</h4><div id="taskLogHistory"></div></section></div>
+        <div class="task-log-section-heading"><span>01</span><div><b>Nội dung báo cáo</b><small>Mô tả việc đã làm, sản phẩm hoàn thành hoặc khó khăn cần xử lý.</small></div></div>
+        <label class="task-log-field">Kết quả thực hiện <em>*</em><textarea id="taskLogContent" class="field" rows="6" maxlength="10000" required placeholder="Nhập kết quả thực hiện của nhiệm vụ..."></textarea></label>
+        <div class="task-log-two-columns">
+          <label class="task-log-field">Tự đánh giá của đơn vị<select id="taskLogSelfAssessment" class="field">${options(SELF_OPTIONS,"Đang thực hiện")}</select></label>
+          <label class="task-log-field">Ghi chú đánh giá<textarea id="taskLogAssessmentNote" class="field" rows="3" placeholder="Giải trình ngắn (nếu có)"></textarea></label>
+        </div>
+        <div class="task-log-section-heading is-evidence"><span>02</span><div><b>Minh chứng</b><small>Có thể thêm đường dẫn hoặc tải tệp; không bắt buộc.</small></div></div>
+        <div class="task-log-two-columns task-log-evidence-grid">
+          <label class="task-log-field">Đường dẫn minh chứng<input id="taskLogEvidenceUrl" class="field" type="url" placeholder="https://..."></label>
+          <label class="task-log-field">Tệp minh chứng<input id="taskLogEvidenceFile" class="field" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"><small class="task-log-file-note">PDF, Word, Excel hoặc hình ảnh</small></label>
+        </div>
+        <div class="pm-modal-footer task-log-footer"><button type="button" class="btn btn-ghost" onclick="closeTaskLogModal()">Đóng</button><button class="btn btn-primary" type="submit">Lưu kết quả thực hiện</button></div>
+      </form><section class="task-log-history"><div class="task-log-history-heading"><div><span>NHẬT KÝ</span><h4>Lịch sử cập nhật</h4></div><small>Thông tin mới nhất hiển thị trước</small></div><div id="taskLogHistory"></div></section></div>
     </div></div>`);
   }
   window.openTaskLogModal=function(taskId){
     const task=tasks.find(item=>String(item.id)===String(taskId));if(!task)return;
     activeLogTaskId=String(taskId);createLogModal();
-    document.getElementById("taskLogTitle").textContent=`Kết quả · ${taskDoc(task)||"Nhiệm vụ"}`;
+    document.getElementById("taskLogTitle").textContent="Cập nhật kết quả thực hiện";
+    document.getElementById("taskLogDocument").textContent=taskDoc(task)||"Chưa có số văn bản";
+    document.getElementById("taskLogConclusion").textContent=taskValue(task,"conclusion",taskValue(task,"task",""))||"Chưa có nội dung kết luận";
     document.getElementById("taskLogContent").value="";document.getElementById("taskLogAssessmentNote").value="";document.getElementById("taskLogEvidenceUrl").value="";document.getElementById("taskLogEvidenceFile").value="";
     renderTaskLogHistory();document.getElementById("taskLogModal").classList.add("open");lockScroll();
+    window.setTimeout(()=>document.getElementById("taskLogContent")?.focus(),80);
   };
   window.closeTaskLogModal=function(){document.getElementById("taskLogModal")?.classList.remove("open");activeLogTaskId="";unlockScroll();};
   window.renderTaskLogHistory=function(){
     const host=document.getElementById("taskLogHistory");if(!host)return;
     const rows=logsFor(activeLogTaskId);
-    host.innerHTML=rows.length?rows.map(log=>`<article class="task-log-entry"><b>${html(log.author_name)} · ${html(log.reporting_period)}</b><p>${html(log.content)}</p>${log.self_assessment?`<small>Tự đánh giá: ${html(log.self_assessment)}${log.assessment_note?` · ${html(log.assessment_note)}`:""}</small>`:""}<small>${html(notificationTime(log.created_at))}</small>${log.evidence_url||log.evidence_path?`<a href="#" onclick="openTaskEvidence('${html(log.id)}');return false">↗ Mở minh chứng ${html(log.evidence_name||"")}</a>`:""}</article>`).join(""):`<p class="text-sm text-slate-500">Chưa có cập nhật nào.</p>`;
+    host.innerHTML=rows.length?rows.map(log=>`<article class="task-log-entry"><div class="task-log-entry-head"><b>${html(log.author_name)}</b><time>${html(notificationTime(log.created_at))}</time></div><span class="task-log-period">${html(log.reporting_period)}</span><p>${html(log.content)}</p>${log.self_assessment?`<div class="task-log-assessment"><small>Tự đánh giá</small><strong>${html(log.self_assessment)}</strong>${log.assessment_note?`<p>${html(log.assessment_note)}</p>`:""}</div>`:""}${log.evidence_url||log.evidence_path?`<a href="#" onclick="openTaskEvidence('${html(log.id)}');return false">↗ Mở minh chứng ${html(log.evidence_name||"")}</a>`:""}</article>`).join(""):`<div class="task-log-empty-state"><span aria-hidden="true">◎</span><b>Chưa có kết quả thực hiện</b><p>Lần cập nhật đầu tiên sẽ được lưu cùng người nhập và thời gian.</p></div>`;
   };
   window.submitTaskProgressLog=async function(event,form){
     event.preventDefault();const task=tasks.find(item=>String(item.id)===activeLogTaskId);if(!task)return;
