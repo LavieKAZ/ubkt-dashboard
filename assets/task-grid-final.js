@@ -26,6 +26,9 @@
     const value=String(taskValue(task,"vpduAssessment","")||"").trim();
     return FINAL_OPTIONS.includes(value)?value:"Chưa thẩm định";
   }
+  function taskConclusion(task){
+    return String(taskValue(task,"conclusion","")||"").trim()||String(taskValue(task,"task","")||"").trim();
+  }
   window.taskFinalAssessment=finalAssessment;
   taskStatus=function(task){return norm(finalAssessment(task));};
   taskIsDone=function(task){return finalAssessment(task)==="Hoàn thành";};
@@ -57,8 +60,7 @@
       if(gridState.time==="week"&&!(days!==null&&days>=0&&days<=7))return false;
       if(gridState.time==="month"&&!(days!==null&&days>=0&&days<=30))return false;
       if(gridState.search){
-        const logText=logsFor(task.id).map(log=>`${log.content||""} ${log.self_assessment||""} ${log.assessment_note||""}`).join(" ");
-        if(!norm(`${fullText(task)} ${logText}`).includes(norm(gridState.search)))return false;
+        if(!norm(`${taskDoc(task)} ${taskConclusion(task)}`).includes(norm(gridState.search)))return false;
       }
       return true;
     }).sort((a,b)=>{
@@ -78,8 +80,8 @@
   }
   function options(values,current){return values.map(value=>`<option ${value===current?"selected":""}>${html(value)}</option>`).join("");}
   function editableText(task,field,value,kind="input"){
-    if(!isOversightUser())return `<div class="task-grid-readonly ${field==="doc"?"task-grid-doc":""}">${html(value||"—")}</div>`;
-    if(kind==="textarea")return `<textarea class="task-grid-cell-textarea" onblur="updateTaskGridField('${html(task.id)}','${field}',this.value,this)">${html(value)}</textarea>`;
+    if(!isOversightUser())return `<div class="task-grid-readonly ${field==="doc"?"task-grid-doc":field==="conclusion"?"task-grid-conclusion":""}">${html(value||"—")}</div>`;
+    if(kind==="textarea")return `<textarea class="task-grid-cell-textarea task-grid-conclusion-editor" rows="5" oninput="autoResizeTaskGridTextarea(this)" onblur="updateTaskGridField('${html(task.id)}','${field}',this.value,this)">${html(value)}</textarea>`;
     return `<input class="task-grid-cell-input" value="${html(value)}" onblur="updateTaskGridField('${html(task.id)}','${field}',this.value,this)">`;
   }
   function resultCell(task){
@@ -121,6 +123,7 @@
     renderTaskGridFilterOptions();
     if(!rows.length){
       wrap.innerHTML=`<div class="task-grid-empty"><div><b>Không có nhiệm vụ phù hợp</b><span>Thử thay đổi từ khóa hoặc bộ lọc đang chọn.</span></div></div>`;
+      updateTaskGridSearchUi(0,all.length);
       return;
     }
     wrap.innerHTML=`<table class="task-excel-table"><thead><tr>
@@ -128,12 +131,32 @@
     </tr></thead><tbody>${rows.map((task,index)=>`<tr>
       <td>${index+1}</td>
       <td>${editableText(task,"doc",taskDoc(task))}</td>
-      <td>${editableText(task,"conclusion",taskValue(task,"conclusion",taskValue(task,"task","")),"textarea")}</td>
+      <td>${editableText(task,"conclusion",taskConclusion(task),"textarea")}</td>
       <td>${unitCell(task)}</td><td>${dateCell(task)}</td><td>${resultCell(task)}</td><td>${selfCell(task)}</td><td>${finalCell(task)}</td>
     </tr>`).join("")}</tbody></table>`;
+    updateTaskGridSearchUi(rows.length,all.length);
+    window.requestAnimationFrame(()=>wrap.querySelectorAll(".task-grid-conclusion-editor").forEach(window.autoResizeTaskGridTextarea));
   };
 
   window.setTaskGridFilter=function(key,value){gridState[key]=String(value||"");renderTaskListFull();};
+  window.autoResizeTaskGridTextarea=function(element){
+    if(!element)return;
+    element.style.height="auto";
+    element.style.height=`${Math.min(Math.max(element.scrollHeight,112),240)}px`;
+    element.classList.toggle("is-scrollable",element.scrollHeight>240);
+  };
+  window.updateTaskGridSearchUi=function(visible,total){
+    const count=document.getElementById("taskGridSearchCount");
+    const clear=document.getElementById("taskGridSearchClear");
+    if(count)count.textContent=gridState.search?`${visible} kết quả phù hợp`:`${total} nhiệm vụ`;
+    if(clear)clear.hidden=!gridState.search;
+  };
+  window.clearTaskGridSearch=function(){
+    gridState.search="";
+    const input=document.getElementById("taskCenterSearch");
+    if(input){input.value="";input.focus();}
+    renderTaskListFull();
+  };
   window.resetTaskGridFilters=function(){
     Object.assign(gridState,{search:"",unit:"",time:"",assessment:"",sheet:"all"});
     ["taskCenterSearch","taskGridUnitFilter","taskGridTimeFilter","taskGridAssessmentFilter"].forEach(id=>{const element=document.getElementById(id);if(element)element.value="";});
@@ -153,6 +176,14 @@
     const value=gridState.unit;
     select.innerHTML=`<option value="">Tất cả đơn vị</option>${uniqueUnits().map(unit=>`<option ${unit===value?"selected":""}>${html(unit)}</option>`).join("")}`;
   };
+
+  document.addEventListener("keydown",event=>{
+    if(!(event.ctrlKey||event.metaKey)||String(event.key).toLowerCase()!=="f")return;
+    const page=document.getElementById("page-tasks");
+    const input=document.getElementById("taskCenterSearch");
+    if(!page||page.classList.contains("hidden")||!input)return;
+    event.preventDefault();input.focus();input.select();
+  });
 
   window.updateTaskGridField=async function(taskId,field,value,element){
     if(!isOversightUser())return;
@@ -220,7 +251,7 @@
     activeLogTaskId=String(taskId);createLogModal();
     document.getElementById("taskLogTitle").textContent="Cập nhật kết quả thực hiện";
     document.getElementById("taskLogDocument").textContent=taskDoc(task)||"Chưa có số văn bản";
-    document.getElementById("taskLogConclusion").textContent=taskValue(task,"conclusion",taskValue(task,"task",""))||"Chưa có nội dung kết luận";
+    document.getElementById("taskLogConclusion").textContent=taskConclusion(task)||"Chưa có nội dung kết luận";
     document.getElementById("taskLogContent").value="";document.getElementById("taskLogAssessmentNote").value="";document.getElementById("taskLogEvidenceUrl").value="";document.getElementById("taskLogEvidenceFile").value="";
     renderTaskLogHistory();document.getElementById("taskLogModal").classList.add("open");lockScroll();
     window.setTimeout(()=>document.getElementById("taskLogContent")?.focus(),80);

@@ -1282,7 +1282,7 @@ body{
   <link rel="stylesheet" href="./assets/tailwind-compiled.css?v=20260725">
   <link rel="stylesheet" href="./assets/project-manager-v3.css?v=20260806save1">
   <link rel="stylesheet" href="./assets/resolution-tracker.css?v=20261001">
-  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261002c">
+  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261002d">
 </head>
 <body class="sidebar-collapsed">
   <!-- LANDING -->
@@ -1736,19 +1736,14 @@ body{
 
   <div class="card rounded-3xl task-grid-workspace">
     <div class="task-grid-toolbar">
-      <label class="task-grid-search">
-        <span aria-hidden="true">⌕</span>
-        <input id="taskCenterSearch" class="field" oninput="setTaskGridFilter('search',this.value)" placeholder="Tìm số văn bản, nội dung, đơn vị...">
-      </label>
-      <div class="task-grid-admin-filters" data-admin-only>
-        <select id="taskGridUnitFilter" class="field" onchange="setTaskGridFilter('unit',this.value)"><option value="">Tất cả đơn vị</option></select>
-        <select id="taskGridTimeFilter" class="field" onchange="setTaskGridFilter('time',this.value)">
-          <option value="">Tất cả thời gian</option><option value="overdue">Đã quá hạn</option><option value="week">Trong 7 ngày</option><option value="month">Trong 30 ngày</option><option value="none">Chưa có hạn</option>
-        </select>
-        <select id="taskGridAssessmentFilter" class="field" onchange="setTaskGridFilter('assessment',this.value)">
-          <option value="">Tất cả thẩm định</option><option>Chưa thẩm định</option><option>Đang xử lý</option><option>Hoàn thành</option><option>Trễ hạn</option><option>Tạm dừng</option><option>Không hoàn thành</option>
-        </select>
-        <button type="button" class="btn btn-ghost" onclick="resetTaskGridFilters()">Xóa lọc</button>
+      <div class="task-grid-search-shell">
+        <label class="task-grid-search" for="taskCenterSearch">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+          <input id="taskCenterSearch" type="search" autocomplete="off" oninput="setTaskGridFilter('search',this.value)" placeholder="Tìm số văn bản hoặc nội dung kết luận...">
+          <kbd>Ctrl F</kbd>
+        </label>
+        <span id="taskGridSearchCount" class="task-grid-search-count">Toàn bộ nhiệm vụ</span>
+        <button id="taskGridSearchClear" type="button" class="task-grid-search-clear" onclick="clearTaskGridSearch()" hidden>Xóa tìm kiếm</button>
       </div>
     </div>
     <div id="taskSheetTabs" class="task-sheet-tabs" data-admin-only aria-label="Chuyển bảng theo đơn vị"></div>
@@ -2485,11 +2480,11 @@ body{
         <div class="w-12 h-12 rounded-2xl bg-blue-50 text-[#4D96FF] flex items-center justify-center font-black text-xl mb-4">
           1
         </div>
-        <h4 class="font-extrabold text-lg">Nhập từ văn bản chỉ đạo</h4>
+        <h4 class="font-extrabold text-lg">Nhập một nhiệm vụ</h4>
         <p class="text-sm text-slate-500 mt-2 leading-6">
-          Phù hợp khi bổ sung nhanh một nhiệm vụ từ thông báo kết luận, công văn chỉ đạo hoặc nghị quyết.
+          Nhập số văn bản, nội dung kết luận, đơn vị thực hiện và thời hạn trên một biểu mẫu gọn.
         </p>
-        <span class="badge b-blue mt-4">Biểu mẫu 3 bước</span>
+        <span class="badge b-blue mt-4">4 trường cốt lõi</span>
       </button>
 
       <button
@@ -2502,7 +2497,7 @@ body{
         </div>
         <h4 class="font-extrabold text-lg">Nhập hàng loạt</h4>
         <p class="text-sm text-slate-500 mt-2 leading-6">
-          Dành cho trường hợp dán dữ liệu từ Excel hoặc nhập nhiều dòng nhiệm vụ cùng lúc.
+          Dán nhiều dòng từ Excel theo cùng cấu trúc bốn trường của Bảng nhiệm vụ.
         </p>
         <span class="badge b-green mt-4">Bảng kiểm tra trước khi lưu</span>
       </button>
@@ -2516,7 +2511,7 @@ body{
       <div>
         <h3 class="text-xl font-extrabold">Nhập hàng loạt nhiệm vụ</h3>
         <p class="text-sm text-slate-500 mt-1">
-          Nhập nhiều nhiệm vụ theo dạng bảng. Có thể dán dữ liệu từ Excel theo đúng thứ tự cột bên dưới.
+          Nhập nhiều nhiệm vụ theo đúng bốn trường của Bảng nhiệm vụ.
         </p>
       </div>
 
@@ -2532,30 +2527,21 @@ body{
     <div class="p-5">
       <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 mb-4">
         <p class="text-sm text-slate-600 leading-6">
-          <b>Thứ tự cột khi dán từ Excel:</b>
-          Nhóm văn bản | Số văn bản | Ngày văn bản | Trích yếu | Nội dung nhiệm vụ |
-          Đơn vị chủ trì | Đơn vị phối hợp | Thời hạn | Trạng thái | Kết quả | Ghi chú
+          <b>Thứ tự cột khi dán từ Excel:</b> Số văn bản | Nội dung kết luận | Đơn vị thực hiện | Thời hạn (dd/mm/yyyy)
         </p>
       </div>
 
       <div id="bulkTaskAlert" class="hidden rounded-2xl border border-slate-200 p-3 mb-4 text-sm"></div>
 
       <div class="overflow-auto rounded-2xl border border-slate-200 bg-white">
-        <table class="min-w-[1500px] w-full text-sm">
+        <table class="min-w-[1050px] w-full text-sm">
           <thead class="bg-slate-50 text-slate-600">
             <tr>
               <th class="p-3 text-left w-[70px]">STT</th>
-              <th class="p-3 text-left w-[170px]">Nhóm văn bản</th>
               <th class="p-3 text-left w-[170px]">Số văn bản</th>
-              <th class="p-3 text-left w-[150px]">Ngày văn bản</th>
-              <th class="p-3 text-left w-[240px]">Trích yếu</th>
-              <th class="p-3 text-left w-[300px]">Nội dung nhiệm vụ</th>
-              <th class="p-3 text-left w-[190px]">Đơn vị chủ trì</th>
-              <th class="p-3 text-left w-[190px]">Đơn vị phối hợp</th>
+              <th class="p-3 text-left w-[430px]">Nội dung kết luận</th>
+              <th class="p-3 text-left w-[230px]">Đơn vị thực hiện</th>
               <th class="p-3 text-left w-[150px]">Thời hạn</th>
-              <th class="p-3 text-left w-[170px]">Trạng thái</th>
-              <th class="p-3 text-left w-[240px]">Kết quả</th>
-              <th class="p-3 text-left w-[240px]">Ghi chú</th>
               <th class="p-3 text-center w-[90px]">Xóa</th>
             </tr>
           </thead>
@@ -2566,7 +2552,7 @@ body{
 
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mt-4">
         <p class="text-xs text-slate-500">
-          Dòng thiếu số văn bản, nội dung nhiệm vụ hoặc đơn vị chủ trì sẽ không được lưu.
+          Dòng thiếu số văn bản, nội dung kết luận, đơn vị thực hiện hoặc thời hạn sẽ không được lưu.
         </p>
 
         <div class="flex flex-wrap gap-2 justify-end">
@@ -2593,95 +2579,38 @@ body{
   </div>
 </div>
   <div id="taskModal" class="modal">
-    <div class="modal-card card w-full max-w-5xl antd-task-modal pm-filament-modal">
-      <div class="p-5 border-b border-slate-200 flex items-start justify-between gap-3 antd-modal-header">
-        <div>
-          <div class="antd-modal-kicker">QUẢN LÝ VĂN BẢN VÀ NHIỆM VỤ</div>
-          <h3 id="taskModalTitle" class="text-xl font-extrabold">Nhập nhiệm vụ trực tiếp</h3>
-          <p id="taskModalDesc" class="text-sm text-slate-500">Nhập văn bản chỉ đạo, phân công thực hiện và tiến độ ban đầu.</p>
-        </div>
-        <button onclick="closeTaskModal()" class="btn btn-ghost px-3" aria-label="Đóng biểu mẫu">✕</button>
+    <div class="modal-card card w-full pm-filament-modal task-create-modal">
+      <div class="pm-modal-heading task-create-heading">
+        <div class="pm-modal-heading-icon task-create-heading-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/><path d="M4 4h16v16H4z"/></svg></div>
+        <div><div class="antd-modal-kicker">THÊM NHIỆM VỤ</div><h3 id="taskModalTitle">Tạo nhiệm vụ mới</h3><p id="taskModalDesc">Nhập nội dung giao việc theo đúng cấu trúc của Bảng nhiệm vụ.</p></div>
+        <button type="button" onclick="closeTaskModal()" class="pm-modal-close" aria-label="Đóng biểu mẫu">✕</button>
       </div>
 
-      <nav class="antd-task-steps" aria-label="Các bước nhập nhiệm vụ">
-        <button id="taskStepButton1" type="button" class="antd-task-step is-active" aria-current="step" onclick="setTaskFormStep(1)">
-          <span>1</span><b>Văn bản chỉ đạo</b><small>Nguồn và căn cứ</small>
-        </button>
-        <button id="taskStepButton2" type="button" class="antd-task-step" onclick="setTaskFormStep(2)">
-          <span>2</span><b>Nhiệm vụ & phân công</b><small>Nội dung thực hiện</small>
-        </button>
-        <button id="taskStepButton3" type="button" class="antd-task-step" onclick="setTaskFormStep(3)">
-          <span>3</span><b>Tiến độ ban đầu</b><small>Trạng thái và kết quả</small>
-        </button>
-      </nav>
-
-      <div id="taskWizardBody" class="antd-task-wizard-body">
-        <section class="antd-task-step-panel is-active" data-task-step="1" aria-labelledby="taskStepButton1">
-          <div class="antd-form-section-heading">
-            <span>A</span>
-            <div><h4>Thông tin văn bản căn cứ</h4><p>Nhập đúng số, ngày ban hành và trích yếu để tránh trùng văn bản.</p></div>
-          </div>
-          <div class="grid sm:grid-cols-2 gap-3">
-            <label class="antd-form-label">Nhóm văn bản <span>*</span><select id="inGroup" class="field mt-1"><option>Thông báo kết luận</option><option>Kết luận kiểm tra</option><option>Kết luận giám sát</option><option>Nghị quyết</option><option>Chương trình làm việc</option><option>Kế hoạch</option><option>Công văn chỉ đạo</option><option>Báo cáo</option><option>Khác</option></select></label>
-            <label class="antd-form-label">Loại văn bản<input id="inType" class="field mt-1" value="thông báo kết luận"></label>
-            <label class="antd-form-label sm:col-span-2">Số, ký hiệu văn bản <span>*</span><input id="inDoc" class="field mt-1" placeholder="Ví dụ: 94-TB/VPĐU"></label>
-            <label class="antd-form-label">Ngày ban hành<input id="inDate" class="field mt-1 date-input-vi" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" autocomplete="off"></label>
-            <label class="antd-form-label">Ngày họp / ngày kết luận<input id="inMeet" class="field mt-1 date-input-vi" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" autocomplete="off"></label>
-            <label class="antd-form-label sm:col-span-2">Trích yếu văn bản<textarea id="inSummary" class="field mt-1" rows="4" placeholder="Tóm tắt nội dung chính của văn bản"></textarea></label>
-          </div>
-        </section>
-
-        <section class="antd-task-step-panel" data-task-step="2" aria-labelledby="taskStepButton2" hidden>
-          <div class="antd-form-section-heading">
-            <span>B</span>
-            <div><h4>Nội dung nhiệm vụ và phân công</h4><p>Xác định rõ việc phải làm, đơn vị chủ trì, người phụ trách và thời hạn.</p></div>
-          </div>
-          <div class="grid sm:grid-cols-2 gap-3">
-            <label class="antd-form-label">STT nội dung<input id="inOrder" class="field mt-1" type="number" min="1" value="1"></label>
-            <label class="antd-form-label">Mức độ ưu tiên<select id="inPriority" class="field mt-1"><option value="Thường">Thường</option><option value="Trung bình" selected>Trung bình</option><option value="Cao">Cao</option><option value="Khẩn cấp">Khẩn cấp</option></select></label>
-            <label class="antd-form-label">Phạm vi nhiệm vụ<select id="inHorizon" class="field mt-1"><option value="ngắn hạn">Ngắn hạn</option><option value="dài hạn/nhiệm kỳ">Dài hạn / nhiệm kỳ</option></select></label>
-            <label class="antd-form-label">Căn cứ nhiệm kỳ<input id="inSourceResolution" class="field mt-1" placeholder="Ví dụ: Nghị quyết Đại hội Đảng bộ phường"></label>
-            <label class="antd-form-label">Đơn vị chủ trì <span>*</span><select id="inUnit" class="field mt-1"><option value="">Chọn đơn vị chủ trì</option></select></label>
-            <label class="antd-form-label">Đơn vị phối hợp<select id="inCoUnit" class="field mt-1"><option value="">Không có / chưa phân công</option></select></label>
-            <label class="antd-form-label">Người phụ trách<input id="inOwner" class="field mt-1" placeholder="Cán bộ theo dõi trực tiếp"></label>
-            <label class="antd-form-label pm-deadline-field">Thời hạn hoàn thành <span>*</span><input id="inDeadline" class="field mt-1 date-input-vi" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" autocomplete="off" aria-required="true"><small>Nhập theo định dạng ngày/tháng/năm, ví dụ 31/08/2026.</small></label>
-            <label class="antd-form-label sm:col-span-2">Nội dung kết luận<textarea id="inConclusion" class="field mt-1" rows="3" placeholder="Nội dung kết luận hoặc yêu cầu cần triển khai"></textarea></label>
-            <label class="antd-form-label sm:col-span-2">Nhiệm vụ cụ thể <span>*</span><textarea id="inTask" class="field mt-1" rows="4" placeholder="Việc cần làm, sản phẩm đầu ra hoặc kết quả phải đạt"></textarea></label>
-            <label class="antd-form-label">Epic / nhóm công việc lớn<input id="inEpic" class="field mt-1" placeholder="Ví dụ: Chuyển đổi số, Kiểm tra chuyên đề"></label>
-            <label class="antd-form-label">Sprint / đợt xử lý<input id="inSprint" class="field mt-1" placeholder="Ví dụ: Đợt 1 · Tháng 8/2026"></label>
-            <label class="antd-form-label">Ước tính thời gian (giờ)<input id="inEstimateHours" class="field mt-1" type="number" min="0" step="0.5" placeholder="Ví dụ: 8"></label>
-          </div>
-        </section>
-
-        <section class="antd-task-step-panel" data-task-step="3" aria-labelledby="taskStepButton3" hidden>
-          <div class="antd-form-section-heading">
-            <span>C</span>
-            <div><h4>Tiến độ và kết quả ban đầu</h4><p>Ghi nhận trạng thái hiện tại; có thể tiếp tục cập nhật sau trong Trung tâm nhiệm vụ.</p></div>
-          </div>
-          <div class="grid sm:grid-cols-2 gap-3">
-            <label class="antd-form-label">Trạng thái<select id="inStatus" class="field mt-1"><option>chưa thực hiện</option><option>đang thực hiện</option><option>hoàn thành</option><option>quá hạn</option></select></label>
-            <label class="antd-form-label">Tiến độ hiện tại
-              <div class="antd-range-field mt-1"><input id="inProgress" type="range" min="0" max="100" step="5" value="0" oninput="inProgressValue.textContent=this.value+'%';updateTaskWizardReview()"><output id="inProgressValue">0%</output></div>
-            </label>
-            <label class="antd-form-label sm:col-span-2">Kết quả thực hiện<textarea id="inResult" class="field mt-1" rows="4" placeholder="Kết quả, sản phẩm đã hoàn thành hoặc nội dung đang xử lý"></textarea></label>
-            <label class="antd-form-label sm:col-span-2">Ghi chú / khó khăn<textarea id="inNote" class="field mt-1" rows="3" placeholder="Khó khăn, vướng mắc hoặc nội dung cần đôn đốc"></textarea></label>
-          </div>
-          <aside id="taskWizardReview" class="antd-task-review" aria-live="polite"></aside>
-        </section>
-        <div id="dupWarning" class="hidden mt-4 rounded-xl border border-yellow-200 bg-yellow-50 p-4 pm-duplicate-warning" role="alert"></div>
-      </div>
-      <div class="p-5 border-t border-slate-200 flex flex-col sm:flex-row justify-between gap-3 antd-wizard-footer">
-        <div class="antd-form-required-note"><span>*</span> Trường bắt buộc · Dữ liệu được đồng bộ theo cơ chế hiện tại</div>
-        <div class="flex flex-col sm:flex-row justify-end gap-2">
-          <button onclick="clearTaskForm()" class="btn btn-ghost">Xóa trắng</button>
-          <button onclick="closeTaskModal()" class="btn btn-ghost">Hủy</button>
-          <button id="taskWizardBack" type="button" onclick="previousTaskFormStep()" class="btn btn-ghost" hidden>Quay lại</button>
-          <button id="taskWizardNext" type="button" onclick="nextTaskFormStep()" class="btn btn-primary">Tiếp tục</button>
-          <span id="taskWizardSaveActions" class="antd-save-actions" hidden>
-            <button onclick="saveTask(false,this)" class="btn btn-primary">Lưu nhiệm vụ</button>
-            <button onclick="saveTask(true,this)" class="btn btn-ghost">Lưu và thêm nhiệm vụ cùng văn bản</button>
-          </span>
+      <div id="taskWizardBody" class="task-create-body">
+        <div class="task-create-note"><span aria-hidden="true">i</span><p><b>Mỗi dòng là một nhiệm vụ.</b> Kết quả thực hiện và tự đánh giá sẽ được đơn vị cập nhật sau trong Bảng nhiệm vụ.</p></div>
+        <div class="task-create-grid">
+          <label class="task-create-field">Số, ký hiệu văn bản <span>*</span><input id="inDoc" class="field" placeholder="Ví dụ: 181-TB/ĐU" autocomplete="off"></label>
+          <label class="task-create-field">Thời hạn thực hiện <span>*</span><input id="inDeadline" class="field date-input-vi" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" autocomplete="off" aria-required="true"><small>Nhập theo thứ tự ngày/tháng/năm.</small></label>
+          <label class="task-create-field task-create-span-2">Nội dung kết luận <span>*</span><textarea id="inConclusion" class="field" rows="7" placeholder="Nhập đầy đủ nội dung kết luận hoặc yêu cầu cần thực hiện"></textarea><small>Nội dung này sẽ hiển thị nguyên văn tại Bảng nhiệm vụ.</small></label>
+          <label class="task-create-field task-create-span-2">Đơn vị thực hiện <span>*</span><select id="inUnit" class="field"><option value="">Chọn đơn vị được giao nhiệm vụ</option></select><small>Đơn vị được chọn chỉ nhìn thấy và cập nhật nhiệm vụ thuộc phạm vi của mình.</small></label>
         </div>
+
+        <div class="task-create-legacy-fields" hidden aria-hidden="true">
+          <input id="inGroup" value="Thông báo kết luận">
+          <input id="inType" value="thông báo kết luận"><input id="inDate"><input id="inMeet"><textarea id="inSummary"></textarea>
+          <input id="inOrder" type="number" value="1"><input id="inPriority" value="Trung bình">
+          <input id="inHorizon" value="ngắn hạn"><input id="inSourceResolution">
+          <input id="inCoUnit"><input id="inOwner"><textarea id="inTask"></textarea>
+          <input id="inEpic"><input id="inSprint"><input id="inEstimateHours" type="number" value="0">
+          <input id="inStatus" value="chưa thực hiện">
+          <input id="inProgress" type="number" value="0"><output id="inProgressValue">0%</output><textarea id="inResult"></textarea><textarea id="inNote"></textarea>
+          <aside id="taskWizardReview"></aside>
+        </div>
+        <div id="dupWarning" class="hidden rounded-xl border border-yellow-200 bg-yellow-50 p-4 pm-duplicate-warning" role="alert"></div>
+      </div>
+      <div class="task-create-footer">
+        <div class="antd-form-required-note"><span>*</span> Trường bắt buộc</div>
+        <div><button type="button" onclick="clearTaskForm()" class="btn btn-ghost">Nhập lại</button><button type="button" onclick="closeTaskModal()" class="btn btn-ghost">Đóng</button><button type="button" onclick="saveTask(false,this)" class="btn btn-primary">Lưu nhiệm vụ</button><button type="button" onclick="saveTask(true,this)" class="btn btn-ghost task-create-save-more">Lưu và thêm nhiệm vụ cùng văn bản</button></div>
       </div>
     </div>
   </div>
@@ -4098,7 +4027,7 @@ body{
         ["userEditUnit","Chọn đơn vị được cấp quyền"]
       ].forEach(([id,blankLabel])=>{
         const select=document.getElementById(id);
-        if(!select)return;
+        if(!select||select.tagName!=="SELECT")return;
         const selected=select.value;
         select.innerHTML=organizationUnitOptions(selected,blankLabel);
       });
@@ -8189,8 +8118,8 @@ function filterDashboardByDeadline(deadline){
       }
       editingTaskId=t.id;
       duplicateConfirmed=true;
-      document.getElementById("taskModalTitle").textContent="Chỉnh sửa nhiệm vụ và tiến độ";
-      document.getElementById("taskModalDesc").textContent="Có thể sửa toàn bộ trường dữ liệu nhập vào, kết quả thực hiện và trạng thái tiến độ.";
+      document.getElementById("taskModalTitle").textContent="Chỉnh sửa thông tin giao việc";
+      document.getElementById("taskModalDesc").textContent="Điều chỉnh số văn bản, nội dung kết luận, đơn vị thực hiện hoặc thời hạn.";
       inGroup.value=t.group || "Thông báo kết luận";
       inType.value=t.type || "thông báo kết luận";
       inDoc.value=t.doc || "";
@@ -8275,15 +8204,10 @@ function emptyBulkTaskRow(){
   return {
     group: "Thông báo kết luận",
     doc: "",
-    date: "",
-    summary: "",
-    task: "",
+    conclusion: "",
     unit: "",
-    coUnit: "",
     deadline: "",
-    status: "đang thực hiện",
-    result: "",
-    note: ""
+    status: "chưa thực hiện"
   };
 }
 
@@ -8352,59 +8276,20 @@ function renderBulkTaskRows(){
   body.innerHTML = bulkTaskRows.map((r,i)=>`
     <tr class="border-t border-slate-100 hover:bg-blue-50/30">
       <td class="p-2 text-center font-bold text-slate-500">${i+1}</td>
-
-      <td class="p-2">
-        <select class="field" onchange="updateBulkTaskCell(${i}, 'group', this.value)">
-          ${bulkTaskOptions(r.group)}
-        </select>
-      </td>
-
       <td class="p-2">
         <input class="field" value="${escapeHtml(r.doc)}" onchange="updateBulkTaskCell(${i}, 'doc', this.value)" placeholder="VD: 89-TB/VPĐU">
       </td>
-
       <td class="p-2">
-        <input class="field date-input-vi" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" autocomplete="off" value="${escapeHtml(formatDateInputValue(r.date))}" onchange="updateBulkTaskCell(${i}, 'date', dateInputToISO(this.value));this.value=formatDateInputValue(this.value)">
+        <textarea class="field" rows="4" onchange="updateBulkTaskCell(${i}, 'conclusion', this.value)" placeholder="Nội dung kết luận hoặc yêu cầu cần thực hiện">${escapeHtml(r.conclusion||r.task||r.summary)}</textarea>
       </td>
-
-      <td class="p-2">
-        <textarea class="field" rows="2" onchange="updateBulkTaskCell(${i}, 'summary', this.value)" placeholder="Trích yếu văn bản">${escapeHtml(r.summary)}</textarea>
-      </td>
-
-      <td class="p-2">
-        <textarea class="field" rows="2" onchange="updateBulkTaskCell(${i}, 'task', this.value)" placeholder="Nội dung nhiệm vụ">${escapeHtml(r.task)}</textarea>
-      </td>
-
       <td class="p-2">
         <select class="field" onchange="updateBulkTaskCell(${i}, 'unit', this.value)">
-          ${bulkUnitOptions(r.unit,"Chọn đơn vị chủ trì")}
+          ${bulkUnitOptions(r.unit,"Chọn đơn vị thực hiện")}
         </select>
       </td>
-
-      <td class="p-2">
-        <select class="field" onchange="updateBulkTaskCell(${i}, 'coUnit', this.value)">
-          ${bulkUnitOptions(r.coUnit,"Không có / chưa phân công")}
-        </select>
-      </td>
-
       <td class="p-2">
         <input class="field date-input-vi" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" autocomplete="off" value="${escapeHtml(formatDateInputValue(r.deadline))}" onchange="updateBulkTaskCell(${i}, 'deadline', dateInputToISO(this.value));this.value=formatDateInputValue(this.value)">
       </td>
-
-      <td class="p-2">
-        <select class="field" onchange="updateBulkTaskCell(${i}, 'status', this.value)">
-          ${bulkStatusOptions(r.status)}
-        </select>
-      </td>
-
-      <td class="p-2">
-        <textarea class="field" rows="2" onchange="updateBulkTaskCell(${i}, 'result', this.value)" placeholder="Kết quả thực hiện">${escapeHtml(r.result)}</textarea>
-      </td>
-
-      <td class="p-2">
-        <textarea class="field" rows="2" onchange="updateBulkTaskCell(${i}, 'note', this.value)" placeholder="Ghi chú">${escapeHtml(r.note)}</textarea>
-      </td>
-
       <td class="p-2 text-center">
         <button onclick="removeBulkTaskRow(${i})" class="icon-btn icon-delete" title="Xóa dòng">✕</button>
       </td>
@@ -8474,18 +8359,13 @@ function getValidBulkRows(){
       ...r,
       _row: idx + 1,
       doc: String(r.doc || "").trim(),
-      date: normalizeBulkDate(r.date),
-      summary: String(r.summary || "").trim(),
-      task: String(r.task || "").trim(),
+      conclusion: String(r.conclusion || r.task || r.summary || "").trim(),
       unit: canonicalUnitValue(r.unit),
-      coUnit: canonicalUnitValue(r.coUnit),
       deadline: normalizeBulkDate(r.deadline),
-      status: String(r.status || "đang thực hiện").trim(),
-      result: String(r.result || "").trim(),
-      note: String(r.note || "").trim()
+      status: "chưa thực hiện"
     }))
     .filter(r=>{
-      return r.doc || r.summary || r.task || r.unit || r.deadline || r.result || r.note;
+      return r.doc || r.conclusion || r.unit || r.deadline;
     });
 }
 
@@ -8496,20 +8376,13 @@ function validateBulkTasks(showSuccess=true){
 
   rows.forEach(r=>{
     if(!r.doc) errors.push(`Dòng ${r._row}: thiếu số văn bản.`);
-    if(!r.task) errors.push(`Dòng ${r._row}: thiếu nội dung nhiệm vụ.`);
-    if(!r.unit) errors.push(`Dòng ${r._row}: chưa chọn đơn vị chủ trì trong danh mục.`);
-
-    if(r.date && r.deadline && parseDate(r.deadline) < parseDate(r.date)){
-      errors.push(`Dòng ${r._row}: thời hạn nhỏ hơn ngày văn bản.`);
-    }
-
-    if(!r.deadline){
-      warnings.push(`Dòng ${r._row}: chưa nhập thời hạn.`);
-    }
+    if(!r.conclusion) errors.push(`Dòng ${r._row}: thiếu nội dung kết luận.`);
+    if(!r.unit) errors.push(`Dòng ${r._row}: chưa chọn đơn vị thực hiện trong danh mục.`);
+    if(!r.deadline) errors.push(`Dòng ${r._row}: chưa nhập thời hạn.`);
 
     const existed = tasks.some(t=>
       norm(taskDoc(t)) === norm(r.doc) &&
-      norm(taskValue(t,"task","")) === norm(r.task)
+      norm(taskValue(t,"conclusion","")||taskValue(t,"task","")) === norm(r.conclusion)
     );
 
     if(existed){
@@ -8567,17 +8440,12 @@ function parseBulkTaskPaste(text){
     const cols = line.split("\t");
 
     return {
-      group: cols[0] || "Thông báo kết luận",
-      doc: cols[1] || "",
-      date: normalizeBulkDate(cols[2] || ""),
-      summary: cols[3] || "",
-      task: cols[4] || "",
-      unit: cols[5] || "",
-      coUnit: cols[6] || "",
-      deadline: normalizeBulkDate(cols[7] || ""),
-      status: cols[8] || "đang thực hiện",
-      result: cols[9] || "",
-      note: cols[10] || ""
+      group: "Thông báo kết luận",
+      doc: cols[0] || "",
+      conclusion: cols[1] || "",
+      unit: cols[2] || "",
+      deadline: normalizeBulkDate(cols[3] || ""),
+      status: "chưa thực hiện"
     };
   });
 
@@ -8598,19 +8466,19 @@ async function saveBulkTasks(triggerButton){
     group: r.group || "Thông báo kết luận",
     type: norm(r.group || "thông báo kết luận"),
     doc: r.doc,
-    date: r.date,
+    date: "",
     meet: "",
-    summary: r.summary,
+    summary: r.conclusion.slice(0,500),
     order: tasks.length + idx + 1,
-    conclusion: r.summary,
-    task: r.task,
+    conclusion: r.conclusion,
+    task: r.conclusion,
     unit: r.unit,
-    coUnit: r.coUnit,
+    coUnit: "",
     owner: "",
     deadline: r.deadline,
-    status: r.status || "đang thực hiện",
-    result: r.result,
-    note: r.note,
+    status: "chưa thực hiện",
+    result: "",
+    note: "",
     horizon: "ngắn hạn",
     sourceResolution: "Nhập hàng loạt",
     sourceTable: "Nhập hàng loạt",
@@ -8696,10 +8564,11 @@ async function saveBulkTasks(triggerButton){
         <div><span>Kiểm soát</span><b>${escapeHtml(inStatus.value)} · ${progress}%</b><small>Hạn ${escapeHtml(formatDateInputValue(inDeadline.value)||"chưa xác định")}</small></div>`;
     }
 
-    function openTaskModal(){editingTaskId=null;duplicateConfirmed=false;document.getElementById("taskModalTitle").textContent="Nhập nhiệm vụ từ văn bản chỉ đạo";document.getElementById("taskModalDesc").textContent="Hoàn thành 3 bước: văn bản, phân công và tiến độ ban đầu.";clearTaskForm();dupWarning.classList.add("hidden");taskModal.classList.add("open");setTaskFormStep(1);lockScroll();}
+    function openTaskModal(){editingTaskId=null;duplicateConfirmed=false;document.getElementById("taskModalTitle").textContent="Tạo nhiệm vụ mới";document.getElementById("taskModalDesc").textContent="Nhập nội dung giao việc theo đúng cấu trúc của Bảng nhiệm vụ.";clearTaskForm();dupWarning.classList.add("hidden");taskModal.classList.add("open");setTaskFormStep(1);lockScroll();setTimeout(()=>inDoc?.focus(),80);}
     function closeTaskModal(){taskModal.classList.remove("open");unlockScroll()}
     function clearTaskForm(){
       ["inDoc","inDate","inMeet","inSummary","inConclusion","inTask","inUnit","inCoUnit","inOwner","inDeadline","inResult","inNote","inSourceResolution","inEpic","inSprint","inEstimateHours"].forEach(id=>{const el=document.getElementById(id);if(el)el.value=""});
+      inGroup.value="Thông báo kết luận";inType.value="thông báo kết luận";
       inOrder.value="1";inStatus.value="chưa thực hiện";inHorizon.value="ngắn hạn";
       if(typeof inPriority!=="undefined")inPriority.value="Trung bình";
       if(typeof inProgress!=="undefined")inProgress.value="0";
@@ -8708,15 +8577,16 @@ async function saveBulkTasks(triggerButton){
     }
 
     function formData(){
-      return {id:Date.now(),group:inGroup.value,type:inType.value,doc:inDoc.value.trim(),date:readDateInput(inDate),meet:readDateInput(inMeet),summary:inSummary.value.trim(),order:Number(inOrder.value||1),conclusion:inConclusion.value.trim(),task:inTask.value.trim(),unit:canonicalUnitValue(inUnit.value),coUnit:canonicalUnitValue(inCoUnit.value),owner:inOwner.value.trim(),deadline:readDateInput(inDeadline),status:inStatus.value,progress:Number(inProgress.value||0),priority:inPriority.value,result:inResult.value.trim(),note:inNote.value.trim(),horizon:inHorizon.value,sourceResolution:inSourceResolution.value.trim(),epic:inEpic.value.trim(),sprint:inSprint.value.trim(),estimateHours:Math.max(0,Number(inEstimateHours.value||0))};
+      const conclusion=inConclusion.value.trim();
+      return {id:Date.now(),group:inGroup.value,type:inType.value,doc:inDoc.value.trim(),date:readDateInput(inDate),meet:readDateInput(inMeet),summary:inSummary.value.trim()||conclusion.slice(0,500),order:Number(inOrder.value||1),conclusion,task:inTask.value.trim()||conclusion,unit:canonicalUnitValue(inUnit.value),coUnit:canonicalUnitValue(inCoUnit.value),owner:inOwner.value.trim(),deadline:readDateInput(inDeadline),status:inStatus.value,progress:Number(inProgress.value||0),priority:inPriority.value,result:inResult.value.trim(),note:inNote.value.trim(),horizon:inHorizon.value,sourceResolution:inSourceResolution.value.trim(),epic:inEpic.value.trim(),sprint:inSprint.value.trim(),estimateHours:Math.max(0,Number(inEstimateHours.value||0))};
     }
 
     function validateTask(t){
       const errs=[];
       if(!t.group)errs.push("Chưa nhập nhóm văn bản.");
       if(!t.doc)errs.push("Chưa nhập số văn bản.");
-      if(!t.task)errs.push("Chưa nhập nhiệm vụ cụ thể.");
-      if(!t.unit)errs.push("Chưa chọn đơn vị chủ trì trong danh mục.");
+      if(!t.conclusion)errs.push("Chưa nhập nội dung kết luận.");
+      if(!t.unit)errs.push("Chưa chọn đơn vị thực hiện trong danh mục.");
       if(!t.deadline)errs.push("Chưa nhập thời hạn.");
       if(t.date&&t.deadline&&parseDate(t.deadline)<parseDate(t.date))errs.push("Thời hạn không được nhỏ hơn ngày ban hành.");
       return errs;
@@ -9967,7 +9837,7 @@ window.addEventListener("resize", ()=>{
 setTimeout(initLiquidScrollIndicators, 300);
   </script>
   <script src="./assets/resolution-tracker.js?v=20261001"></script>
-  <script src="./assets/task-grid-final.js?v=20261002c"></script>
+  <script src="./assets/task-grid-final.js?v=20261002d"></script>
   <div id="moduleToast" class="module-toast" role="status" aria-live="polite" aria-atomic="true" data-tone="info">
     <div class="module-toast-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01"/><circle cx="12" cy="12" r="9"/></svg>
