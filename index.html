@@ -1282,6 +1282,7 @@ body{
   <link rel="stylesheet" href="./assets/tailwind-compiled.css?v=20260725">
   <link rel="stylesheet" href="./assets/project-manager-v3.css?v=20260806save1">
   <link rel="stylesheet" href="./assets/resolution-tracker.css?v=20261001">
+  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261002">
 </head>
 <body class="sidebar-collapsed">
   <!-- LANDING -->
@@ -1332,7 +1333,6 @@ body{
           <div class="pm-nav-section"><span class="pm-nav-label">QUẢN LÝ CÔNG VIỆC</span></div>
           <button class="nav-item" data-page="projects" data-admin-only onclick="switchPage('projects')" title="Dự án / Chương trình"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M20.25 7.5v9.75a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6.75A2.25 2.25 0 0 1 6 4.5h4.5l2.25 3h5.25a2.25 2.25 0 0 1 2.25 2.25Z"/></svg></span><span class="nav-label">Dự án / Chương trình</span></button>
           <button class="nav-item" data-page="tasks" onclick="switchPage('tasks')" title="Nhiệm vụ"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M16.5 4.478V6.75A2.25 2.25 0 0 1 14.25 9h-4.5A2.25 2.25 0 0 1 7.5 6.75V4.478m9 0A2.25 2.25 0 0 0 14.25 2.25h-4.5A2.25 2.25 0 0 0 7.5 4.478m9 0c.86.074 1.72.167 2.575.279A2.25 2.25 0 0 1 21 6.987v12.263A2.25 2.25 0 0 1 18.75 21H5.25A2.25 2.25 0 0 1 3 18.75V6.987a2.25 2.25 0 0 1 1.925-2.23A48.54 48.54 0 0 1 7.5 4.478M9 12.75h6m-6 3h6"/></svg></span><span class="nav-label">Nhiệm vụ</span></button>
-          <button class="nav-item" data-page="roadmap" data-admin-only onclick="switchPage('roadmap')" title="Roadmap"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M6.75 3v2.25M17.25 3v2.25M3.75 9h16.5M5.25 4.5h13.5A1.5 1.5 0 0 1 20.25 6v13.5A1.5 1.5 0 0 1 18.75 21H5.25a1.5 1.5 0 0 1-1.5-1.5V6a1.5 1.5 0 0 1 1.5-1.5Z"/></svg></span><span class="nav-label">Roadmap</span></button>
 
           <div class="pm-nav-section"><span class="pm-nav-label">THEO DÕI NGHỊ QUYẾT</span></div>
           <button class="nav-item" data-page="resolutions" onclick="switchPage('resolutions')" title="Theo dõi 11 Nghị quyết"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M7 3.75h7.5L18.5 8v12.25H7z"/><path d="M14.5 3.75V8h4"/><path d="M9.75 12h6"/><path d="M9.75 15.5h6"/><path d="M9.75 19h4"/></svg></span><span class="nav-label">Theo dõi 11 Nghị quyết</span></button>
@@ -1461,8 +1461,7 @@ body{
                 </div>
                 <div class="pm-launch-grid">
                   <button type="button" onclick="switchPage('projects')"><i class="is-blue"><svg viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v10H3z"/></svg></i><span><b>Dự án / Chương trình</b><small>Nhóm theo Epic và loại văn bản</small></span><em>→</em></button>
-                  <button type="button" onclick="switchPage('tasks');setTaskViewMode('kanban')"><i class="is-violet"><svg viewBox="0 0 24 24"><path d="M4 5h4v14H4zM10 5h4v9h-4zM16 5h4v11h-4z"/></svg></i><span><b>Kanban Board</b><small>Điều phối trạng thái trực quan</small></span><em>→</em></button>
-                  <button type="button" onclick="switchPage('roadmap')"><i class="is-amber"><svg viewBox="0 0 24 24"><path d="M4 18h16M6 15V8M11 15V5M16 15v-4M20 15V7"/></svg></i><span><b>Roadmap</b><small>Epic, Sprint và dòng thời gian</small></span><em>→</em></button>
+                  <button type="button" onclick="switchPage('tasks')"><i class="is-violet"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 10h16M4 15h16M4 20h16"/></svg></i><span><b>Bảng nhiệm vụ</b><small>Tra cứu, cập nhật và thẩm định trên một bảng</small></span><em>→</em></button>
                   <button type="button" onclick="openTaskIntakeChooser()"><i class="is-green"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></i><span><b>Nhập dữ liệu</b><small>Văn bản, phân công và tiến độ</small></span><em>→</em></button>
                 </div>
               </section>
@@ -1719,149 +1718,41 @@ body{
 </dialog>
 
           <!-- TASKS PAGE -->
-<section id="page-tasks" class="page hidden space-y-5">
-  <div class="card rounded-3xl p-5">
-    <div class="flex flex-col xl:flex-row xl:items-start justify-between gap-4">
+<section id="page-tasks" class="page hidden space-y-4 task-grid-page">
+  <div class="card rounded-3xl p-5 task-grid-hero">
+    <div class="task-grid-hero-row">
       <div>
-        <h3 class="text-xl font-extrabold">Trung tâm nhiệm vụ</h3>
-        <p class="text-sm text-slate-500 mt-1">
-          Tìm kiếm, lọc, xem chi tiết, cập nhật tiến độ và nhập nhiệm vụ. Dữ liệu được tính trực tiếp từ danh sách nhiệm vụ hiện có.
-        </p>
+        <span class="task-grid-kicker">BẢNG QUẢN LÝ NHIỆM VỤ</span>
+        <h3>Danh sách nhiệm vụ và kết quả thực hiện</h3>
+        <p id="taskCenterHint">Dữ liệu được phân quyền theo đơn vị; trạng thái Dashboard lấy từ đánh giá thẩm định cuối.</p>
       </div>
-
-      <div class="flex flex-col sm:flex-row gap-2">
-        <button onclick="openTaskIntakeChooser()" class="btn btn-primary" data-admin-only>+ Nhập nhiệm vụ</button>
-        <button onclick="resetTaskFilters('');render()" class="btn btn-ghost">Xóa lọc</button>
-      </div>
+      <button onclick="openTaskIntakeChooser()" class="btn btn-primary" data-admin-only>＋ Thêm nhiệm vụ</button>
     </div>
     <div class="pm-unit-scope-banner" data-unit-only hidden>
       <span aria-hidden="true">✓</span>
-      <div><b>Phạm vi dữ liệu: <strong id="unitScopeName">Đơn vị</strong></b><p>Chỉ hiển thị nhiệm vụ của đơn vị này. Mọi cập nhật tiến độ sẽ được gửi Admin phê duyệt trước khi ghi chính thức.</p></div>
-    </div>
-
-    <div class="grid grid-cols-2 lg:grid-cols-7 gap-3 mt-4">
-      <button onclick="setQuick('all')" class="period-kpi text-left soft">
-        <p class="text-xs font-extrabold text-slate-500 uppercase">Tất cả</p>
-        <b id="taskPageTotal">0</b>
-      </button>
-
-      <button onclick="setQuick('processing')" class="period-kpi text-left soft">
-        <p class="text-xs font-extrabold text-slate-500 uppercase">Đang xử lý</p>
-        <b id="taskPageProcessing" class="text-[#4D96FF]">0</b>
-      </button>
-
-      <button onclick="setQuick('done')" class="period-kpi text-left soft">
-        <p class="text-xs font-extrabold text-slate-500 uppercase">Hoàn thành</p>
-        <b id="taskPageDone" class="text-[#6BCB77]">0</b>
-      </button>
-
-      <button onclick="setQuick('late')" class="period-kpi text-left soft">
-        <p class="text-xs font-extrabold text-slate-500 uppercase">Quá hạn</p>
-        <b id="taskPageLate" class="text-[#FF6B6B]">0</b>
-      </button>
-
-      <button onclick="setQuick('soon7')" class="period-kpi text-left soft">
-        <p class="text-xs font-extrabold text-slate-500 uppercase">Sắp đến hạn</p>
-        <b id="taskPageSoon" class="text-[#B89400]">0</b>
-      </button>
-
-      <button onclick="setQuick('tenure')" class="period-kpi text-left soft">
-        <p class="text-xs font-extrabold text-slate-500 uppercase">Nhiệm kỳ</p>
-        <b id="taskPageTenure" class="text-[#B89400]">0</b>
-      </button>
-
-      <button onclick="setQuick('noDeadline')" class="period-kpi text-left soft">
-        <p class="text-xs font-extrabold text-slate-500 uppercase">Chưa có hạn</p>
-        <b id="taskPageNoDeadline" class="text-slate-700">0</b>
-      </button>
+      <div><b>Phạm vi: <strong id="unitScopeName">Đơn vị</strong></b><p>Chỉ hiển thị nhiệm vụ của đơn vị. Anh/chị được thêm kết quả thực hiện và tự đánh giá; các cột giao việc được khóa.</p></div>
     </div>
   </div>
 
-  <div class="card rounded-3xl p-4">
-    <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-3 mb-4">
-      <div>
-        <h3 class="font-extrabold">Bảng điều hành công việc</h3>
-        <p id="taskCenterHint" class="text-sm text-slate-500 mt-1">
-          Theo dõi nhiệm vụ theo trạng thái, đơn vị phụ trách, thời hạn và mức hoàn thành trên cùng một bảng.
-        </p>
-      </div>
-
-      <div class="flex flex-col sm:flex-row gap-2">
-        <input
-          id="taskCenterSearch"
-          oninput="filters.keyword=this.value;render()"
-          class="field sm:w-96"
-          placeholder="Tìm số văn bản, nhiệm vụ, đơn vị, kết quả..."
-        >
-
-        <button onclick="document.getElementById('taskCenterAdvanced').classList.toggle('open')" class="btn btn-ghost">
-          Tìm nâng cao
-        </button>
+  <div class="card rounded-3xl task-grid-workspace">
+    <div class="task-grid-toolbar">
+      <label class="task-grid-search">
+        <span aria-hidden="true">⌕</span>
+        <input id="taskCenterSearch" class="field" oninput="setTaskGridFilter('search',this.value)" placeholder="Tìm số văn bản, nội dung, đơn vị...">
+      </label>
+      <div class="task-grid-admin-filters" data-admin-only>
+        <select id="taskGridUnitFilter" class="field" onchange="setTaskGridFilter('unit',this.value)"><option value="">Tất cả đơn vị</option></select>
+        <select id="taskGridTimeFilter" class="field" onchange="setTaskGridFilter('time',this.value)">
+          <option value="">Tất cả thời gian</option><option value="overdue">Đã quá hạn</option><option value="week">Trong 7 ngày</option><option value="month">Trong 30 ngày</option><option value="none">Chưa có hạn</option>
+        </select>
+        <select id="taskGridAssessmentFilter" class="field" onchange="setTaskGridFilter('assessment',this.value)">
+          <option value="">Tất cả thẩm định</option><option>Chưa thẩm định</option><option>Đang xử lý</option><option>Hoàn thành</option><option>Trễ hạn</option><option>Tạm dừng</option><option>Không hoàn thành</option>
+        </select>
+        <button type="button" class="btn btn-ghost" onclick="resetTaskGridFilters()">Xóa lọc</button>
       </div>
     </div>
-
-    <div id="taskCenterAdvanced" class="drawer open">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-3 pb-4">
-        <select id="taskCenterGroup" onchange="filters.group=this.value;render()" class="field">
-          <option value="">Tất cả nhóm văn bản</option>
-        </select>
-
-        <select id="taskCenterUnit" onchange="filters.unit=this.value;render()" class="field">
-          <option value="">Tất cả đơn vị</option>
-        </select>
-
-        <select id="taskCenterStatus" onchange="filters.status=this.value;render()" class="field">
-          <option value="">Tất cả trạng thái</option>
-          <option value="processing">Đang xử lý</option>
-          <option value="done">Hoàn thành</option>
-          <option value="late">Quá hạn</option>
-          <option value="soon7">Sắp đến hạn</option>
-          <option value="tenure">Nhiệm kỳ dài hạn</option>
-        </select>
-
-        <select id="taskCenterDeadline" onchange="filters.deadline=this.value;render()" class="field">
-          <option value="">Tất cả thời hạn</option>
-          <option value="overdue">Quá hạn</option>
-          <option value="soon7">Sắp đến hạn trong 7 ngày</option>
-          <option value="noDeadline">Chưa có thời hạn</option>
-          <option value="noResult">Chưa có kết quả</option>
-        </select>
-
-        <input
-          id="taskCenterDoc"
-          oninput="filters.doc=this.value;render()"
-          class="field"
-          placeholder="Số văn bản"
-        >
-
-        <select id="taskCenterHorizon" onchange="filters.quick=this.value;render()" class="field">
-          <option value="">Tất cả loại nhiệm vụ</option>
-          <option value="tenure">Nhiệm kỳ / dài hạn</option>
-        </select>
-
-        <select id="taskCenterEpic" onchange="filters.epic=this.value;render()" class="field">
-          <option value="">Tất cả Epic / nhóm lớn</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="project-view-toolbar">
-      <div>
-        <b>Không gian quản lý dự án</b>
-        <span>Chuyển góc nhìn mà không làm thay đổi dữ liệu nhiệm vụ hiện có.</span>
-      </div>
-      <div class="project-view-switch" role="group" aria-label="Chọn kiểu hiển thị nhiệm vụ">
-        <button id="taskViewBoardBtn" type="button" aria-pressed="true" onclick="setTaskViewMode('board')">Danh sách</button>
-        <button id="taskViewKanbanBtn" type="button" aria-pressed="false" onclick="setTaskViewMode('kanban')">Kanban</button>
-        <button id="taskViewRoadmapBtn" type="button" aria-pressed="false" onclick="setTaskViewMode('roadmap')">Lộ trình</button>
-        <button id="taskViewCardsBtn" type="button" aria-pressed="false" onclick="setTaskViewMode('cards')">Thẻ nhiệm vụ</button>
-      </div>
-    </div>
-
-    <div id="taskProjectBoard" class="project-board"></div>
-    <div id="taskKanbanBoard" class="pm-kanban hidden"></div>
-    <div id="taskRoadmapView" class="pm-roadmap hidden"></div>
-    <div id="taskListFull" class="task-board hidden"></div>
+    <div id="taskSheetTabs" class="task-sheet-tabs" data-admin-only aria-label="Chuyển bảng theo đơn vị"></div>
+    <div id="taskExcelGrid" class="task-excel-wrap" aria-live="polite"></div>
   </div>
 </section>
 
@@ -3729,7 +3620,7 @@ body{
           profile.phone,
           profile.requested_unit,
           profile.unit_name,
-          profile.role==="admin"?"Quản trị hệ thống":"Tài khoản đơn vị"
+          profile.role==="admin"?"Quản trị hệ thống":profile.role==="vpdu"?"Văn phòng Đảng ủy":profile.role==="ubkt"?"Ủy ban Kiểm tra":"Tài khoản đơn vị"
         ].filter(Boolean).join(" "));
         return matchesStatus&&matchesRole&&matchesUnit&&(!search||haystack.includes(search));
       });
@@ -10076,6 +9967,7 @@ window.addEventListener("resize", ()=>{
 setTimeout(initLiquidScrollIndicators, 300);
   </script>
   <script src="./assets/resolution-tracker.js?v=20261001"></script>
+  <script src="./assets/task-grid-final.js?v=20261002b"></script>
   <div id="moduleToast" class="module-toast" role="status" aria-live="polite" aria-atomic="true" data-tone="info">
     <div class="module-toast-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01"/><circle cx="12" cy="12" r="9"/></svg>
