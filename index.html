@@ -1453,6 +1453,7 @@ body{
         <nav class="space-y-2">
           <button class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16V9"/><path d="M12 16V6"/><path d="M16 16v-4"/></svg></span><span class="nav-label">Dashboard & Chốt kỳ</span></button>
           <button class="nav-item" data-page="tasks" onclick="switchPage('tasks')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h16"/><path d="M6 4h8l4 4v9a2 2 0 0 1-2 2H6z"/><path d="M14 4v5h5"/><path d="M8 13h8"/><path d="M8 16h5"/></svg></span><span class="nav-label">Trung tâm nhiệm vụ</span></button>
+          <a class="nav-item" href="/nhiem-vu/" title="Tab Nhiệm vụ mới: bảng lưới, cờ đỏ, bình luận tiến độ"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16"/><path d="M10 4v16"/></svg></span><span class="nav-label">Nhiệm vụ (bản mới)</span></a>
           <button class="nav-item" data-page="opinion" onclick="switchPage('opinion')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16v10H7l-3 3z"/><path d="M8 9h8"/><path d="M8 12h5"/></svg></span><span class="nav-label">Tổ Công tác 1374</span></button>
           <button class="nav-item" data-page="conclusions" onclick="switchPage('conclusions')"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3h10l3 3v15H6z"/><path d="M15 3v4h4"/><path d="M9 12l2 2 4-5"/><path d="M9 17h7"/></svg></span><span class="nav-label">Giám sát KL Thanh tra, Kiểm tra</span></button>
         
@@ -3449,6 +3450,17 @@ body{
           // Map username → email nếu chưa phải email
           const emailToUse = u.includes('@') ? u : (u==='admin' ? 'admin@tanmy.vn' : u+'@tanmy.vn');
           await signInWithSupabase(emailToUse, p);
+          // [Giai đoạn 2] VPĐU và tài khoản Đơn vị chỉ dùng Tab Nhiệm vụ mới → chuyển thẳng sang đó.
+          try{
+            const client=getSupabaseClient();
+            const {data:{user}}=await client.auth.getUser();
+            const {data:myProfile}=await client.from("user_profiles").select("role").eq("id", user.id).maybeSingle();
+            if(myProfile && (myProfile.role==="vpdu" || myProfile.role==="unit")){
+              setLoginMessage("Đang chuyển sang Tab Nhiệm vụ...");
+              location.href="/nhiem-vu/";
+              return;
+            }
+          }catch(roleError){ console.warn("Không đọc được vai trò tài khoản", roleError); }
           const supaKey = emailToUse.toLowerCase().split('@')[0];
           const mappedUser = LOCAL_USERS.find(x=>x.username.toLowerCase()===supaKey||x.username.toLowerCase()===u.toLowerCase());
           currentUser = mappedUser ? {...mappedUser, username:u, password:""} : {username:u,name:u,role:"Tài khoản Supabase",permissions:["all"]};
