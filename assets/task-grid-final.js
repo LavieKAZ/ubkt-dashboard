@@ -4,16 +4,20 @@
 
   const FINAL_OPTIONS=["Chưa thẩm định","Đang xử lý","Hoàn thành","Trễ hạn","Tạm dừng","Không hoàn thành"];
   const SELF_OPTIONS=["Chưa tự đánh giá","Đang thực hiện","Hoàn thành","Chậm tiến độ","Cần hỗ trợ"];
-  const gridState={search:"",unit:"",time:"",assessment:"",sheet:"all"};
+  const gridState={search:"",unit:"",time:"",assessment:"",sheet:"all",columns:{flag:"",doc:"",content:"",unit:"",deadline:"",result:"",self:"",final:""}};
   let progressLogs=[];
   let systemNotifications=[];
   let activeLogTaskId="";
+  let taskGridRealtimeChannel=null;
 
   window.isSystemAdminUser=function(){
     return currentProfile?.role==="admin"&&currentProfile?.approval_status==="approved"&&currentProfile?.is_active===true;
   };
   window.isOversightUser=function(){
     return ["admin","vpdu","ubkt"].includes(currentProfile?.role)&&currentProfile?.approval_status==="approved"&&currentProfile?.is_active===true;
+  };
+  window.canFlagTask=function(){
+    return ["admin","vpdu"].includes(currentProfile?.role)&&currentProfile?.approval_status==="approved"&&currentProfile?.is_active===true;
   };
   isAdminUser=window.isOversightUser;
   syncCurrentUserWithProfile=function(profile){
@@ -28,6 +32,10 @@
   }
   function taskConclusion(task){
     return String(taskValue(task,"conclusion","")||"").trim()||String(taskValue(task,"task","")||"").trim();
+  }
+  function taskFlagged(task){
+    const value=taskValue(task,"redFlag",false);
+    return value===true||String(value).toLowerCase()==="true";
   }
   window.taskFinalAssessment=finalAssessment;
   taskStatus=function(task){return norm(finalAssessment(task));};
@@ -59,6 +67,22 @@
       if(gridState.time==="overdue"&&!(days!==null&&days<0))return false;
       if(gridState.time==="week"&&!(days!==null&&days>=0&&days<=7))return false;
       if(gridState.time==="month"&&!(days!==null&&days>=0&&days<=30))return false;
+      const column=gridState.columns;
+      if(column.flag==="flagged"&&!taskFlagged(task))return false;
+      if(column.flag==="normal"&&taskFlagged(task))return false;
+      if(column.doc&&!norm(taskDoc(task)).includes(norm(column.doc)))return false;
+      if(column.content&&!norm(taskConclusion(task)).includes(norm(column.content)))return false;
+      if(column.unit&&unit!==column.unit)return false;
+      if(column.deadline==="none"&&deadline)return false;
+      if(column.deadline==="overdue"&&!(days!==null&&days<0))return false;
+      if(column.deadline==="week"&&!(days!==null&&days>=0&&days<=7))return false;
+      if(column.deadline==="month"&&!(days!==null&&days>=0&&days<=30))return false;
+      const taskLogs=logsFor(task.id);
+      if(column.result==="yes"&&!taskLogs.length)return false;
+      if(column.result==="no"&&taskLogs.length)return false;
+      const self=taskLogs.find(log=>log.self_assessment)?.self_assessment||"Chưa tự đánh giá";
+      if(column.self&&self!==column.self)return false;
+      if(column.final&&assessment!==column.final)return false;
       if(gridState.search){
         if(!norm(`${taskDoc(task)} ${taskConclusion(task)}`).includes(norm(gridState.search)))return false;
       }
@@ -79,6 +103,29 @@
     return "is-none";
   }
   function options(values,current){return values.map(value=>`<option ${value===current?"selected":""}>${html(value)}</option>`).join("");}
+  function filterIcon(){return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 7v5l-4 2v-7z"/></svg>';}
+  function attachmentIcon(){return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 12-8.5 8.5a6 6 0 0 1-8.5-8.5l9-9a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg>';}
+  function columnFilterControl(key){
+    const value=gridState.columns[key]||"";
+    if(key==="doc"||key==="content")return `<input type="search" value="${html(value)}" placeholder="Nhập từ khóa..." onclick="event.stopPropagation()" onchange="setTaskGridColumnFilter('${key}',this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">`;
+    if(key==="unit")return `<select onclick="event.stopPropagation()" onchange="setTaskGridColumnFilter('unit',this.value)"><option value="">Tất cả đơn vị</option>${uniqueUnits().map(unit=>`<option value="${html(unit)}" ${unit===value?"selected":""}>${html(unit)}</option>`).join("")}</select>`;
+    const sets={
+      flag:[["","Tất cả"],["flagged","Đã gắn cờ"],["normal","Chưa gắn cờ"]],
+      deadline:[["","Tất cả thời hạn"],["none","Chưa có thời hạn"],["overdue","Đã quá hạn"],["week","Trong 7 ngày"],["month","Trong 30 ngày"]],
+      result:[["","Tất cả"],["yes","Đã có cập nhật"],["no","Chưa có cập nhật"]],
+      self:[["","Tất cả tự đánh giá"],...SELF_OPTIONS.map(item=>[item,item])],
+      final:[["","Tất cả thẩm định"],...FINAL_OPTIONS.map(item=>[item,item])]
+    };
+    return `<select onclick="event.stopPropagation()" onchange="setTaskGridColumnFilter('${key}',this.value)">${(sets[key]||[]).map(([optionValue,label])=>`<option value="${html(optionValue)}" ${optionValue===value?"selected":""}>${html(label)}</option>`).join("")}</select>`;
+  }
+  function headerCell(label,key,className){
+    const active=!!gridState.columns[key];
+    return `<th class="${className||""}"><div class="task-grid-th"><span>${html(label)}</span><details class="task-grid-filter ${active?"is-active":""}"><summary title="Lọc cột ${html(label)}" aria-label="Lọc cột ${html(label)}">${filterIcon()}</summary><div class="task-grid-filter-popover" onclick="event.stopPropagation()"><b>Lọc ${html(label)}</b>${columnFilterControl(key)}${active?`<button type="button" onclick="setTaskGridColumnFilter('${key}','')">Xóa bộ lọc cột</button>`:""}</div></details></div></th>`;
+  }
+  function flagCell(task,index){
+    const flagged=taskFlagged(task);
+    return `<div class="task-grid-row-index"><span>${index+1}</span>${canFlagTask()?`<button type="button" class="task-flag-button ${flagged?"is-active":""}" onclick="toggleTaskRedFlag('${html(task.id)}',this)" aria-pressed="${flagged}" title="${flagged?"Bỏ cờ cảnh báo":"Gắn cờ cảnh báo"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4m0 1h10l-2 4 2 4H6"/></svg></button>`:""}</div>`;
+  }
   function editableText(task,field,value,kind="input"){
     if(!isOversightUser())return `<div class="task-grid-readonly ${field==="doc"?"task-grid-doc":field==="conclusion"?"task-grid-conclusion":""}">${html(value||"—")}</div>`;
     if(kind==="textarea")return `<textarea class="task-grid-cell-textarea task-grid-conclusion-editor" rows="5" oninput="autoResizeTaskGridTextarea(this)" onblur="updateTaskGridField('${html(task.id)}','${field}',this.value,this)">${html(value)}</textarea>`;
@@ -86,8 +133,9 @@
   }
   function resultCell(task){
     const latest=latestLog(task.id);
+    const author=latest?logAuthor(latest):null;
     return `<div class="task-grid-result-log">
-      ${latest?`<p>${html(latest.content)}</p><small>${html(latest.author_name)} · ${html(notificationTime(latest.created_at))}</small>`:`<p class="text-slate-400">Chưa có cập nhật</p>`}
+      ${latest?`<p>${html(latest.content)}</p><small>${html(author.name)} · ${html(relativeLogTime(latest.created_at))}</small>`:`<p class="text-slate-400">Chưa có cập nhật</p>`}
       <button type="button" onclick="openTaskLogModal('${html(task.id)}')">${latest?"Xem / thêm cập nhật":"＋ Thêm kết quả"}</button>
     </div>`;
   }
@@ -104,7 +152,7 @@
   function dateCell(task){
     const value=taskDeadline(task);
     if(!isOversightUser())return `<div class="task-grid-readonly task-grid-date">${html(fmt(value))}</div>`;
-    return `<input class="task-grid-cell-input date-input-vi" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" value="${html(formatDateInputValue(value))}" onblur="updateTaskGridField('${html(task.id)}','deadline',dateInputToISO(this.value),this)">`;
+    return `<input class="task-grid-cell-input date-input-vi" inputmode="numeric" maxlength="10" placeholder="Không bắt buộc" value="${html(formatDateInputValue(value))}" onblur="commitTaskGridDeadline('${html(task.id)}',this)">`;
   }
   function finalCell(task){
     const value=finalAssessment(task);
@@ -124,21 +172,27 @@
     if(!rows.length){
       wrap.innerHTML=`<div class="task-grid-empty"><div><b>Không có nhiệm vụ phù hợp</b><span>Thử thay đổi từ khóa hoặc bộ lọc đang chọn.</span></div></div>`;
       updateTaskGridSearchUi(0,all.length);
+      window.requestAnimationFrame(window.syncTaskGridScrollbars);
       return;
     }
     wrap.innerHTML=`<table class="task-excel-table"><thead><tr>
-      <th class="col-stt">STT</th><th class="col-doc">Số văn bản</th><th class="col-content">Nội dung kết luận</th><th class="col-unit">Đơn vị thực hiện</th><th class="col-date">Thời gian</th><th class="col-result">Kết quả thực hiện</th><th class="col-self">Tự đánh giá của đơn vị tham mưu</th><th class="col-final">Đánh giá của VPĐU (Thẩm định)</th>
-    </tr></thead><tbody>${rows.map((task,index)=>`<tr>
-      <td>${index+1}</td>
+      ${headerCell("STT","flag","col-stt")}${headerCell("Số văn bản","doc","col-doc")}${headerCell("Nội dung kết luận","content","col-content")}${headerCell("Đơn vị thực hiện","unit","col-unit")}${headerCell("Thời gian","deadline","col-date")}${headerCell("Kết quả thực hiện","result","col-result")}${headerCell("Tự đánh giá của đơn vị","self","col-self")}${headerCell("Đánh giá của VPĐU","final","col-final")}
+    </tr></thead><tbody>${rows.map((task,index)=>`<tr class="${taskFlagged(task)?"is-flagged":""}">
+      <td>${flagCell(task,index)}</td>
       <td>${editableText(task,"doc",taskDoc(task))}</td>
       <td>${editableText(task,"conclusion",taskConclusion(task),"textarea")}</td>
       <td>${unitCell(task)}</td><td>${dateCell(task)}</td><td>${resultCell(task)}</td><td>${selfCell(task)}</td><td>${finalCell(task)}</td>
     </tr>`).join("")}</tbody></table>`;
     updateTaskGridSearchUi(rows.length,all.length);
     window.requestAnimationFrame(()=>wrap.querySelectorAll(".task-grid-conclusion-editor").forEach(window.autoResizeTaskGridTextarea));
+    window.requestAnimationFrame(window.syncTaskGridScrollbars);
   };
 
   window.setTaskGridFilter=function(key,value){gridState[key]=String(value||"");renderTaskListFull();};
+  window.setTaskGridColumnFilter=function(key,value){
+    if(!(key in gridState.columns))return;
+    gridState.columns[key]=String(value||"");renderTaskListFull();
+  };
   window.autoResizeTaskGridTextarea=function(element){
     if(!element)return;
     element.style.height="auto";
@@ -157,8 +211,24 @@
     if(input){input.value="";input.focus();}
     renderTaskListFull();
   };
+  window.syncTaskGridScrollbars=function(){
+    const grid=document.getElementById("taskExcelGrid");
+    const bar=document.getElementById("taskGridBottomScrollbar");
+    const track=bar?.firstElementChild;
+    if(!grid||!bar||!track)return;
+    track.style.width=`${grid.scrollWidth}px`;
+    bar.hidden=grid.scrollWidth<=grid.clientWidth+2;
+    if(!grid.dataset.bottomScrollReady){
+      let syncing=false;
+      grid.addEventListener("scroll",()=>{if(syncing)return;syncing=true;bar.scrollLeft=grid.scrollLeft;syncing=false;},{passive:true});
+      bar.addEventListener("scroll",()=>{if(syncing)return;syncing=true;grid.scrollLeft=bar.scrollLeft;syncing=false;},{passive:true});
+      grid.dataset.bottomScrollReady="1";
+    }
+    bar.scrollLeft=grid.scrollLeft;
+  };
   window.resetTaskGridFilters=function(){
     Object.assign(gridState,{search:"",unit:"",time:"",assessment:"",sheet:"all"});
+    Object.keys(gridState.columns).forEach(key=>gridState.columns[key]="");
     ["taskCenterSearch","taskGridUnitFilter","taskGridTimeFilter","taskGridAssessmentFilter"].forEach(id=>{const element=document.getElementById(id);if(element)element.value="";});
     renderTaskListFull();
   };
@@ -184,13 +254,33 @@
     if(!page||page.classList.contains("hidden")||!input)return;
     event.preventDefault();input.focus();input.select();
   });
+  window.addEventListener("resize",()=>window.requestAnimationFrame(window.syncTaskGridScrollbars));
+
+  window.commitTaskGridDeadline=function(taskId,element){
+    const raw=String(element?.value||"").trim();
+    const value=raw?dateInputToISO(raw):"";
+    if(raw&&!value){showModuleToast("Ngày chưa đúng định dạng","Vui lòng nhập ngày/tháng/năm, ví dụ 31/12/2026.");renderTaskListFull();return;}
+    updateTaskGridField(taskId,"deadline",value,element);
+  };
+
+  window.toggleTaskRedFlag=async function(taskId,element){
+    if(!canFlagTask())return;
+    const task=tasks.find(item=>String(item.id)===String(taskId));if(!task)return;
+    const next=!taskFlagged(task);
+    element?.classList.add("is-saving");
+    const updated={...task,redFlag:next,redFlagBy:currentProfile?.full_name||currentProfile?.email||"Quản lý",redFlagAt:next?new Date().toISOString():null,updatedAt:localTodayISO()};
+    const auditItem=createAuditEntry(next?"Gắn cờ cảnh báo":"Bỏ cờ cảnh báo",updated,next?"Nhiệm vụ cần chú ý":"Đã bỏ đánh dấu cần chú ý");
+    const result=await saveRecordsImmediately([{table:DB_TABLES.tasks,items:[updated]},{table:DB_TABLES.audit,items:[auditItem]}],null);
+    if(!result.saved){element?.classList.remove("is-saving");return;}
+    Object.assign(task,updated);appendAuditEntry(auditItem);persistLocal(false);render();
+    showModuleToast(next?"Đã gắn cờ cảnh báo":"Đã bỏ cờ cảnh báo",next?"Toàn bộ dòng nhiệm vụ đã được đánh dấu để cấp quản lý theo dõi.":"Nhiệm vụ đã trở về trạng thái hiển thị bình thường.");
+  };
 
   window.updateTaskGridField=async function(taskId,field,value,element){
     if(!isOversightUser())return;
     const task=tasks.find(item=>String(item.id)===String(taskId));
     if(!task)return;
     const clean=String(value??"").trim();
-    if(field==="deadline"&&!clean){showModuleToast("Thiếu thời hạn","Vui lòng nhập thời hạn theo định dạng ngày/tháng/năm.");renderTaskListFull();return;}
     if(["doc","conclusion","unit"].includes(field)&&!clean){showModuleToast("Chưa đủ thông tin","Trường này không được để trống.");renderTaskListFull();return;}
     const previous=task[field];
     if(String(previous??"")===clean)return;
@@ -217,9 +307,53 @@
   const legacyLoadFromDatabase=loadFromDatabase;
   loadFromDatabase=async function(){
     const loaded=await legacyLoadFromDatabase();
-    if(loaded){await loadTaskGridCollections();render();}
+    if(loaded){await loadTaskGridCollections();installTaskGridRealtime();render();}
     return loaded;
   };
+  function installTaskGridRealtime(){
+    const client=getSupabaseClient();
+    if(!client||taskGridRealtimeChannel)return;
+    let refreshTimer=null;
+    const refresh=()=>{
+      window.clearTimeout(refreshTimer);
+      refreshTimer=window.setTimeout(async()=>{
+        try{
+          const loaded=await legacyLoadFromDatabase();
+          if(loaded){await loadTaskGridCollections();persistLocal(false);render();}
+        }catch(error){console.warn("Task grid realtime refresh failed",error);}
+      },220);
+    };
+    taskGridRealtimeChannel=client
+      .channel(`task-grid-${currentProfile?.id||"viewer"}`)
+      .on("postgres_changes",{event:"*",schema:"public",table:"ubkt_tasks"},refresh)
+      .on("postgres_changes",{event:"*",schema:"public",table:"task_progress_logs"},refresh)
+      .on("postgres_changes",{event:"*",schema:"public",table:"system_notifications"},refresh)
+      .subscribe();
+  }
+
+  function authorSnapshot(){
+    const name=currentProfile?.full_name||currentProfile?.email||"Người dùng";
+    const role=currentProfile?.role==="admin"?"Quản trị hệ thống":currentProfile?.role==="vpdu"?"Văn phòng Đảng ủy":currentProfile?.role==="ubkt"?"Ủy ban Kiểm tra":canonicalUnitValue(currentProfile?.unit_name)||"Đơn vị thực hiện";
+    return {name,role,stored:`${name}|||${role}`};
+  }
+  function logAuthor(log){
+    const parts=String(log?.author_name||"Người dùng").split("|||");
+    return {name:parts[0]||"Người dùng",role:parts[1]||"Người cập nhật nhiệm vụ"};
+  }
+  function avatarText(value){
+    const words=String(value||"ND").trim().split(/\s+/).filter(Boolean);
+    return (words.length>1?`${words[0][0]}${words[words.length-1][0]}`:words[0]?.slice(0,2)||"ND").toLocaleUpperCase("vi");
+  }
+  function relativeLogTime(value){
+    const time=Date.parse(value||"");if(!Number.isFinite(time))return "Vừa cập nhật";
+    const seconds=Math.round((time-Date.now())/1000);const abs=Math.abs(seconds);
+    const formatter=new Intl.RelativeTimeFormat("vi",{numeric:"auto"});
+    if(abs<60)return formatter.format(seconds,"second");
+    if(abs<3600)return formatter.format(Math.round(seconds/60),"minute");
+    if(abs<86400)return formatter.format(Math.round(seconds/3600),"hour");
+    if(abs<604800)return formatter.format(Math.round(seconds/86400),"day");
+    return notificationTime(value);
+  }
 
   function createLogModal(){
     if(document.getElementById("taskLogModal"))return;
@@ -230,20 +364,13 @@
         <button type="button" class="pm-modal-close" onclick="closeTaskLogModal()" aria-label="Đóng cửa sổ">✕</button>
       </div>
       <div class="task-log-context" aria-label="Nhiệm vụ đang cập nhật"><div><span>Số văn bản</span><strong id="taskLogDocument">—</strong></div><p id="taskLogConclusion">—</p></div>
-      <div class="task-log-body"><form class="task-log-form" onsubmit="submitTaskProgressLog(event,this)">
-        <div class="task-log-section-heading"><span>01</span><div><b>Nội dung báo cáo</b><small>Mô tả việc đã làm, sản phẩm hoàn thành hoặc khó khăn cần xử lý.</small></div></div>
-        <label class="task-log-field">Kết quả thực hiện <em>*</em><textarea id="taskLogContent" class="field" rows="6" maxlength="10000" required placeholder="Nhập kết quả thực hiện của nhiệm vụ..."></textarea></label>
-        <div class="task-log-two-columns">
-          <label class="task-log-field">Tự đánh giá của đơn vị<select id="taskLogSelfAssessment" class="field">${options(SELF_OPTIONS,"Đang thực hiện")}</select></label>
-          <label class="task-log-field">Ghi chú đánh giá<textarea id="taskLogAssessmentNote" class="field" rows="3" placeholder="Giải trình ngắn (nếu có)"></textarea></label>
-        </div>
-        <div class="task-log-section-heading is-evidence"><span>02</span><div><b>Minh chứng</b><small>Có thể thêm đường dẫn hoặc tải tệp; không bắt buộc.</small></div></div>
-        <div class="task-log-two-columns task-log-evidence-grid">
-          <label class="task-log-field">Đường dẫn minh chứng<input id="taskLogEvidenceUrl" class="field" type="url" placeholder="https://..."></label>
-          <label class="task-log-field">Tệp minh chứng<input id="taskLogEvidenceFile" class="field" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"><small class="task-log-file-note">PDF, Word, Excel hoặc hình ảnh</small></label>
-        </div>
-        <div class="pm-modal-footer task-log-footer"><button type="button" class="btn btn-ghost" onclick="closeTaskLogModal()">Đóng</button><button class="btn btn-primary" type="submit">Lưu kết quả thực hiện</button></div>
-      </form><section class="task-log-history"><div class="task-log-history-heading"><div><span>NHẬT KÝ</span><h4>Lịch sử cập nhật</h4></div><small>Thông tin mới nhất hiển thị trước</small></div><div id="taskLogHistory"></div></section></div>
+      <div class="task-log-body task-social-body"><form class="task-social-composer" onsubmit="submitTaskProgressLog(event,this)">
+        <div class="task-social-identity"><span id="taskComposerAvatar" class="task-social-avatar">ND</span><div><b id="taskComposerName">Người cập nhật</b><small id="taskComposerRole">Đơn vị thực hiện</small></div></div>
+        <div class="task-social-input"><textarea id="taskLogContent" rows="5" maxlength="10000" required placeholder="Viết cập nhật tiến độ, kết quả thực hiện hoặc khó khăn cần báo cáo..."></textarea></div>
+        <div class="task-social-assessment"><label>Tự đánh giá<select id="taskLogSelfAssessment">${options(SELF_OPTIONS,"Đang thực hiện")}</select></label><small>Mỗi lần gửi sẽ tạo một dấu vết mới và không ghi đè lịch sử.</small></div>
+        <details class="task-social-more"><summary>Thêm ghi chú hoặc đường dẫn minh chứng</summary><div><label>Ghi chú đánh giá<textarea id="taskLogAssessmentNote" rows="2" placeholder="Giải trình ngắn (nếu có)"></textarea></label><label>Đường dẫn minh chứng<input id="taskLogEvidenceUrl" type="url" placeholder="https://..."></label></div></details>
+        <div class="task-social-actions"><label class="task-social-attach" for="taskLogEvidenceFile"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 12-8.5 8.5a6 6 0 0 1-8.5-8.5l9-9a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg><span id="taskLogFileName">Đính kèm minh chứng</span><input id="taskLogEvidenceFile" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" onchange="document.getElementById('taskLogFileName').textContent=this.files[0]?.name||'Đính kèm minh chứng'"></label><button class="btn btn-primary" type="submit">Gửi cập nhật</button></div>
+      </form><section class="task-log-history task-social-feed"><div class="task-log-history-heading"><div><span>HOẠT ĐỘNG</span><h4>Luồng cập nhật</h4></div><small>Mới nhất hiển thị trước</small></div><div id="taskLogHistory"></div></section></div>
     </div></div>`);
   }
   window.openTaskLogModal=function(taskId){
@@ -253,6 +380,7 @@
     document.getElementById("taskLogDocument").textContent=taskDoc(task)||"Chưa có số văn bản";
     document.getElementById("taskLogConclusion").textContent=taskConclusion(task)||"Chưa có nội dung kết luận";
     document.getElementById("taskLogContent").value="";document.getElementById("taskLogAssessmentNote").value="";document.getElementById("taskLogEvidenceUrl").value="";document.getElementById("taskLogEvidenceFile").value="";
+    const author=authorSnapshot();document.getElementById("taskComposerAvatar").textContent=avatarText(author.name);document.getElementById("taskComposerName").textContent=author.name;document.getElementById("taskComposerRole").textContent=author.role;document.getElementById("taskLogFileName").textContent="Đính kèm minh chứng";
     renderTaskLogHistory();document.getElementById("taskLogModal").classList.add("open");lockScroll();
     window.setTimeout(()=>document.getElementById("taskLogContent")?.focus(),80);
   };
@@ -260,7 +388,7 @@
   window.renderTaskLogHistory=function(){
     const host=document.getElementById("taskLogHistory");if(!host)return;
     const rows=logsFor(activeLogTaskId);
-    host.innerHTML=rows.length?rows.map(log=>`<article class="task-log-entry"><div class="task-log-entry-head"><b>${html(log.author_name)}</b><time>${html(notificationTime(log.created_at))}</time></div><span class="task-log-period">${html(log.reporting_period)}</span><p>${html(log.content)}</p>${log.self_assessment?`<div class="task-log-assessment"><small>Tự đánh giá</small><strong>${html(log.self_assessment)}</strong>${log.assessment_note?`<p>${html(log.assessment_note)}</p>`:""}</div>`:""}${log.evidence_url||log.evidence_path?`<a href="#" onclick="openTaskEvidence('${html(log.id)}');return false">↗ Mở minh chứng ${html(log.evidence_name||"")}</a>`:""}</article>`).join(""):`<div class="task-log-empty-state"><span aria-hidden="true">◎</span><b>Chưa có kết quả thực hiện</b><p>Lần cập nhật đầu tiên sẽ được lưu cùng người nhập và thời gian.</p></div>`;
+    host.innerHTML=rows.length?rows.map(log=>{const author=logAuthor(log);return `<article class="task-social-comment"><span class="task-social-avatar">${html(avatarText(author.name))}</span><div class="task-social-bubble"><div class="task-social-comment-head"><div><b>${html(author.name)}</b><small>${html(author.role)}</small></div><time title="${html(notificationTime(log.created_at))}">${html(relativeLogTime(log.created_at))}</time></div><p>${html(log.content)}</p><div class="task-social-comment-meta">${log.self_assessment?`<span>Tự đánh giá: <b>${html(log.self_assessment)}</b></span>`:""}<span>${html(log.reporting_period)}</span></div>${log.assessment_note?`<div class="task-social-note">${html(log.assessment_note)}</div>`:""}${log.evidence_url||log.evidence_path?`<a class="task-social-evidence" href="#" onclick="openTaskEvidence('${html(log.id)}');return false">${attachmentIcon()}<span>${html(log.evidence_name||"Mở minh chứng đính kèm")}</span></a>`:""}</div></article>`;}).join(""):`<div class="task-log-empty-state"><span aria-hidden="true">◎</span><b>Chưa có cập nhật nào</b><p>Hãy gửi báo cáo đầu tiên để bắt đầu luồng trao đổi tiến độ.</p></div>`;
   };
   window.submitTaskProgressLog=async function(event,form){
     event.preventDefault();const task=tasks.find(item=>String(item.id)===activeLogTaskId);if(!task)return;
@@ -273,9 +401,9 @@
         evidencePath=`${activeLogTaskId}/${currentProfile.id}/${Date.now()}-${safeName}`;evidenceName=file.name;
         const upload=await client.storage.from("task-evidence").upload(evidencePath,file,{upsert:false});if(upload.error)throw upload.error;
       }
-      const now=new Date();const payload={task_id:activeLogTaskId,author_id:currentProfile.id,author_name:currentProfile.full_name||currentProfile.unit_name||currentProfile.email||"Người dùng",content,self_assessment:document.getElementById("taskLogSelfAssessment").value,assessment_note:document.getElementById("taskLogAssessmentNote").value.trim()||null,reporting_period:`Tuần ${new Intl.DateTimeFormat("vi-VN",{day:"2-digit",month:"2-digit",year:"numeric"}).format(now)}`,evidence_url:document.getElementById("taskLogEvidenceUrl").value.trim()||null,evidence_path:evidencePath,evidence_name:evidenceName};
+      const now=new Date();const author=authorSnapshot();const payload={task_id:activeLogTaskId,author_id:currentProfile.id,author_name:author.stored,content,self_assessment:document.getElementById("taskLogSelfAssessment").value,assessment_note:document.getElementById("taskLogAssessmentNote").value.trim()||null,reporting_period:`Tuần ${new Intl.DateTimeFormat("vi-VN",{day:"2-digit",month:"2-digit",year:"numeric"}).format(now)}`,evidence_url:document.getElementById("taskLogEvidenceUrl").value.trim()||null,evidence_path:evidencePath,evidence_name:evidenceName};
       const {data,error}=await client.from("task_progress_logs").insert(payload).select().single();if(error)throw error;
-      progressLogs.unshift(data);recordTaskNotification(task,"comment","Có cập nhật kết quả thực hiện",content.slice(0,140));renderTaskLogHistory();renderTaskListFull();form.reset();
+      progressLogs.unshift(data);recordTaskNotification(task,"comment","Có cập nhật kết quả thực hiện",content.slice(0,140));renderTaskLogHistory();renderTaskListFull();form.reset();document.getElementById("taskLogSelfAssessment").value="Đang thực hiện";document.getElementById("taskLogFileName").textContent="Đính kèm minh chứng";
       showModuleToast("Đã lưu kết quả thực hiện","Nhật ký mới đã được ghi kèm người cập nhật và thời gian chốt kỳ.");
     }catch(error){showModuleToast("Chưa lưu được cập nhật",error.message||"Vui lòng thử lại.");}
     finally{setSaveButtonBusy(button,false);}

@@ -1282,7 +1282,7 @@ body{
   <link rel="stylesheet" href="./assets/tailwind-compiled.css?v=20260725">
   <link rel="stylesheet" href="./assets/project-manager-v3.css?v=20260806save1">
   <link rel="stylesheet" href="./assets/resolution-tracker.css?v=20261001">
-  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261002d">
+  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261003a">
 </head>
 <body class="sidebar-collapsed">
   <!-- LANDING -->
@@ -1748,6 +1748,7 @@ body{
     </div>
     <div id="taskSheetTabs" class="task-sheet-tabs" data-admin-only aria-label="Chuyển bảng theo đơn vị"></div>
     <div id="taskExcelGrid" class="task-excel-wrap" aria-live="polite"></div>
+    <div id="taskGridBottomScrollbar" class="task-grid-bottom-scroll" aria-label="Thanh cuộn ngang bảng nhiệm vụ"><div></div></div>
   </div>
 </section>
 
@@ -2482,7 +2483,7 @@ body{
         </div>
         <h4 class="font-extrabold text-lg">Nhập một nhiệm vụ</h4>
         <p class="text-sm text-slate-500 mt-2 leading-6">
-          Nhập số văn bản, nội dung kết luận, đơn vị thực hiện và thời hạn trên một biểu mẫu gọn.
+          Nhập số văn bản, nội dung kết luận và đơn vị thực hiện; thời hạn có thể bổ sung sau.
         </p>
         <span class="badge b-blue mt-4">4 trường cốt lõi</span>
       </button>
@@ -2527,7 +2528,7 @@ body{
     <div class="p-5">
       <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 mb-4">
         <p class="text-sm text-slate-600 leading-6">
-          <b>Thứ tự cột khi dán từ Excel:</b> Số văn bản | Nội dung kết luận | Đơn vị thực hiện | Thời hạn (dd/mm/yyyy)
+          <b>Thứ tự cột khi dán từ Excel:</b> Số văn bản | Nội dung kết luận | Đơn vị thực hiện | Thời hạn (dd/mm/yyyy, không bắt buộc)
         </p>
       </div>
 
@@ -2552,7 +2553,7 @@ body{
 
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mt-4">
         <p class="text-xs text-slate-500">
-          Dòng thiếu số văn bản, nội dung kết luận, đơn vị thực hiện hoặc thời hạn sẽ không được lưu.
+          Chỉ bắt buộc số văn bản, nội dung kết luận và đơn vị thực hiện. Có thể để trống thời hạn.
         </p>
 
         <div class="flex flex-wrap gap-2 justify-end">
@@ -2590,7 +2591,7 @@ body{
         <div class="task-create-note"><span aria-hidden="true">i</span><p><b>Mỗi dòng là một nhiệm vụ.</b> Kết quả thực hiện và tự đánh giá sẽ được đơn vị cập nhật sau trong Bảng nhiệm vụ.</p></div>
         <div class="task-create-grid">
           <label class="task-create-field">Số, ký hiệu văn bản <span>*</span><input id="inDoc" class="field" placeholder="Ví dụ: 181-TB/ĐU" autocomplete="off"></label>
-          <label class="task-create-field">Thời hạn thực hiện <span>*</span><input id="inDeadline" class="field date-input-vi" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" autocomplete="off" aria-required="true"><small>Nhập theo thứ tự ngày/tháng/năm.</small></label>
+          <label class="task-create-field">Thời hạn thực hiện <em>Không bắt buộc</em><input id="inDeadline" class="field date-input-vi" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" autocomplete="off"><small>Có thể để trống và bổ sung sau; nếu nhập, dùng ngày/tháng/năm.</small></label>
           <label class="task-create-field task-create-span-2">Nội dung kết luận <span>*</span><textarea id="inConclusion" class="field" rows="7" placeholder="Nhập đầy đủ nội dung kết luận hoặc yêu cầu cần thực hiện"></textarea><small>Nội dung này sẽ hiển thị nguyên văn tại Bảng nhiệm vụ.</small></label>
           <label class="task-create-field task-create-span-2">Đơn vị thực hiện <span>*</span><select id="inUnit" class="field"><option value="">Chọn đơn vị được giao nhiệm vụ</option></select><small>Đơn vị được chọn chỉ nhìn thấy và cập nhật nhiệm vụ thuộc phạm vi của mình.</small></label>
         </div>
@@ -8378,7 +8379,6 @@ function validateBulkTasks(showSuccess=true){
     if(!r.doc) errors.push(`Dòng ${r._row}: thiếu số văn bản.`);
     if(!r.conclusion) errors.push(`Dòng ${r._row}: thiếu nội dung kết luận.`);
     if(!r.unit) errors.push(`Dòng ${r._row}: chưa chọn đơn vị thực hiện trong danh mục.`);
-    if(!r.deadline) errors.push(`Dòng ${r._row}: chưa nhập thời hạn.`);
 
     const existed = tasks.some(t=>
       norm(taskDoc(t)) === norm(r.doc) &&
@@ -8540,7 +8540,6 @@ async function saveBulkTasks(triggerButton){
       if(step===2){
         if(!inTask.value.trim())messages.push("Vui lòng nhập nhiệm vụ cụ thể.");
         if(!canonicalUnitValue(inUnit.value))messages.push("Vui lòng chọn đơn vị chủ trì trong danh mục.");
-        if(!readDateInput(inDeadline))messages.push("Vui lòng nhập thời hạn hoàn thành.");
         if(!ensureValidDateInputs(inDeadline))return false;
       }
       if(messages.length){alert(messages.join("\n"));return false}
@@ -8587,7 +8586,6 @@ async function saveBulkTasks(triggerButton){
       if(!t.doc)errs.push("Chưa nhập số văn bản.");
       if(!t.conclusion)errs.push("Chưa nhập nội dung kết luận.");
       if(!t.unit)errs.push("Chưa chọn đơn vị thực hiện trong danh mục.");
-      if(!t.deadline)errs.push("Chưa nhập thời hạn.");
       if(t.date&&t.deadline&&parseDate(t.deadline)<parseDate(t.date))errs.push("Thời hạn không được nhỏ hơn ngày ban hành.");
       return errs;
     }
@@ -8647,7 +8645,7 @@ async function saveBulkTasks(triggerButton){
       t.relations=[];
       t.notificationEvents=[];
       recordTaskActivity(t,"create","Đã tạo nhiệm vụ.");
-      recordTaskNotification(t,"create","Nhiệm vụ mới được tạo",`${t.unit||"Chưa phân công"} · hạn ${fmt(t.deadline)}`);
+      recordTaskNotification(t,"create","Nhiệm vụ mới được tạo",`${t.unit||"Chưa phân công"} · ${t.deadline?`hạn ${fmt(t.deadline)}`:"chưa đặt thời hạn"}`);
       const auditItem=createAuditEntry("Thêm nhiệm vụ",t,`Trạng thái: ${t.status}`);
       const saveResult=await saveRecordsImmediately([
         {table:DB_TABLES.tasks,items:[t]},
@@ -9837,7 +9835,7 @@ window.addEventListener("resize", ()=>{
 setTimeout(initLiquidScrollIndicators, 300);
   </script>
   <script src="./assets/resolution-tracker.js?v=20261001"></script>
-  <script src="./assets/task-grid-final.js?v=20261002d"></script>
+  <script src="./assets/task-grid-final.js?v=20261003a"></script>
   <div id="moduleToast" class="module-toast" role="status" aria-live="polite" aria-atomic="true" data-tone="info">
     <div class="module-toast-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01"/><circle cx="12" cy="12" r="9"/></svg>
