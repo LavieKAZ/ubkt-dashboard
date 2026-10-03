@@ -1282,7 +1282,7 @@ body{
   <link rel="stylesheet" href="./assets/tailwind-compiled.css?v=20260725">
   <link rel="stylesheet" href="./assets/project-manager-v3.css?v=20260806save1">
   <link rel="stylesheet" href="./assets/resolution-tracker.css?v=20261001">
-  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261003a">
+  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261003v3">
 </head>
 <body class="sidebar-collapsed">
   <!-- LANDING -->
@@ -1739,9 +1739,13 @@ body{
       <div class="task-grid-search-shell">
         <label class="task-grid-search" for="taskCenterSearch">
           <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
-          <input id="taskCenterSearch" type="search" autocomplete="off" oninput="setTaskGridFilter('search',this.value)" placeholder="Tìm số văn bản hoặc nội dung kết luận...">
+          <input id="taskCenterSearch" type="search" autocomplete="off" oninput="queueTaskGridSearch(this.value)" placeholder="Tìm số văn bản hoặc nội dung kết luận...">
           <kbd>Ctrl F</kbd>
         </label>
+        <div class="task-grid-top-filters" aria-label="Bộ lọc nhiệm vụ">
+          <label><span>Tháng</span><select id="taskGridMonthFilter" onchange="setTaskGridFilter('month',this.value)"><option value="">Tất cả tháng</option></select></label>
+          <label><span>Tiến độ</span><select id="taskGridAssessmentFilter" onchange="setTaskGridFilter('assessment',this.value)"><option value="">Tất cả tiến độ</option></select></label>
+        </div>
         <span id="taskGridSearchCount" class="task-grid-search-count">Toàn bộ nhiệm vụ</span>
         <button id="taskGridSearchClear" type="button" class="task-grid-search-clear" onclick="clearTaskGridSearch()" hidden>Xóa tìm kiếm</button>
       </div>
@@ -1749,6 +1753,7 @@ body{
     <div id="taskSheetTabs" class="task-sheet-tabs" data-admin-only aria-label="Chuyển bảng theo đơn vị"></div>
     <div id="taskExcelGrid" class="task-excel-wrap" aria-live="polite"></div>
     <div id="taskGridBottomScrollbar" class="task-grid-bottom-scroll" aria-label="Thanh cuộn ngang bảng nhiệm vụ"><div></div></div>
+    <div id="taskGridPagination" class="task-grid-pagination" aria-label="Phân trang nhiệm vụ"></div>
   </div>
 </section>
 
@@ -9835,7 +9840,7 @@ window.addEventListener("resize", ()=>{
 setTimeout(initLiquidScrollIndicators, 300);
   </script>
   <script src="./assets/resolution-tracker.js?v=20261001"></script>
-  <script src="./assets/task-grid-final.js?v=20261003a"></script>
+  <script src="./assets/task-grid-final.js?v=20261003v3"></script>
   <div id="moduleToast" class="module-toast" role="status" aria-live="polite" aria-atomic="true" data-tone="info">
     <div class="module-toast-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01"/><circle cx="12" cy="12" r="9"/></svg>
