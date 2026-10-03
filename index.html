@@ -1282,7 +1282,7 @@ body{
   <link rel="stylesheet" href="./assets/tailwind-compiled.css?v=20260725">
   <link rel="stylesheet" href="./assets/project-manager-v3.css?v=20260806save1">
   <link rel="stylesheet" href="./assets/resolution-tracker.css?v=20261001">
-  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261003v3">
+  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261003univer1">
 </head>
 <body class="sidebar-collapsed">
   <!-- LANDING -->
@@ -1735,6 +1735,17 @@ body{
   </div>
 
   <div class="card rounded-3xl task-grid-workspace">
+    <div class="task-sheet-appbar">
+      <div class="task-workbook-identity">
+        <span class="task-workbook-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 9h16M9 4v16"/></svg></span>
+        <div><b>Workbook nhiệm vụ</b><span id="taskGridSyncState" data-state="ready">Dữ liệu Dashboard được liên kết trực tiếp</span></div>
+      </div>
+      <div class="task-sheet-app-actions">
+        <button type="button" onclick="openTaskIntakeChooser()" data-admin-only><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Thêm dòng</button>
+        <button type="button" onclick="refreshTaskGridData(this)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>Làm mới</button>
+        <button id="taskGridDensityButton" type="button" onclick="toggleTaskGridDensity()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Thu gọn</button>
+      </div>
+    </div>
     <div class="task-grid-toolbar">
       <div class="task-grid-search-shell">
         <label class="task-grid-search" for="taskCenterSearch">
@@ -1750,9 +1761,18 @@ body{
         <button id="taskGridSearchClear" type="button" class="task-grid-search-clear" onclick="clearTaskGridSearch()" hidden>Xóa tìm kiếm</button>
       </div>
     </div>
-    <div id="taskSheetTabs" class="task-sheet-tabs" data-admin-only aria-label="Chuyển bảng theo đơn vị"></div>
+    <div class="task-grid-formula-bar" aria-label="Thanh nội dung ô đang chọn">
+      <output id="taskGridNameBox" class="task-grid-name-box" aria-label="Tọa độ ô">B2</output>
+      <span class="task-grid-fx" aria-hidden="true">fx</span>
+      <textarea id="taskGridFormulaInput" rows="1" readonly placeholder="Chọn một ô để xem đầy đủ nội dung" oninput="taskGridFormulaChanged()" onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter'){event.preventDefault();saveSelectedTaskGridCell()}"></textarea>
+      <button id="taskGridFormulaSave" type="button" onclick="saveSelectedTaskGridCell()" hidden>Lưu ô</button>
+    </div>
     <div id="taskExcelGrid" class="task-excel-wrap" aria-live="polite"></div>
     <div id="taskGridBottomScrollbar" class="task-grid-bottom-scroll" aria-label="Thanh cuộn ngang bảng nhiệm vụ"><div></div></div>
+    <div class="task-sheet-footer">
+      <div id="taskSheetTabs" class="task-sheet-tabs" data-admin-only aria-label="Chuyển bảng theo đơn vị"></div>
+      <div class="task-sheet-footer-status"><span><i></i>Đã liên kết Dashboard</span><span>Cố định 3 cột đầu</span></div>
+    </div>
     <div id="taskGridPagination" class="task-grid-pagination" aria-label="Phân trang nhiệm vụ"></div>
   </div>
 </section>
@@ -9838,7 +9858,7 @@ window.addEventListener("resize", ()=>{
 setTimeout(initLiquidScrollIndicators, 300);
   </script>
   <script src="./assets/resolution-tracker.js?v=20261001"></script>
-  <script src="./assets/task-grid-final.js?v=20261003v3"></script>
+  <script src="./assets/task-grid-final.js?v=20261003univer1"></script>
   <div id="moduleToast" class="module-toast" role="status" aria-live="polite" aria-atomic="true" data-tone="info">
     <div class="module-toast-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01"/><circle cx="12" cy="12" r="9"/></svg>

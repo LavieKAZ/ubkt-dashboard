@@ -4,7 +4,10 @@
 
   const FINAL_OPTIONS=["Chưa thẩm định","Đang xử lý","Hoàn thành","Trễ hạn","Tạm dừng","Không hoàn thành"];
   const SELF_OPTIONS=["Chưa tự đánh giá","Đang thực hiện","Hoàn thành","Chậm tiến độ","Cần hỗ trợ"];
-  const gridState={search:"",month:"",assessment:"",sheet:"all",page:1,pageSize:30,columns:{flag:"",doc:"",content:"",unit:"",deadline:"",result:"",self:"",final:""}};
+  const GRID_FIELDS=["stt","doc","conclusion","unit","deadline","result","self","final"];
+  const GRID_LETTERS=["A","B","C","D","E","F","G","H"];
+  const GRID_COLUMN_CLASSES=["col-stt","col-doc","col-content","col-unit","col-date","col-result","col-self","col-final"];
+  const gridState={search:"",month:"",assessment:"",sheet:"all",page:1,pageSize:30,density:"comfortable",selection:null,columns:{flag:"",doc:"",content:"",unit:"",deadline:"",result:"",self:"",final:""}};
   let progressLogs=[];
   let systemNotifications=[];
   let activeLogTaskId="";
@@ -46,6 +49,19 @@
   }
   function taskProgressSummary(task){
     return String(taskValue(task,"latestProgressSummary",taskValue(task,"result",""))||"").trim();
+  }
+  function gridCellValue(task,field,rowNumber){
+    const values={
+      stt:String(Math.max(1,(Number(rowNumber)||2)-1)),
+      doc:taskDoc(task),
+      conclusion:taskConclusion(task),
+      unit:taskUnit(task),
+      deadline:formatDateInputValue(taskDeadline(task)),
+      result:taskProgressSummary(task),
+      self:taskSelfAssessment(task),
+      final:finalAssessment(task)
+    };
+    return String(values[field]??"");
   }
   window.taskFinalAssessment=finalAssessment;
   taskStatus=function(task){return norm(finalAssessment(task));};
@@ -132,6 +148,10 @@
     const active=!!gridState.columns[key];
     return `<th class="${className||""}"><div class="task-grid-th"><span>${html(label)}</span><details class="task-grid-filter ${active?"is-active":""}"><summary title="Lọc cột ${html(label)}" aria-label="Lọc cột ${html(label)}">${filterIcon()}</summary><div class="task-grid-filter-popover" onclick="event.stopPropagation()"><b>Lọc ${html(label)}</b>${columnFilterControl(key)}${active?`<button type="button" onclick="setTaskGridColumnFilter('${key}','')">Xóa bộ lọc cột</button>`:""}</div></details></div></th>`;
   }
+  function gridCellAttributes(task,field,row,col){
+    const selected=gridState.selection&&String(gridState.selection.taskId)===String(task.id)&&gridState.selection.field===field;
+    return `data-task-id="${html(task.id)}" data-grid-field="${field}" data-grid-row="${row}" data-grid-col="${col}" tabindex="-1"${selected?' class="is-selected-cell"':''}`;
+  }
   function flagCell(task,index){
     const flagged=taskFlagged(task);
     return `<div class="task-grid-row-index"><span>${index}</span>${canFlagTask()?`<button type="button" class="task-flag-button ${flagged?"is-active":""}" onclick="openTaskRedFlagModal('${html(task.id)}')" aria-pressed="${flagged}" title="${flagged?"Sửa Note đỏ":"Thêm Note đỏ"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4m0 1h10l-2 4 2 4H6"/></svg></button>`:""}</div>`;
@@ -185,25 +205,28 @@
     const rows=filtered.slice(offset,offset+gridState.pageSize);
     const hint=document.getElementById("taskCenterHint");
     if(hint)hint.textContent=`Trang ${gridState.page}/${pageCount} · ${filtered.length} nhiệm vụ phù hợp · Dashboard dùng Đánh giá của VPĐU.`;
+    document.querySelector(".task-grid-workspace")?.classList.toggle("is-compact",gridState.density==="compact");
     renderTaskSheetTabs();
     renderTaskGridFilterOptions();
     if(!rows.length){
       wrap.innerHTML=`<div class="task-grid-empty"><div><b>Không có nhiệm vụ phù hợp</b><span>Thử thay đổi từ khóa hoặc bộ lọc đang chọn.</span></div></div>`;
       updateTaskGridSearchUi(0,all.length);
       renderTaskGridPagination(0,1);
+      clearTaskGridSelectionUi();
       window.requestAnimationFrame(window.syncTaskGridScrollbars);
       return;
     }
-    wrap.innerHTML=`<table class="task-excel-table"><thead><tr>
+    wrap.innerHTML=`<table class="task-excel-table"><thead><tr class="task-grid-letter-row">${GRID_LETTERS.map((letter,index)=>`<th class="${GRID_COLUMN_CLASSES[index]}" aria-hidden="true">${letter}</th>`).join("")}</tr><tr class="task-grid-column-row">
       ${headerCell("STT","flag","col-stt")}${headerCell("Số văn bản","doc","col-doc")}${headerCell("Nội dung kết luận","content","col-content")}${headerCell("Đơn vị thực hiện",null,"col-unit")}${headerCell("Thời gian","deadline","col-date")}${headerCell("Kết quả thực hiện","result","col-result")}${headerCell("Tự đánh giá của đơn vị","self","col-self")}${headerCell("Đánh giá của VPĐU","final","col-final")}
-    </tr></thead><tbody>${rows.map((task,index)=>`<tr class="${taskFlagged(task)?"is-flagged":""}">
-      <td>${flagCell(task,offset+index+1)}</td>
-      <td>${editableText(task,"doc",taskDoc(task))}</td>
-      <td>${conclusionCell(task)}</td>
-      <td>${unitCell(task)}</td><td>${dateCell(task)}</td><td>${resultCell(task)}</td><td>${selfCell(task)}</td><td>${finalCell(task)}</td>
-    </tr>`).join("")}</tbody></table>`;
+    </tr></thead><tbody>${rows.map((task,index)=>{const sheetRow=offset+index+2;return `<tr class="${taskFlagged(task)?"is-flagged":""}" data-task-row="${sheetRow}">
+      <td ${gridCellAttributes(task,"stt",sheetRow,0)}>${flagCell(task,offset+index+1)}</td>
+      <td ${gridCellAttributes(task,"doc",sheetRow,1)}>${editableText(task,"doc",taskDoc(task))}</td>
+      <td ${gridCellAttributes(task,"conclusion",sheetRow,2)}>${conclusionCell(task)}</td>
+      <td ${gridCellAttributes(task,"unit",sheetRow,3)}>${unitCell(task)}</td><td ${gridCellAttributes(task,"deadline",sheetRow,4)}>${dateCell(task)}</td><td ${gridCellAttributes(task,"result",sheetRow,5)}>${resultCell(task)}</td><td ${gridCellAttributes(task,"self",sheetRow,6)}>${selfCell(task)}</td><td ${gridCellAttributes(task,"final",sheetRow,7)}>${finalCell(task)}</td>
+    </tr>`;}).join("")}</tbody></table>`;
     updateTaskGridSearchUi(filtered.length,all.length);
     renderTaskGridPagination(filtered.length,pageCount);
+    restoreTaskGridSelection(rows[0],offset+2);
     window.requestAnimationFrame(()=>wrap.querySelectorAll(".task-grid-conclusion-editor").forEach(window.autoResizeTaskGridTextarea));
     window.requestAnimationFrame(window.syncTaskGridScrollbars);
   };
@@ -248,6 +271,91 @@
     gridState.page=1;
     renderTaskListFull();
   };
+  window.toggleTaskGridDensity=function(){
+    gridState.density=gridState.density==="compact"?"comfortable":"compact";
+    const button=document.getElementById("taskGridDensityButton");
+    if(button)button.lastChild.textContent=gridState.density==="compact"?"Thoáng":"Thu gọn";
+    renderTaskListFull();
+  };
+  function setTaskGridSyncState(state,label){
+    const element=document.getElementById("taskGridSyncState");if(!element)return;
+    element.dataset.state=state;element.textContent=label;
+  }
+  window.refreshTaskGridData=async function(button){
+    if(button?.disabled)return;
+    const original=button?.innerHTML;if(button){button.disabled=true;button.classList.add("is-loading");}
+    setTaskGridSyncState("syncing","Đang đồng bộ dữ liệu...");
+    try{
+      const loaded=await loadFromDatabase();
+      if(!loaded)throw new Error("Chưa kết nối được cơ sở dữ liệu");
+      setTaskGridSyncState("ready",`Đã đồng bộ lúc ${new Intl.DateTimeFormat("vi-VN",{hour:"2-digit",minute:"2-digit"}).format(new Date())}`);
+      showModuleToast("Đã làm mới bảng nhiệm vụ","Dữ liệu mới nhất từ hệ thống đã được tải và Dashboard vẫn liên kết theo thẩm định VPĐU.");
+    }catch(error){setTaskGridSyncState("error","Đồng bộ chưa thành công");showModuleToast("Chưa làm mới được dữ liệu",error.message||"Vui lòng thử lại.");}
+    finally{if(button){button.disabled=false;button.classList.remove("is-loading");button.innerHTML=original;}}
+  };
+  function clearTaskGridSelectionUi(){
+    const name=document.getElementById("taskGridNameBox");const input=document.getElementById("taskGridFormulaInput");const save=document.getElementById("taskGridFormulaSave");
+    if(name)name.textContent="—";if(input){input.value="";input.readOnly=true;input.placeholder="Không có ô dữ liệu phù hợp";input.classList.remove("is-dirty");}if(save){save.hidden=true;save.classList.remove("is-ready");}
+  }
+  function restoreTaskGridSelection(fallbackTask,fallbackRow){
+    let selection=gridState.selection;
+    let cell=selection?document.querySelector(`#taskExcelGrid td[data-task-id="${CSS.escape(String(selection.taskId))}"][data-grid-field="${selection.field}"]`):null;
+    if(!cell&&fallbackTask){selection={taskId:String(fallbackTask.id),field:"doc",row:fallbackRow,col:1};gridState.selection=selection;cell=document.querySelector(`#taskExcelGrid td[data-task-id="${CSS.escape(String(fallbackTask.id))}"][data-grid-field="doc"]`);}
+    if(cell)selectTaskGridCell(cell,false);else clearTaskGridSelectionUi();
+  }
+  function selectTaskGridCell(cell,scroll=true){
+    if(!cell)return;
+    document.querySelectorAll("#taskExcelGrid td.is-selected-cell").forEach(item=>item.classList.remove("is-selected-cell"));cell.classList.add("is-selected-cell");
+    const task=tasks.find(item=>String(item.id)===String(cell.dataset.taskId));if(!task)return;
+    const field=cell.dataset.gridField;const row=Number(cell.dataset.gridRow)||2;const col=Number(cell.dataset.gridCol)||0;
+    gridState.selection={taskId:String(task.id),field,row,col};
+    const name=document.getElementById("taskGridNameBox");const input=document.getElementById("taskGridFormulaInput");const save=document.getElementById("taskGridFormulaSave");
+    if(name)name.textContent=`${GRID_LETTERS[col]||"A"}${row}`;
+    if(input){input.value=gridCellValue(task,field,row);input.readOnly=!(isOversightUser()&&["doc","conclusion"].includes(field));input.placeholder=input.readOnly?"Ô này được thao tác bằng điều khiển trong bảng":"Sửa nội dung và nhấn Ctrl + Enter để lưu";input.classList.remove("is-dirty");input.dataset.original=input.value;}
+    if(save){save.hidden=input?.readOnly!==false;save.classList.remove("is-ready");}
+    if(scroll)cell.scrollIntoView({block:"nearest",inline:"nearest"});
+  }
+  window.taskGridFormulaChanged=function(){
+    const input=document.getElementById("taskGridFormulaInput");if(!input||input.readOnly)return;
+    input.classList.toggle("is-dirty",input.value!==input.dataset.original);const save=document.getElementById("taskGridFormulaSave");if(save)save.classList.toggle("is-ready",input.value!==input.dataset.original);
+  };
+  window.saveSelectedTaskGridCell=async function(){
+    const selection=gridState.selection;const input=document.getElementById("taskGridFormulaInput");const button=document.getElementById("taskGridFormulaSave");
+    if(!selection||!input||input.readOnly||input.value===input.dataset.original)return;
+    setTaskGridSyncState("syncing","Đang lưu ô đã chỉnh sửa...");
+    await updateTaskGridField(selection.taskId,selection.field,input.value,button);
+  };
+  function installTaskSheetInteractions(){
+    const wrap=document.getElementById("taskExcelGrid");
+    if(!wrap||wrap.dataset.sheetInteractionsReady)return;
+    wrap.dataset.sheetInteractionsReady="1";
+    wrap.addEventListener("click",event=>{
+      const cell=event.target.closest("td[data-grid-field]");
+      if(cell)selectTaskGridCell(cell,false);
+    });
+    document.addEventListener("keydown",event=>{
+      const page=document.getElementById("page-tasks");
+      if(!page||page.classList.contains("hidden")||!gridState.selection)return;
+      if(event.target.closest("input,textarea,select,button,[contenteditable='true']"))return;
+      if(!["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Enter"].includes(event.key))return;
+      if(event.key==="Enter"){
+        if(gridState.selection.field==="result"){
+          event.preventDefault();
+          openTaskLogModal(gridState.selection.taskId);
+        }
+        return;
+      }
+      let {row,col}=gridState.selection;
+      if(event.key==="ArrowUp")row-=1;
+      if(event.key==="ArrowDown")row+=1;
+      if(event.key==="ArrowLeft")col-=1;
+      if(event.key==="ArrowRight")col+=1;
+      col=Math.max(0,Math.min(GRID_FIELDS.length-1,col));
+      const next=wrap.querySelector(`td[data-grid-row="${row}"][data-grid-col="${col}"]`);
+      if(!next)return;
+      event.preventDefault();selectTaskGridCell(next,true);next.focus({preventScroll:true});
+    });
+  }
   window.renderTaskGridPagination=function(total,pageCount){
     const host=document.getElementById("taskGridPagination");if(!host)return;
     if(!total){host.innerHTML="";return;}
@@ -327,9 +435,11 @@
     const task=tasks.find(item=>String(item.id)===activeRedFlagTaskId);if(!task)return false;
     const updated={...task,redFlag:flagged,redFlagNote:flagged?note:"",redFlagBy:flagged?(currentProfile?.full_name||currentProfile?.email||"Quản lý"):"",redFlagAt:flagged?new Date().toISOString():null,updatedAt:localTodayISO()};
     const auditItem=createAuditEntry(flagged?"Cập nhật Note đỏ":"Gỡ Note đỏ",updated,flagged?note:"Đã bỏ cảnh báo quản lý");
+    setTaskGridSyncState("syncing",flagged?"Đang lưu Note đỏ...":"Đang gỡ cảnh báo...");
     const result=await saveRecordsImmediately([{table:DB_TABLES.tasks,items:[updated]},{table:DB_TABLES.audit,items:[auditItem]}],button,flagged?"Đang lưu Note đỏ...":"Đang gỡ cảnh báo...");
-    if(!result.saved)return false;
+    if(!result.saved){setTaskGridSyncState("error","Note đỏ chưa được lưu");return false;}
     Object.assign(task,updated);appendAuditEntry(auditItem);persistLocal(false);closeTaskRedFlagModal();render();
+    setTaskGridSyncState("ready","Đã lưu và đồng bộ Dashboard");
     showModuleToast(flagged?"Đã lưu Note đỏ":"Đã gỡ cảnh báo",flagged?"Dòng nhiệm vụ và nội dung cảnh báo đã được cập nhật cho đơn vị thực hiện.":"Nhiệm vụ đã trở về trạng thái bình thường.");
     return true;
   }
@@ -344,13 +454,15 @@
     if(["doc","conclusion","unit"].includes(field)&&!clean){showModuleToast("Chưa đủ thông tin","Trường này không được để trống.");renderTaskListFull();return;}
     const previous=task[field];
     if(String(previous??"")===clean)return;
+    setTaskGridSyncState("syncing","Đang lưu thay đổi...");
     element?.classList.add("is-saving");
     const updated={...task,[field]:clean,updatedAt:localTodayISO()};
     const auditItem=createAuditEntry(field==="vpduAssessment"?"Chốt đánh giá VPĐU":"Chỉnh sửa nhiệm vụ",updated,`${field}: ${clean}`);
     const result=await saveRecordsImmediately([{table:DB_TABLES.tasks,items:[updated]},{table:DB_TABLES.audit,items:[auditItem]}],null);
     element?.classList.remove("is-saving");
-    if(!result.saved){renderTaskListFull();return;}
+    if(!result.saved){setTaskGridSyncState("error","Thay đổi chưa được lưu");renderTaskListFull();return;}
     Object.assign(task,updated);appendAuditEntry(auditItem);persistLocal(false);render();
+    setTaskGridSyncState("ready","Đã lưu và đồng bộ Dashboard");
     showModuleToast(field==="vpduAssessment"?"Đã cập nhật thẩm định":"Đã lưu thay đổi",field==="vpduAssessment"?"Các số liệu Dashboard đã được tính lại ngay.":"Dữ liệu nhiệm vụ đã được đồng bộ.");
   };
 
@@ -370,7 +482,8 @@
   const legacyLoadFromDatabase=loadFromDatabase;
   loadFromDatabase=async function(){
     const loaded=await legacyLoadFromDatabase();
-    if(loaded){await loadTaskGridCollections();installTaskGridRealtime();render();}
+    if(loaded){await loadTaskGridCollections();installTaskGridRealtime();render();setTaskGridSyncState("ready","Dữ liệu Dashboard được liên kết trực tiếp");}
+    else setTaskGridSyncState("error","Đang dùng dữ liệu cục bộ");
     return loaded;
   };
   function installTaskGridRealtime(){
@@ -381,9 +494,10 @@
       window.clearTimeout(refreshTimer);
       refreshTimer=window.setTimeout(async()=>{
         try{
+          setTaskGridSyncState("syncing","Đang nhận thay đổi mới...");
           const loaded=await legacyLoadFromDatabase();
-          if(loaded){await loadTaskGridCollections();if(activeLogTaskId){await loadTaskLogs(activeLogTaskId);renderTaskLogHistory();}persistLocal(false);render();}
-        }catch(error){console.warn("Task grid realtime refresh failed",error);}
+          if(loaded){await loadTaskGridCollections();if(activeLogTaskId){await loadTaskLogs(activeLogTaskId);renderTaskLogHistory();}persistLocal(false);render();setTaskGridSyncState("ready","Vừa nhận dữ liệu mới");}
+        }catch(error){setTaskGridSyncState("error","Mất kết nối cập nhật trực tiếp");console.warn("Task grid realtime refresh failed",error);}
       },220);
     };
     taskGridRealtimeChannel=client
@@ -458,7 +572,7 @@
   };
   window.submitTaskProgressLog=async function(event,form){
     event.preventDefault();const task=tasks.find(item=>String(item.id)===activeLogTaskId);if(!task)return;
-    const button=form.querySelector("button[type=submit]");setSaveButtonBusy(button,true,"Đang lưu...");
+    const button=form.querySelector("button[type=submit]");setSaveButtonBusy(button,true,"Đang lưu...");setTaskGridSyncState("syncing","Đang lưu kết quả thực hiện...");
     try{
       const client=getSupabaseClient();const content=document.getElementById("taskLogContent").value.trim();const file=document.getElementById("taskLogEvidenceFile").files[0];
       let evidencePath=null,evidenceName=null;
@@ -470,8 +584,9 @@
       const now=new Date();const author=authorSnapshot();const payload={task_id:activeLogTaskId,author_id:currentProfile.id,author_name:author.stored,content,self_assessment:document.getElementById("taskLogSelfAssessment").value,assessment_note:document.getElementById("taskLogAssessmentNote").value.trim()||null,reporting_period:`Tuần ${new Intl.DateTimeFormat("vi-VN",{day:"2-digit",month:"2-digit",year:"numeric"}).format(now)}`,evidence_url:document.getElementById("taskLogEvidenceUrl").value.trim()||null,evidence_path:evidencePath,evidence_name:evidenceName};
       const {data,error}=await client.from("task_progress_logs").insert(payload).select().single();if(error)throw error;
       progressLogs.unshift(data);Object.assign(task,{latestProgressSummary:content,selfAssessment:payload.self_assessment,latestProgressAt:data.created_at||now.toISOString(),latestProgressAuthor:author.stored});recordTaskNotification(task,"comment","Có cập nhật kết quả thực hiện",content.slice(0,140));renderTaskLogHistory();renderTaskListFull();form.reset();document.getElementById("taskLogSelfAssessment").value="Đang thực hiện";document.getElementById("taskLogFileName").textContent="Đính kèm minh chứng";
+      setTaskGridSyncState("ready","Đã lưu và đồng bộ Dashboard");
       showModuleToast("Đã lưu kết quả thực hiện","Nhật ký mới đã được ghi kèm người cập nhật và thời gian chốt kỳ.");
-    }catch(error){showModuleToast("Chưa lưu được cập nhật",error.message||"Vui lòng thử lại.");}
+    }catch(error){setTaskGridSyncState("error","Kết quả chưa được lưu");showModuleToast("Chưa lưu được cập nhật",error.message||"Vui lòng thử lại.");}
     finally{setSaveButtonBusy(button,false);}
   };
   window.openTaskEvidence=async function(logId){
@@ -534,5 +649,5 @@
     if(error){showModuleToast("Chưa lưu được người dùng",error.message);return;}closeUserEditModal();await loadAdminQueues(false);showModuleToast("Đã cập nhật quyền tài khoản","Vai trò và phạm vi truy cập mới đã có hiệu lực.");
   };
 
-  document.addEventListener("DOMContentLoaded",()=>{createLogModal();installRoleOptions();});
+  document.addEventListener("DOMContentLoaded",()=>{createLogModal();installRoleOptions();installTaskSheetInteractions();});
 })();
