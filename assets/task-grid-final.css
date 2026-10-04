@@ -1,9 +1,4 @@
 .task-grid-page{--grid-blue:#2563eb;--grid-border:#dbe3ee;--grid-muted:#64748b}
-.task-grid-hero{background:linear-gradient(135deg,#fff 0%,#f8fbff 55%,#eef6ff 100%);border:1px solid #dbeafe}
-.task-grid-hero-row{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
-.task-grid-kicker{display:block;color:#2563eb;font-size:.74rem;font-weight:900;letter-spacing:.1em;margin-bottom:.35rem}
-.task-grid-hero h3{font-size:1.42rem;line-height:1.25;font-weight:900;letter-spacing:-.02em;color:#172033}
-.task-grid-hero p{max-width:760px;font-size:.96rem;line-height:1.55;color:#64748b;margin-top:.35rem}
 .task-grid-workspace{overflow:hidden;border:1px solid #dbe3ee}
 .task-sheet-appbar{display:flex;min-height:60px;align-items:center;justify-content:space-between;gap:18px;padding:9px 14px;border-bottom:1px solid var(--grid-border);background:#fff}
 .task-workbook-identity{display:flex;min-width:0;align-items:center;gap:11px}.task-workbook-icon{display:grid;flex:0 0 38px;width:38px;height:38px;place-items:center;border-radius:9px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;box-shadow:0 5px 14px rgba(37,99,235,.2)}.task-workbook-icon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.65}.task-workbook-identity>div{display:flex;min-width:0;flex-direction:column}.task-workbook-identity b{overflow:hidden;color:#172033;font-size:14px;line-height:1.3;font-weight:900;text-overflow:ellipsis;white-space:nowrap}.task-workbook-identity span:not(.task-workbook-icon){position:relative;margin-top:3px;padding-left:12px;color:#64748b;font-size:11px;line-height:1.3;font-weight:650}.task-workbook-identity span:not(.task-workbook-icon):before{content:"";position:absolute;left:0;top:50%;width:7px;height:7px;border-radius:50%;background:#22c55e;transform:translateY(-50%);box-shadow:0 0 0 3px #dcfce7}.task-workbook-identity span[data-state="syncing"]:before{background:#3b82f6;box-shadow:0 0 0 3px #dbeafe;animation:task-grid-pulse 1s ease-in-out infinite}.task-workbook-identity span[data-state="error"]{color:#b91c1c}.task-workbook-identity span[data-state="error"]:before{background:#ef4444;box-shadow:0 0 0 3px #fee2e2}@keyframes task-grid-pulse{50%{opacity:.35}}
@@ -172,3 +167,58 @@ body.task-grid-resizing,body.task-grid-resizing *{cursor:col-resize!important;us
 .task-sheet-tab:focus-visible{outline:2px solid #2563eb;outline-offset:-2px}
 /* Khi mở cửa sổ (popup), khối đáy đang ghim lùi xuống dưới lớp nền mờ */
 body:has(.modal.open) .task-grid-dock.is-floating{visibility:hidden}
+
+/* ================= Gọn giao diện Tab Nhiệm vụ (04/10/2026) =================
+   Thang chữ thống nhất: tiêu đề 15px/700 · nội dung 13–14px/500–600 · chú thích 11–12px/500
+   Chỉ 1 nút chính "Thêm nhiệm vụ" (xanh đậm); các nút phụ dạng nền trong suốt */
+.task-sheet-appbar{min-height:64px;padding:12px 16px}
+.task-workbook-identity b{font-size:15px;font-weight:700;letter-spacing:-.01em}
+.task-workbook-identity span:not(.task-workbook-icon){margin-top:2px;font-size:12px;font-weight:500}
+.task-sheet-app-actions{gap:4px}
+.task-sheet-app-actions button{min-height:36px;padding:6px 10px;border-radius:8px;font-size:13px;font-weight:600}
+.task-sheet-app-actions .task-sheet-add{margin-left:6px;padding:7px 14px;border-color:#2563eb;background:#2563eb;color:#fff;box-shadow:0 2px 6px rgba(37,99,235,.22)}
+.task-sheet-app-actions .task-sheet-add:hover{border-color:#1d4ed8;background:#1d4ed8;color:#fff}
+.task-sheet-app-actions .task-sheet-add[hidden]{display:none}
+/* Ghi chú phạm vi cho tài khoản đơn vị (trước đây chữ 8px khó đọc) */
+.task-scope-note{display:flex;align-items:flex-start;gap:10px;padding:10px 16px;border-bottom:1px solid var(--grid-border);background:#f0f7ff;color:#334155;font-size:13px;line-height:1.55}
+.task-scope-note[hidden]{display:none}
+.task-scope-note svg{flex:0 0 18px;width:18px;height:18px;margin-top:1px;fill:none;stroke:#2563eb;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.task-scope-note p{margin:0}.task-scope-note b{color:#1e3a8a;font-weight:700}.task-scope-note strong{color:#1d4ed8}
+/* Thanh tìm kiếm + bộ lọc: cùng chiều cao 44px, chữ cùng cỡ */
+.task-grid-toolbar{padding:12px 16px}
+.task-grid-search-shell{gap:8px}
+.task-grid-search>input{min-height:42px;font-size:14px;font-weight:500}
+.task-grid-search>kbd{font-size:11px;font-weight:600}
+.task-grid-top-filters{gap:8px}
+.task-grid-top-filters .task-filter-field{position:relative;display:flex;flex-direction:column;justify-content:center;gap:1px;min-width:176px;height:44px;padding:0 34px 0 12px;border:1px solid #cbd5e1;border-radius:.75rem;background:#fff;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.task-grid-top-filters .task-filter-field:hover{border-color:#94a3b8}
+.task-grid-top-filters .task-filter-field:focus-within{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+.task-grid-top-filters .task-filter-field:after{content:"";position:absolute;right:14px;top:50%;width:7px;height:7px;border-right:1.8px solid #64748b;border-bottom:1.8px solid #64748b;transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.task-grid-top-filters .task-filter-field>span{position:static;display:block;color:#64748b;font-size:11px;line-height:14px;font-weight:600;letter-spacing:0;text-transform:none;pointer-events:none}
+.task-grid-top-filters .task-filter-field>select,.task-grid-top-filters .task-filter-field>select:focus{-webkit-appearance:none;appearance:none;display:block;width:100%;min-width:0;height:20px;margin:0;padding:0;border:0;border-radius:0;outline:0;background:transparent;box-shadow:none;color:#172033;font:inherit;font-size:13.5px;line-height:20px;font-weight:600;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.task-grid-search-count{font-size:13px;font-weight:600}
+.task-grid-search-clear{font-size:13px;font-weight:600}
+/* Tiêu đề cột, tab đơn vị, dòng trạng thái */
+.task-excel-table th{font-weight:700}
+.task-sheet-tab{font-size:13px;font-weight:600}
+.task-sheet-tab.is-active{font-weight:700}
+.task-sheet-tab small{font-size:12px;font-weight:500}
+.task-sheet-footer-status{margin-left:auto;font-size:11.5px;font-weight:500}
+@media(max-width:900px){.task-sheet-app-actions{justify-content:flex-start}.task-sheet-app-actions .task-sheet-add{margin-left:auto}}
+@media(max-width:640px){
+  .task-sheet-appbar{gap:10px;padding:12px}
+  .task-sheet-app-actions{gap:2px}
+  .task-sheet-app-actions button{padding:6px 8px}
+  .task-grid-toolbar{padding:12px}
+  .task-grid-top-filters .task-filter-field{min-width:0;width:100%}
+  .task-scope-note{padding:10px 12px;font-size:12.5px}
+}
+@media(max-width:640px),(pointer:coarse){.task-grid-search>kbd{display:none}.task-grid-search>input{padding-right:1rem}}
+/* Ghi đè quy tắc chung "#appScreen select" (viền + cao tối thiểu 36px, có !important) chỉ cho 2 ô lọc,
+   vì quy tắc đó đẩy ô chọn đè lên nhãn "Tháng"/"Tiến độ" */
+#appScreen .task-grid-top-filters .task-filter-field>select,
+#appScreen .task-grid-top-filters .task-filter-field>select:focus{min-height:0!important;height:20px!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:#172033!important;font-family:inherit!important;font-size:13.5px!important;line-height:20px!important;font-weight:600!important}
+.task-sheet-app-actions button{white-space:nowrap}
+.task-grid-top-filters .task-filter-field{align-items:stretch;text-align:left}
+.task-sheet-app-actions button svg{flex:0 0 16px}
+@media(max-width:420px){.task-sheet-add-long{display:none}}
