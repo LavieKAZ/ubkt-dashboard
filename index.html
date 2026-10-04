@@ -1282,7 +1282,7 @@ body{
   <link rel="stylesheet" href="./assets/tailwind-compiled.css?v=20260725">
   <link rel="stylesheet" href="./assets/project-manager-v3.css?v=20260806save1">
   <link rel="stylesheet" href="./assets/resolution-tracker.css?v=20261001">
-  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261004gon2">
+  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261004wrap1">
   <link rel="stylesheet" href="./assets/dashboard-overview.css?v=20261004dov3">
 </head>
 <body class="sidebar-collapsed">
@@ -1606,12 +1606,6 @@ body{
         <span id="taskGridSearchCount" class="task-grid-search-count">Toàn bộ nhiệm vụ</span>
         <button id="taskGridSearchClear" type="button" class="task-grid-search-clear" onclick="clearTaskGridSearch()" hidden>Xóa tìm kiếm</button>
       </div>
-    </div>
-    <div class="task-grid-formula-bar" aria-label="Thanh nội dung ô đang chọn">
-      <output id="taskGridNameBox" class="task-grid-name-box" aria-label="Tọa độ ô">B2</output>
-      <span class="task-grid-fx" aria-hidden="true">fx</span>
-      <textarea id="taskGridFormulaInput" rows="1" readonly placeholder="Chọn một ô để xem đầy đủ nội dung" oninput="taskGridFormulaChanged()" onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter'){event.preventDefault();saveSelectedTaskGridCell()}"></textarea>
-      <button id="taskGridFormulaSave" type="button" onclick="saveSelectedTaskGridCell()" hidden>Lưu ô</button>
     </div>
     <div id="taskExcelGrid" class="task-excel-wrap" aria-live="polite"></div>
     <div id="taskGridDockSpacer" class="task-grid-dock-spacer" aria-hidden="true"></div>
@@ -9717,7 +9711,7 @@ window.addEventListener("resize", ()=>{
 setTimeout(initLiquidScrollIndicators, 300);
   </script>
   <script src="./assets/resolution-tracker.js?v=20261001"></script>
-  <script src="./assets/task-grid-final.js?v=20261004dov1"></script>
+  <script src="./assets/task-grid-final.js?v=20261004wrap1"></script>
   <script src="./assets/dashboard-overview.js?v=20261004dov3"></script>
   <div id="moduleToast" class="module-toast" role="status" aria-live="polite" aria-atomic="true" data-tone="info">
     <div class="module-toast-icon" aria-hidden="true">
