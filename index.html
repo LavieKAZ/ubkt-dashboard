@@ -1282,7 +1282,7 @@ body{
   <link rel="stylesheet" href="./assets/tailwind-compiled.css?v=20260725">
   <link rel="stylesheet" href="./assets/project-manager-v3.css?v=20260806save1">
   <link rel="stylesheet" href="./assets/resolution-tracker.css?v=20261001">
-  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261004univer2">
+  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261004gon2">
 </head>
 <body class="sidebar-collapsed">
   <!-- LANDING -->
@@ -1719,43 +1719,32 @@ body{
 
           <!-- TASKS PAGE -->
 <section id="page-tasks" class="page hidden space-y-4 task-grid-page">
-  <div class="card rounded-3xl p-5 task-grid-hero">
-    <div class="task-grid-hero-row">
-      <div>
-        <span class="task-grid-kicker">BẢNG QUẢN LÝ NHIỆM VỤ</span>
-        <h3>Danh sách nhiệm vụ và kết quả thực hiện</h3>
-        <p id="taskCenterHint">Dữ liệu được phân quyền theo đơn vị; trạng thái Dashboard lấy từ đánh giá thẩm định cuối.</p>
-      </div>
-      <button onclick="openTaskIntakeChooser()" class="btn btn-primary" data-admin-only>＋ Thêm nhiệm vụ</button>
-    </div>
-    <div class="pm-unit-scope-banner" data-unit-only hidden>
-      <span aria-hidden="true">✓</span>
-      <div><b>Phạm vi: <strong id="unitScopeName">Đơn vị</strong></b><p>Chỉ hiển thị nhiệm vụ của đơn vị. Anh/chị được thêm kết quả thực hiện và tự đánh giá; các cột giao việc được khóa.</p></div>
-    </div>
-  </div>
-
   <div class="card rounded-3xl task-grid-workspace">
     <div class="task-sheet-appbar">
       <div class="task-workbook-identity">
         <span class="task-workbook-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 9h16M9 4v16"/></svg></span>
-        <div><b>Workbook nhiệm vụ</b><span id="taskGridSyncState" data-state="ready">Dữ liệu Dashboard được liên kết trực tiếp</span></div>
+        <div><b>Danh sách nhiệm vụ</b><span id="taskGridSyncState" data-state="ready">Dữ liệu Dashboard được liên kết trực tiếp</span></div>
       </div>
       <div class="task-sheet-app-actions">
-        <button type="button" onclick="openTaskIntakeChooser()" data-admin-only><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Thêm dòng</button>
-        <button type="button" onclick="refreshTaskGridData(this)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>Làm mới</button>
-        <button id="taskGridDensityButton" type="button" onclick="toggleTaskGridDensity()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Thu gọn</button>
+        <button type="button" onclick="refreshTaskGridData(this)" title="Tải lại dữ liệu mới nhất"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>Làm mới</button>
+        <button id="taskGridDensityButton" type="button" onclick="toggleTaskGridDensity()" title="Đổi giữa bảng thoáng và bảng thu gọn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Thu gọn</button>
+        <button type="button" class="task-sheet-add" onclick="openTaskIntakeChooser()" data-admin-only><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Thêm<span class="task-sheet-add-long"> nhiệm vụ</span></button>
       </div>
+    </div>
+    <div class="task-scope-note" data-unit-only hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.4 3 8.4 7 10 4-1.6 7-5.6 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
+      <p><b>Phạm vi: <strong id="unitScopeName">Đơn vị</strong>.</b> Chỉ hiển thị nhiệm vụ của đơn vị. Anh/chị cập nhật kết quả thực hiện và tự đánh giá; các cột giao việc được khóa.</p>
     </div>
     <div class="task-grid-toolbar">
       <div class="task-grid-search-shell">
         <label class="task-grid-search" for="taskCenterSearch">
           <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
-          <input id="taskCenterSearch" type="search" autocomplete="off" oninput="queueTaskGridSearch(this.value)" placeholder="Tìm số văn bản hoặc nội dung kết luận...">
+          <input id="taskCenterSearch" type="search" autocomplete="off" oninput="queueTaskGridSearch(this.value)" placeholder="Tìm số văn bản hoặc nội dung" aria-label="Tìm theo số văn bản hoặc nội dung kết luận">
           <kbd>Ctrl F</kbd>
         </label>
         <div class="task-grid-top-filters" aria-label="Bộ lọc nhiệm vụ">
-          <label><span>Tháng</span><select id="taskGridMonthFilter" onchange="setTaskGridFilter('month',this.value)"><option value="">Tất cả tháng</option></select></label>
-          <label><span>Tiến độ</span><select id="taskGridAssessmentFilter" onchange="setTaskGridFilter('assessment',this.value)"><option value="">Tất cả tiến độ</option></select></label>
+          <label class="task-filter-field"><span>Tháng</span><select id="taskGridMonthFilter" onchange="setTaskGridFilter('month',this.value)"><option value="">Tất cả tháng</option></select></label>
+          <label class="task-filter-field"><span>Tiến độ</span><select id="taskGridAssessmentFilter" onchange="setTaskGridFilter('assessment',this.value)"><option value="">Tất cả tiến độ</option></select></label>
         </div>
         <span id="taskGridSearchCount" class="task-grid-search-count">Toàn bộ nhiệm vụ</span>
         <button id="taskGridSearchClear" type="button" class="task-grid-search-clear" onclick="clearTaskGridSearch()" hidden>Xóa tìm kiếm</button>
@@ -1770,8 +1759,16 @@ body{
     <div id="taskExcelGrid" class="task-excel-wrap" aria-live="polite"></div>
     <div id="taskGridDockSpacer" class="task-grid-dock-spacer" aria-hidden="true"></div>
     <div id="taskGridDock" class="task-grid-dock">
-      <div id="taskGridBottomScrollbar" class="task-grid-bottom-scroll" aria-label="Thanh cuộn ngang bảng nhiệm vụ"><div></div></div>
+      <div id="taskGridBottomScrollbar" class="task-grid-hscroll" role="scrollbar" aria-controls="taskExcelGrid" aria-orientation="horizontal" aria-label="Thanh cuộn ngang bảng nhiệm vụ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+        <button type="button" class="task-hscroll-step" data-step="-1" tabindex="-1" aria-label="Cuộn sang trái"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
+        <div class="task-hscroll-track"><div class="task-hscroll-thumb"></div></div>
+        <button type="button" class="task-hscroll-step" data-step="1" tabindex="-1" aria-label="Cuộn sang phải"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
+      </div>
       <div class="task-sheet-footer">
+        <div id="taskSheetNav" class="task-sheet-nav" hidden>
+          <button type="button" data-tabs-step="-1" aria-label="Xem các tab đơn vị phía trước"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
+          <button type="button" data-tabs-step="1" aria-label="Xem các tab đơn vị phía sau"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
+        </div>
         <div id="taskSheetTabs" class="task-sheet-tabs" data-admin-only aria-label="Chuyển bảng theo đơn vị"></div>
         <div class="task-sheet-footer-status"><span><i></i>Đã liên kết Dashboard</span><span id="taskGridFreezeStatus">Cố định 3 cột đầu</span></div>
       </div>
@@ -4483,7 +4480,8 @@ body{
       const taskBtn=document.getElementById("headerTaskBtn");
 
 if(taskBtn){
-  taskBtn.style.display = isAdminUser() && ["dashboard","projects","tasks","roadmap"].includes(page) ? "" : "none";
+  // Tab Nhiệm vụ đã có nút "Thêm nhiệm vụ" ngay trên bảng nên không hiện thêm nút này ở đầu trang
+  taskBtn.style.display = isAdminUser() && ["dashboard","projects","roadmap"].includes(page) ? "" : "none";
 }
       if(page==="resolutions" && typeof loadResolutionSnapshot==="function"){
         if(!window.__ubktResolutionSnapshotRequested){
@@ -9861,7 +9859,7 @@ window.addEventListener("resize", ()=>{
 setTimeout(initLiquidScrollIndicators, 300);
   </script>
   <script src="./assets/resolution-tracker.js?v=20261001"></script>
-  <script src="./assets/task-grid-final.js?v=20261004univer2"></script>
+  <script src="./assets/task-grid-final.js?v=20261004gon2"></script>
   <div id="moduleToast" class="module-toast" role="status" aria-live="polite" aria-atomic="true" data-tone="info">
     <div class="module-toast-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01"/><circle cx="12" cy="12" r="9"/></svg>
