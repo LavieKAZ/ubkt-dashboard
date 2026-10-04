@@ -151,17 +151,22 @@
   function renderUnits(s){
     const units=[...s.units.values()].sort((a,b)=>b.late-a.late||b.total-a.total||a.name.localeCompare(b.name,"vi"));
     if(!units.length)return emptyState("Chưa có đơn vị nào được giao việc","Số liệu từng đơn vị sẽ hiển thị khi có nhiệm vụ.");
+    const num=(value,tone,label,title)=>`<span class="dov-unit-num ${tone}${value?"":" is-zero"}" title="${esc(title||label)}"><small>${label}</small><b>${value}</b></span>`;
     const rows=units.map(u=>{
       const bar=SEGMENTS.map(seg=>u[seg.key]?`<i class="is-${seg.key}" style="width:${(u[seg.key]/u.total*100).toFixed(2)}%" title="${esc(seg.label)}: ${u[seg.key]}"></i>`:"").join("");
-      const notes=[u.late?`<span class="is-late">${u.late} trễ hạn</span>`:"",u.unappraised?`<span>${u.unappraised} chưa thẩm định</span>`:""].filter(Boolean).join("");
-      return `<button type="button" class="dov-unit-row" data-unit="${esc(u.name)}" onclick="openTaskGridView({sheet:this.dataset.unit})" aria-label="${esc(u.name)}: ${u.done}/${u.total} hoàn thành. Mở sheet đơn vị">
-        <span class="dov-unit-name"><b>${esc(u.name)}</b><small>${u.total} nhiệm vụ${notes?" · ":""}${notes}</small></span>
+      const processing=u.processing+u.unappraised;
+      const processingTitle=u.unappraised?`Đang xử lý ${processing}, gồm ${u.unappraised} chưa thẩm định`:"Đang xử lý";
+      const paused=u.paused?` · ${u.paused} tạm dừng`:"";
+      return `<button type="button" class="dov-unit-row" data-unit="${esc(u.name)}" onclick="openTaskGridView({sheet:this.dataset.unit})" aria-label="${esc(u.name)}: ${u.done} hoàn thành, ${processing} đang xử lý, ${u.late} trễ hạn trên ${u.total} nhiệm vụ. Mở sheet đơn vị">
+        <span class="dov-unit-name"><b>${esc(u.name)}</b><small>${u.total} nhiệm vụ${paused}</small></span>
         <span class="dov-unit-bar" aria-hidden="true">${bar}</span>
-        <span class="dov-unit-pct"><b>${pct(u.done,u.total)}%</b><small>${u.done}/${u.total} xong</small></span>
+        ${num(u.done,"is-done","Hoàn thành")}${num(processing,"is-processing","Đang xử lý",processingTitle)}${num(u.late,"is-late","Trễ hạn","Trễ hạn / Không hoàn thành")}
+        <span class="dov-unit-pct"><b>${pct(u.done,u.total)}%</b></span>
       </button>`;
     }).join("");
+    const head=`<div class="dov-unit-head" aria-hidden="true"><span>Đơn vị</span><span>Tiến độ</span><span class="is-done">Hoàn thành</span><span class="is-processing">Đang xử lý</span><span class="is-late">Trễ hạn</span><span>Tỷ lệ</span></div>`;
     const legend=SEGMENTS.map(seg=>`<span><i class="dov-dot is-${seg.key}" aria-hidden="true"></i>${esc(seg.label)}</span>`).join("");
-    return `<div class="dov-unit-legend">${legend}</div><div class="dov-unit-list">${rows}</div>`;
+    return `<div class="dov-unit-legend">${legend}</div><div class="dov-unit-list">${head}${rows}</div>`;
   }
 
   /* ---------------- 3. Lịch xử lý sắp đến hạn ---------------- */

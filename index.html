@@ -1283,7 +1283,7 @@ body{
   <link rel="stylesheet" href="./assets/project-manager-v3.css?v=20260806save1">
   <link rel="stylesheet" href="./assets/resolution-tracker.css?v=20261001">
   <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261004gon2">
-  <link rel="stylesheet" href="./assets/dashboard-overview.css?v=20261004dov2">
+  <link rel="stylesheet" href="./assets/dashboard-overview.css?v=20261004dov3">
 </head>
 <body class="sidebar-collapsed">
   <!-- LANDING -->
@@ -1403,29 +1403,28 @@ body{
 
             <div id="dovKpis" class="dov-kpis" aria-label="Chỉ số chính"></div>
 
-            <div class="dov-row dov-row-progress">
-              <div class="dov-col">
-              <section class="dov-card dov-card-overall" aria-labelledby="dovOverallTitle">
+            <section class="dov-card dov-progress-card" aria-labelledby="dovOverallTitle">
+              <div class="dov-progress-pane dov-progress-overall">
                 <div class="dov-card-head">
-                  <div><h3 id="dovOverallTitle">Tiến độ tổng thể</h3><p>Tỷ lệ theo Đánh giá của VPĐU. Bấm một dòng để xem danh sách.</p></div>
+                  <div><h3 id="dovOverallTitle">Tiến độ tổng thể</h3><p>Theo Đánh giá của VPĐU. Bấm một dòng để xem danh sách.</p></div>
                 </div>
                 <div id="dovOverall"></div>
-              </section>
-              <section class="dov-card dov-card-units" aria-labelledby="dovUnitsTitle">
+              </div>
+              <div class="dov-progress-pane dov-progress-units">
                 <div class="dov-card-head">
                   <div><h3 id="dovUnitsTitle">Tiến độ theo đơn vị</h3><p>Bấm vào một đơn vị để mở đúng sheet của đơn vị đó trong Tab Nhiệm vụ.</p></div>
                 </div>
                 <div id="dovUnits"></div>
-              </section>
               </div>
-              <section class="dov-card dov-card-deadlines" aria-labelledby="dovDeadlineTitle">
-                <div class="dov-card-head">
-                  <div><h3 id="dovDeadlineTitle">Lịch xử lý sắp đến hạn</h3><p>Nhiệm vụ chưa hoàn thành, đến hạn trong 30 ngày tới hoặc đã quá hạn.</p></div>
-                  <button id="dovDeadlineAll" type="button" class="dov-link-btn" onclick="openDashboardDeadlinePanel()" hidden>Xem tất cả</button>
-                </div>
-                <div id="dovDeadlines"></div>
-              </section>
-            </div>
+            </section>
+
+            <section class="dov-card dov-card-deadlines" aria-labelledby="dovDeadlineTitle">
+              <div class="dov-card-head">
+                <div><h3 id="dovDeadlineTitle">Lịch xử lý sắp đến hạn</h3><p>Nhiệm vụ chưa hoàn thành, đến hạn trong 30 ngày tới hoặc đã quá hạn.</p></div>
+                <button id="dovDeadlineAll" type="button" class="dov-link-btn" onclick="openDashboardDeadlinePanel()" hidden>Xem tất cả</button>
+              </div>
+              <div id="dovDeadlines"></div>
+            </section>
 
             <section id="dovBacklog" class="dov-card is-collapsed" aria-labelledby="dovBacklogTitle">
               <div class="dov-card-head">
@@ -9719,7 +9718,7 @@ setTimeout(initLiquidScrollIndicators, 300);
   </script>
   <script src="./assets/resolution-tracker.js?v=20261001"></script>
   <script src="./assets/task-grid-final.js?v=20261004dov1"></script>
-  <script src="./assets/dashboard-overview.js?v=20261004dov1"></script>
+  <script src="./assets/dashboard-overview.js?v=20261004dov3"></script>
   <div id="moduleToast" class="module-toast" role="status" aria-live="polite" aria-atomic="true" data-tone="info">
     <div class="module-toast-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01"/><circle cx="12" cy="12" r="9"/></svg>

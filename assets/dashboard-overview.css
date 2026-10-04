@@ -66,10 +66,10 @@
 .dov-kpi.is-late .dov-kpi-icon{background:var(--dov-late-soft);color:var(--dov-late)}.dov-kpi.is-late .dov-kpi-value{color:#b91c1c}
 .dov-kpi.is-unappraised .dov-kpi-icon{background:var(--dov-unappraised-soft);color:#b45309}.dov-kpi.is-unappraised .dov-kpi-value{color:#a16207}
 
-/* ---------- Hàng tiến độ + lịch ---------- */
-.dov-row{display:grid;gap:20px;align-items:start}
-.dov-row-progress{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-.dov-col{display:flex;min-width:0;flex-direction:column;gap:20px}
+/* ---------- Tiến độ: một card, hai vùng (tổng thể | đơn vị) để không lệch khung ---------- */
+#page-dashboard .dov-progress-card{display:grid;grid-template-columns:minmax(300px,340px) minmax(0,1fr);padding:0}
+.dov-progress-pane{min-width:0;padding:20px}
+.dov-progress-units{border-left:1px solid var(--dov-line)}
 
 /* Màu dùng chung */
 .dov-dot{display:inline-block;flex:0 0 10px;width:10px;height:10px;border-radius:3px}
@@ -80,8 +80,8 @@
 .is-paused.dov-dot,.dov-unit-bar .is-paused{background:var(--dov-paused)}
 
 /* Tiến độ tổng thể */
-.dov-overall{display:flex;align-items:center;gap:24px}
-.dov-donut{position:relative;flex:0 0 168px;width:168px;height:168px}
+.dov-overall{display:flex;flex-direction:column;align-items:stretch;gap:16px}
+.dov-donut{position:relative;flex:0 0 168px;align-self:center;width:168px;height:168px}
 .dov-donut svg{width:100%;height:100%;transform:rotate(-90deg)}
 #page-dashboard .dov-arc-track{stroke:#eef2f7;stroke-width:16}
 #page-dashboard .dov-arc{stroke-width:16;stroke-linecap:butt}
@@ -121,8 +121,17 @@
 .dov-unit-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:-4px 0 12px;color:var(--dov-muted);font-size:13px}
 .dov-unit-legend span{display:inline-flex;align-items:center;gap:6px}
 .dov-unit-list{display:flex;flex-direction:column}
-#appScreen #page-dashboard .dov-unit-row{display:grid;grid-template-columns:minmax(150px,1fr) minmax(120px,1.2fr) 80px;align-items:center;gap:16px;width:100%;padding:12px 10px;border:0;border-top:1px solid #eef2f7;border-radius:0;background:transparent;color:var(--dov-text);text-align:left;cursor:pointer;transition:background-color .15s}
-#appScreen #page-dashboard .dov-unit-row:first-child{border-top:0}
+.dov-unit-head,#appScreen #page-dashboard .dov-unit-row{display:grid;grid-template-columns:minmax(150px,1.25fr) minmax(110px,1.5fr) repeat(3,88px) 56px;align-items:center;gap:14px}
+.dov-unit-head{padding:0 10px 8px;border-bottom:1px solid var(--dov-line);color:var(--dov-muted);font-size:13px;font-weight:600}
+.dov-unit-head span:nth-child(n+3){text-align:right}
+.dov-unit-head .is-done{color:#15803d}.dov-unit-head .is-processing{color:#1d4ed8}.dov-unit-head .is-late{color:#b91c1c}
+.dov-unit-num{display:flex;flex-direction:column;align-items:flex-end;font-variant-numeric:tabular-nums}
+.dov-unit-num small{display:none}
+.dov-unit-num b{font-size:16px;font-weight:700}
+.dov-unit-num.is-done b{color:#15803d}.dov-unit-num.is-processing b{color:#1d4ed8}.dov-unit-num.is-late b{color:#b91c1c}
+.dov-unit-num.is-zero b{color:#a3afbf;font-weight:500}
+#appScreen #page-dashboard .dov-unit-row{width:100%;padding:12px 10px;border:0;border-top:1px solid #eef2f7;border-radius:0;background:transparent;color:var(--dov-text);text-align:left;cursor:pointer;transition:background-color .15s}
+#appScreen #page-dashboard .dov-unit-head+.dov-unit-row{border-top:0}
 #appScreen #page-dashboard .dov-unit-row:hover{background:var(--dov-soft)}
 .dov-unit-name{display:flex;min-width:0;flex-direction:column}
 .dov-unit-name b{color:var(--dov-ink);font-size:15px;font-weight:600;line-height:1.35}
@@ -188,11 +197,12 @@
 .dov-icon-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 
 /* ---------- Màn hình nhỏ ---------- */
-@media(max-width:1280px){.dov-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:1280px){.dov-kpis{grid-template-columns:repeat(6,minmax(0,1fr))}#appScreen #page-dashboard .dov-kpi{grid-column:span 2}#appScreen #page-dashboard .dov-kpi:nth-child(n+4){grid-column:span 3}}
 @media(max-width:1100px){
-  .dov-row-progress{grid-template-columns:1fr}
-  .dov-col{display:contents}
-  .dov-card-overall{order:1}.dov-card-deadlines{order:2}.dov-card-units{order:3}
+  #page-dashboard .dov-progress-card{grid-template-columns:1fr}
+  .dov-progress-units{border-left:0;border-top:1px solid var(--dov-line)}
+  .dov-overall{flex-direction:row;align-items:center;gap:24px}
+  .dov-legend{max-width:460px}
   .dov-backlog-row{grid-template-columns:minmax(0,1fr) 150px auto;grid-template-areas:"main due view" "main unit status"}
   .dov-backlog-main{grid-area:main}.dov-backlog-due{grid-area:due}.dov-backlog-unit{grid-area:unit}.dov-status{grid-area:status}.dov-backlog-row .dov-view-btn{grid-area:view;justify-self:end}
 }
@@ -203,14 +213,22 @@
   .dov-header-actions{width:100%}
   #appScreen #page-dashboard .dov-header-actions .dov-btn{flex:1;justify-content:center}
   .dov-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  #appScreen #page-dashboard .dov-kpi,#appScreen #page-dashboard .dov-kpi:nth-child(n+4){grid-column:auto}
   #appScreen #page-dashboard .dov-kpi:first-child{grid-column:1/-1}
   #appScreen #page-dashboard .dov-kpi{padding:14px}
   .dov-kpi-value{font-size:28px}
   #page-dashboard .dov-card{padding:16px}
+  .dov-progress-pane{padding:16px}
   .dov-overall{flex-direction:column;align-items:stretch}
-  .dov-donut{align-self:center}
-  #appScreen #page-dashboard .dov-unit-row{grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;padding:12px 4px}
+  .dov-unit-head{display:none}
+  #appScreen #page-dashboard .dov-unit-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 10px;padding:14px 4px}
+  #appScreen #page-dashboard .dov-unit-list>.dov-unit-row:nth-child(2){border-top:0}
+  .dov-unit-name{grid-column:1/3;grid-row:1}
+  .dov-unit-pct{grid-column:3;grid-row:1}
   .dov-unit-bar{grid-column:1/-1;grid-row:2}
+  .dov-unit-num{grid-row:3;flex-direction:column;align-items:flex-start;gap:1px;padding:6px 8px;border-radius:8px;background:#f6f8fb}
+  .dov-unit-num small{display:block;color:var(--dov-muted);font-size:13px;white-space:nowrap}
+  .dov-unit-num b{font-size:15px}
   .dov-due-item{flex-direction:column}
   #appScreen #page-dashboard .dov-due-item .dov-view-btn{align-self:flex-start}
   .dov-backlog-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"main main" "due due" "unit status" "view view"}
@@ -224,3 +242,6 @@
 .dov-header{align-items:center}
 .dov-header p{margin-top:0}
 #appScreen #page-dashboard #dovBacklogToggle{white-space:nowrap;flex:0 0 auto}
+
+/* Sidebar dính đúng màn hình khi cuộn: body dùng clip thay vì hidden để không tạo vùng cuộn riêng */
+html>body{overflow-x:clip}
