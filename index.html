@@ -1283,6 +1283,7 @@ body{
   <link rel="stylesheet" href="./assets/project-manager-v3.css?v=20260806save1">
   <link rel="stylesheet" href="./assets/resolution-tracker.css?v=20261001">
   <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261004gon2">
+  <link rel="stylesheet" href="./assets/dashboard-overview.css?v=20261004dov2">
 </head>
 <body class="sidebar-collapsed">
   <!-- LANDING -->
@@ -1363,7 +1364,7 @@ body{
               </button>
               <div>
                 <div class="pm-breadcrumb"><span>UBKT Tân Mỹ</span><i>/</i><b id="pageSection">Tổng quan</b></div>
-                <h2 id="pageTitle" class="text-lg sm:text-2xl font-extrabold">Dashboard tổng quan</h2>
+                <h2 id="pageTitle" class="text-lg sm:text-2xl font-extrabold">Tổng quan nhiệm vụ</h2>
               </div>
             </div>
             <div class="pm-header-tools flex gap-2 items-center flex-wrap justify-end">
@@ -1386,226 +1387,83 @@ body{
 
         <div class="p-4 sm:p-6 space-y-5">
           <!-- DASHBOARD PAGE -->
-          <section id="page-dashboard" class="page antd-dashboard-page">
-            <div class="bento">
+          <section id="page-dashboard" class="page dov-page" aria-labelledby="dovTitle">
+            <!-- Tổng quan nhiệm vụ (04/10/2026): mọi số liệu tính từ dữ liệu Tab Nhiệm vụ,
+                 trạng thái theo "Đánh giá của VPĐU". Nội dung do assets/dashboard-overview.js vẽ. -->
+            <header class="dov-header">
+              <div>
+                <h2 id="dovTitle" class="dov-sr-only">Tổng quan nhiệm vụ</h2>
+                <p><span id="dovUpdated">Đang tổng hợp dữ liệu…</span><span class="dov-header-note">Số liệu theo Đánh giá của VPĐU</span></p>
+              </div>
+              <div class="dov-header-actions">
+                <button type="button" class="dov-btn" onclick="refreshTaskGridData(this)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Làm mới</span></button>
+                <button type="button" class="dov-btn is-primary" onclick="openTaskIntakeChooser()" data-admin-only><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Thêm nhiệm vụ</span></button>
+              </div>
+            </header>
 
-              <section class="antd-command-hero b-span-12 reveal" aria-labelledby="commandCenterTitle">
-                <div>
-                  <div class="antd-eyebrow">TRUNG TÂM ĐIỀU HÀNH · UBKT TÂN MỸ</div>
-                  <h3 id="commandCenterTitle">Tổng quan nhiệm vụ và tiến độ thực hiện</h3>
-                  <p>Ưu tiên xử lý cảnh báo, kiểm tra tiến độ từng đơn vị và theo dõi kết quả từ văn bản chỉ đạo.</p>
+            <div id="dovKpis" class="dov-kpis" aria-label="Chỉ số chính"></div>
+
+            <div class="dov-row dov-row-progress">
+              <div class="dov-col">
+              <section class="dov-card dov-card-overall" aria-labelledby="dovOverallTitle">
+                <div class="dov-card-head">
+                  <div><h3 id="dovOverallTitle">Tiến độ tổng thể</h3><p>Tỷ lệ theo Đánh giá của VPĐU. Bấm một dòng để xem danh sách.</p></div>
                 </div>
-                <div class="antd-command-hero-actions">
-                  <button type="button" class="btn btn-ghost" onclick="window.open(window.UBKT_TASK_SYSTEM_APP_URL||window.UBKT_TASK_SYSTEM_URL,'_blank','noopener')">Mở lịch công việc</button>
-                  <button type="button" class="btn btn-ghost" onclick="switchPage('tasks');setQuick('late')">Kiểm tra cảnh báo</button>
-                  <button type="button" class="btn btn-primary" onclick="switchPage('tasks')">Mở Trung tâm nhiệm vụ</button>
-                </div>
+                <div id="dovOverall"></div>
               </section>
-
-              <!-- ── KPI: HOÀN THÀNH ── -->
-              <button class="kpi-bento card rounded-3xl b-span-3 reveal antd-kpi-card antd-kpi-done" onclick="switchPage('tasks');setQuick('done')">
-                <div class="kb-label">Đã hoàn thành</div>
-                <div id="mDone" class="kb-val" style="color:#6BCB77">0</div>
-                <div class="kb-sub">nhiệm vụ đã xử lý xong</div>
-                <div class="kb-bar"><div id="kbDone" class="kb-bar-fill" style="background:#6BCB77"></div></div>
-                <div class="kb-glow" style="background:#6BCB77"></div>
-              </button>
-
-              <!-- ── KPI: ĐANG THỰC HIỆN ── -->
-              <button class="kpi-bento card rounded-3xl b-span-3 reveal antd-kpi-card antd-kpi-doing" onclick="setQuick('processing')">
-                <div class="kb-label">Đang thực hiện</div>
-                <div id="mDoing" class="kb-val" style="color:#4D96FF">0</div>
-                <div class="kb-sub">nhiệm vụ còn theo dõi</div>
-                <div class="kb-bar"><div id="kbDoing" class="kb-bar-fill" style="background:#4D96FF"></div></div>
-                <div class="kb-glow" style="background:#4D96FF"></div>
-              </button>
-
-              <!-- ── KPI: QUÁ HẠN ── -->
-              <button class="kpi-bento card rounded-3xl b-span-3 reveal antd-kpi-card antd-kpi-late" onclick="setQuick('late')">
-                <div class="kb-label">Quá hạn — cần đôn đốc</div>
-                <div id="mLate" class="kb-val" style="color:#FF6B6B">0</div>
-                <div class="kb-sub">nhiệm vụ chưa xử lý đúng hạn</div>
-                <div class="kb-bar"><div id="kbLate" class="kb-bar-fill" style="background:#FF6B6B"></div></div>
-                <div class="kb-glow" style="background:#FF6B6B"></div>
-              </button>
-
-              <!-- ── KPI: TỔNG + MINI ── -->
-              <div class="card rounded-3xl b-span-3 reveal antd-kpi-card antd-kpi-total" style="display:flex;flex-direction:column;justify-content:space-between">
-                <button class="kpi-mini" onclick="switchPage('tasks');setQuick('all')" style="flex:1;text-align:left">
-                  <div class="km-label">Tổng nhiệm vụ kỳ này</div>
-                  <div id="mTotal" class="km-val" style="color:#1f2a44">0</div>
-                  <div class="km-sub">Mở toàn bộ nhiệm vụ</div>
-                </button>
-                <div style="border-top:1px solid #f1f5f9;display:grid;grid-template-columns:1fr 1fr">
-                  <button class="kpi-mini" onclick="setQuick('soon7')" style="text-align:left;border-right:1px solid #f1f5f9">
-                    <div class="km-label">Sắp đến hạn</div>
-                    <div id="mSoon" class="km-val" style="color:#D6A900;font-size:22px">0</div>
-                    <div class="km-sub">trong 7 ngày</div>
-                  </button>
-                  <button class="kpi-mini" onclick="setQuick('tenure')" style="text-align:left">
-                    <div class="km-label">Dài hạn / NQ</div>
-                    <div id="mTenure" class="km-val" style="color:#B89400;font-size:22px">0</div>
-                    <div class="km-sub">nhiệm kỳ</div>
-                  </button>
+              <section class="dov-card dov-card-units" aria-labelledby="dovUnitsTitle">
+                <div class="dov-card-head">
+                  <div><h3 id="dovUnitsTitle">Tiến độ theo đơn vị</h3><p>Bấm vào một đơn vị để mở đúng sheet của đơn vị đó trong Tab Nhiệm vụ.</p></div>
                 </div>
-              </div>
-
-              <section class="pm-workspace-launcher b-span-12 reveal" aria-labelledby="pmWorkspaceTitle">
-                <div class="pm-section-title">
-                  <div>
-                    <span>KHÔNG GIAN QUẢN LÝ</span>
-                    <h3 id="pmWorkspaceTitle">Điều hành dự án và nhiệm vụ</h3>
-                    <p>Các góc nhìn được liên kết trực tiếp với dữ liệu nhiệm vụ hiện có.</p>
-                  </div>
-                  <button type="button" class="btn btn-ghost" onclick="switchPage('projects')">Xem danh mục dự án</button>
-                </div>
-                <div class="pm-launch-grid">
-                  <button type="button" onclick="switchPage('projects')"><i class="is-blue"><svg viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v10H3z"/></svg></i><span><b>Dự án / Chương trình</b><small>Nhóm theo Epic và loại văn bản</small></span><em>→</em></button>
-                  <button type="button" onclick="switchPage('tasks')"><i class="is-violet"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 10h16M4 15h16M4 20h16"/></svg></i><span><b>Bảng nhiệm vụ</b><small>Tra cứu, cập nhật và thẩm định trên một bảng</small></span><em>→</em></button>
-                  <button type="button" onclick="openTaskIntakeChooser()"><i class="is-green"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></i><span><b>Nhập dữ liệu</b><small>Văn bản, phân công và tiến độ</small></span><em>→</em></button>
-                </div>
+                <div id="dovUnits"></div>
               </section>
-
-              <section class="antd-action-center b-span-12 reveal" aria-labelledby="actionCenterTitle">
-                <div class="antd-section-heading">
-                  <div>
-                    <div class="antd-eyebrow">CẦN KIỂM TRA NGAY</div>
-                    <h3 id="actionCenterTitle">Hàng đợi điều hành</h3>
-                  </div>
-                  <span id="antdCommandUpdated" class="antd-updated-text">Đang tổng hợp dữ liệu...</span>
+              </div>
+              <section class="dov-card dov-card-deadlines" aria-labelledby="dovDeadlineTitle">
+                <div class="dov-card-head">
+                  <div><h3 id="dovDeadlineTitle">Lịch xử lý sắp đến hạn</h3><p>Nhiệm vụ chưa hoàn thành, đến hạn trong 30 ngày tới hoặc đã quá hạn.</p></div>
+                  <button id="dovDeadlineAll" type="button" class="dov-link-btn" onclick="openDashboardDeadlinePanel()" hidden>Xem tất cả</button>
                 </div>
-                <div class="antd-action-grid">
-                  <button type="button" class="antd-action-item is-error" onclick="setActionFilter('late')">
-                    <span class="antd-action-icon">!</span>
-                    <span><b id="antdActionLate">0</b><small>Nhiệm vụ quá hạn</small></span>
-                    <span class="antd-action-arrow">→</span>
-                  </button>
-                  <button type="button" class="antd-action-item is-warning" onclick="setActionFilter('soon7')">
-                    <span class="antd-action-icon">7</span>
-                    <span><b id="antdActionSoon">0</b><small>Đến hạn trong 7 ngày</small></span>
-                    <span class="antd-action-arrow">→</span>
-                  </button>
-                  <button type="button" class="antd-action-item is-info" onclick="setActionFilter('noResult')">
-                    <span class="antd-action-icon">i</span>
-                    <span><b id="antdActionNoResult">0</b><small>Chưa cập nhật kết quả</small></span>
-                    <span class="antd-action-arrow">→</span>
-                  </button>
-                  <button type="button" class="antd-action-item is-neutral" onclick="setActionFilter('noOwner')">
-                    <span class="antd-action-icon">?</span>
-                    <span><b id="antdActionNoOwner">0</b><small>Chưa phân công phụ trách</small></span>
-                    <span class="antd-action-arrow">→</span>
-                  </button>
-                </div>
+                <div id="dovDeadlines"></div>
               </section>
+            </div>
 
-              <!-- ── TIẾN ĐỘ THEO ĐƠN VỊ (Gantt) ── -->
-              <div class="card rounded-3xl bento-card b-span-7 reveal antd-unit-progress-card">
-                <div class="bento-hd-row">
-                  <div>
-                    <div class="bento-hd">Tiến độ thực hiện theo đơn vị</div>
-                    <div class="bento-sub">Bấm vào một đơn vị để kiểm tra các nhiệm vụ tương ứng</div>
-                  </div>
-                </div>
-                <div id="ganttDash" class="gantt-list"></div>
+            <section id="dovBacklog" class="dov-card is-collapsed" aria-labelledby="dovBacklogTitle">
+              <div class="dov-card-head">
+                <div><h3 id="dovBacklogTitle">Nhiệm vụ tồn đọng — cần theo dõi xử lý <span id="dovBacklogCount" class="dov-count"></span></h3><p>Nhiệm vụ chưa hoàn thành hoặc có Note đỏ; ưu tiên Note đỏ, trễ hạn, rồi theo thời hạn.</p></div>
+                <button id="dovBacklogToggle" type="button" class="dov-btn" aria-expanded="false" aria-controls="dovBacklogBody" onclick="toggleDashboardBacklog()">Mở rộng</button>
               </div>
-
-              <!-- ── LỊCH XỬ LÝ SẮP ĐẾN HẠN ── -->
-              <div class="card rounded-3xl bento-card b-span-5 reveal antd-deadline-card">
-                <div class="bento-hd-row">
-                  <div>
-                    <div class="bento-hd">Lịch xử lý sắp đến hạn</div>
-                    <div class="bento-sub">Nhiệm vụ chưa hoàn thành trong 30 ngày tới</div>
-                  </div>
-                </div>
-                <div id="deadlineList" class="space-y-2 overflow-auto pr-1" style="max-height:280px"></div>
+              <div id="dovBacklogBody" hidden>
+                <label class="dov-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="dovBacklogSearch" type="search" autocomplete="off" placeholder="Tìm số văn bản, nội dung hoặc đơn vị" aria-label="Tìm trong nhiệm vụ tồn đọng" oninput="queueDashboardBacklogSearch(this.value)"></label>
+                <div id="dovBacklogList"></div>
               </div>
+            </section>
 
-              <!-- ── BẢNG NHIỆM VỤ TỒN ĐỌNG ── -->
-              <div class="card rounded-3xl bento-card b-span-12 reveal antd-worklist-card ubkt-collapsed" id="pendingTableCard">
-                <div class="bento-hd-row" style="flex-wrap:wrap;gap:10px">
-                  <div>
-                    <div class="bento-hd">Nhiệm vụ tồn đọng — cần theo dõi xử lý</div>
-                    <div class="bento-sub">Toàn bộ nhiệm vụ chưa hoàn thành, sắp xếp theo mức độ ưu tiên</div>
-                  </div>
-                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                    <button id="pendingDetailsToggle" type="button" class="btn btn-ghost py-1 px-3 text-sm ubkt-pending-toggle" aria-expanded="false" onclick="togglePendingDetails()">Mở rộng</button>
-                  </div>
-                </div>
-                <div class="antd-table-toolbar" aria-label="Bộ lọc bảng nhiệm vụ">
-                  <label class="antd-search-control">
-                    <span aria-hidden="true">⌕</span>
-                    <input id="dashboardQuickSearch" type="search" placeholder="Tìm số văn bản, nội dung, đơn vị..." oninput="filters.keyword=this.value;render()">
-                  </label>
-                  <select id="dashboardUnitFilter" class="field" aria-label="Lọc theo đơn vị" onchange="filters.unit=this.value;render()">
-                    <option value="">Tất cả đơn vị</option>
-                  </select>
-                  <select id="dashboardStatusFilter" class="field" aria-label="Lọc theo trạng thái" onchange="filters.status=this.value;render()">
-                    <option value="">Tất cả trạng thái</option>
-                    <option value="new">Chưa thực hiện</option>
-                    <option value="processing">Đang thực hiện</option>
-                    <option value="done">Hoàn thành</option>
-                    <option value="late">Quá hạn</option>
-                    <option value="soon7">Sắp đến hạn</option>
-                  </select>
-                  <button type="button" class="btn btn-ghost" onclick="resetFilters()">Đặt lại</button>
-                </div>
-                <!-- Animated table -->
-                <div id="pendingTableWrap" class="pending-animated-wrap">
-                  <table class="pending-animated-table">
-                    <thead>
-                      <tr>
-                        <th style="width:32px">#</th>
-                        <th style="width:130px">Đơn vị</th>
-                        <th>Nội dung nhiệm vụ</th>
-                        <th style="width:150px">Số văn bản</th>
-                        <th style="width:120px">Thời hạn</th>
-                        <th style="width:110px">Trạng thái</th>
-                        <th style="width:64px"></th>
-                      </tr>
-                    </thead>
-                    <tbody id="pendingTableBody"></tbody>
-                  </table>
-                  <div id="pendingTableEmpty" class="pending-empty" style="display:none">
-                    <div class="pending-empty-icon">✅</div>
-                    <div class="pending-empty-text">Tất cả nhiệm vụ đã hoàn thành!</div>
-                  </div>
-                </div>
+            <!-- Công cụ quản trị (giữ nguyên chức năng cũ) -->
+            <details class="dov-card dov-tools antd-tools-card">
+              <summary>
+                <span><b>Công cụ quản trị và xuất dữ liệu</b><small>Lịch công việc, nhật ký, cảnh báo, CSV, JSON và khôi phục</small></span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+              </summary>
+              <div class="tool-strip">
+                <button type="button" onclick="window.open(window.UBKT_TASK_SYSTEM_APP_URL||window.UBKT_TASK_SYSTEM_URL,'_blank','noopener')" class="tool-btn">Mở lịch công việc</button>
+                <button type="button" onclick="openTaskGridView({assessment:'group:late'})" class="tool-btn">Cảnh báo thông minh <span id="smartAlertText" class="badge b-coral ml-1">0</span></button>
+                <button type="button" onclick="openAuditModal()" class="tool-btn">Nhật ký thao tác <span id="auditCountText" class="badge b-blue ml-1">0</span></button>
+                <button type="button" onclick="exportCSV()" class="tool-btn">Xuất CSV</button>
+                <button type="button" onclick="exportJSON()" class="tool-btn">Xuất JSON</button>
+                <button type="button" onclick="resetLocalEdits()" class="tool-btn">Khôi phục dữ liệu gốc</button>
               </div>
+            </details>
 
-              <!-- ── PHÂN NHÓM VĂN BẢN ── -->
-              <div class="card rounded-3xl bento-card b-span-12 reveal antd-document-analysis-card">
-                <div class="bento-hd-row">
-                  <div>
-                    <div class="bento-hd">Phân bổ theo nhóm văn bản</div>
-                    <div class="bento-sub">Click vào nhóm để lọc danh sách nhiệm vụ</div>
-                  </div>
+            <!-- Danh sách đầy đủ "Lịch xử lý sắp đến hạn" (mở bằng nút Xem tất cả) -->
+            <div id="dovDeadlinePanel" class="modal dov-panel" role="dialog" aria-modal="true" aria-labelledby="dovPanelTitle" onclick="if(event.target===this)closeDashboardDeadlinePanel()">
+              <div class="dov-panel-card">
+                <div class="dov-panel-head">
+                  <div><h3 id="dovPanelTitle">Lịch xử lý sắp đến hạn</h3><p id="dovPanelSub"></p></div>
+                  <button type="button" class="dov-icon-btn" onclick="closeDashboardDeadlinePanel()" aria-label="Đóng"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
                 </div>
-                <div class="bento-chart-sm"><canvas id="groupChart"></canvas></div>
+                <div id="dovPanelList" class="dov-panel-body"></div>
               </div>
-
-              <!-- ── CÔNG CỤ ── -->
-              <div class="card rounded-3xl bento-card b-span-12 reveal antd-tools-card">
-                <details class="antd-tools-disclosure">
-                  <summary>
-                    <span><b>Công cụ quản trị và xuất dữ liệu</b><small>Nhật ký, cảnh báo, CSV, JSON và khôi phục</small></span>
-                    <span class="antd-tools-chevron">⌄</span>
-                  </summary>
-                  <div class="tool-strip">
-                  <button onclick="switchPage('tasks');setQuick('late')" class="tool-btn">
-                    Cảnh báo thông minh <span id="smartAlertText" class="badge b-coral ml-1">0</span>
-                  </button>
-                  <button onclick="openAuditModal()" class="tool-btn">
-                    Nhật ký thao tác <span id="auditCountText" class="badge b-blue ml-1">0</span>
-                  </button>
-                  <button onclick="exportCSV()" class="tool-btn">Xuất CSV</button>
-                  <button onclick="exportJSON()" class="tool-btn">Xuất JSON</button>
-                  <button onclick="resetLocalEdits()" class="tool-btn">Khôi phục dữ liệu gốc</button>
-                  </div>
-                </details>
-              </div>
-
-            </div><!-- end .bento -->
-
+            </div>
           </section>
 
           <!-- TASKS PAGE -->
@@ -4451,7 +4309,7 @@ body{
       document.getElementById("page-"+page).classList.remove("hidden");
       document.querySelectorAll(".nav-item").forEach(n=>n.classList.toggle("active",n.dataset.page===page));
       const titles={
-  dashboard:"Dashboard tổng quan",
+  dashboard:"Tổng quan nhiệm vụ",
   projects:"Dự án và chương trình",
   tasks:"Quản lý nhiệm vụ",
   roadmap:"Roadmap",
@@ -4481,7 +4339,8 @@ body{
 
 if(taskBtn){
   // Tab Nhiệm vụ đã có nút "Thêm nhiệm vụ" ngay trên bảng nên không hiện thêm nút này ở đầu trang
-  taskBtn.style.display = isAdminUser() && ["dashboard","projects","roadmap"].includes(page) ? "" : "none";
+  // Tổng quan và Tab Nhiệm vụ đã có nút "Thêm nhiệm vụ" riêng nên không hiện thêm nút này ở đầu trang
+  taskBtn.style.display = isAdminUser() && ["projects","roadmap"].includes(page) ? "" : "none";
 }
       if(page==="resolutions" && typeof loadResolutionSnapshot==="function"){
         if(!window.__ubktResolutionSnapshotRequested){
@@ -9859,7 +9718,8 @@ window.addEventListener("resize", ()=>{
 setTimeout(initLiquidScrollIndicators, 300);
   </script>
   <script src="./assets/resolution-tracker.js?v=20261001"></script>
-  <script src="./assets/task-grid-final.js?v=20261004gon2"></script>
+  <script src="./assets/task-grid-final.js?v=20261004dov1"></script>
+  <script src="./assets/dashboard-overview.js?v=20261004dov1"></script>
   <div id="moduleToast" class="module-toast" role="status" aria-live="polite" aria-atomic="true" data-tone="info">
     <div class="module-toast-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01"/><circle cx="12" cy="12" r="9"/></svg>

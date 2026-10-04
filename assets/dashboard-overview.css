@@ -1,0 +1,226 @@
+/* =====================================================================
+   Dashboard "Tổng quan nhiệm vụ" (04/10/2026)
+   Đồng bộ với Tab Nhiệm vụ: xanh #2563eb, viền #dbe3ee, chữ #172033 / #475569.
+   Thang chữ: tiêu đề trang 22px · tiêu đề khối 17px · nội dung 14–15px · chú thích 13px.
+   Khoảng cách khối 20px. Không có chiều cao cố định; không có vùng cuộn lồng.
+   ===================================================================== */
+#page-dashboard.dov-page{
+  --dov-ink:#172033;--dov-text:#334155;--dov-muted:#5b6b80;--dov-line:#dbe3ee;--dov-soft:#f6f8fb;
+  --dov-blue:#2563eb;--dov-blue-soft:#eaf1ff;
+  --dov-done:#16a34a;--dov-done-soft:#e8f7ee;
+  --dov-processing:#2563eb;--dov-processing-soft:#eaf1ff;
+  --dov-unappraised:#d99a06;--dov-unappraised-soft:#fdf5e1;
+  --dov-late:#dc2626;--dov-late-soft:#fdecec;
+  --dov-paused:#94a3b8;--dov-paused-soft:#f1f5f9;
+  display:flex;flex-direction:column;gap:20px;padding:4px 0 32px;color:var(--dov-text);font-size:15px;line-height:1.55
+}
+#page-dashboard.dov-page.hidden{display:none}
+#appScreen #page-dashboard.dov-page h2,#appScreen #page-dashboard.dov-page h3{font-family:inherit!important;color:var(--dov-ink)!important;letter-spacing:-.01em}
+#page-dashboard .dov-page svg,#page-dashboard.dov-page svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- Đầu trang ---------- */
+.dov-header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.dov-header h2{margin:0;font-size:24px;line-height:1.25;font-weight:700}
+.dov-header p{display:flex;flex-wrap:wrap;gap:4px 14px;margin:6px 0 0;color:var(--dov-muted);font-size:14px}
+.dov-header-note{position:relative;padding-left:14px}
+.dov-header-note:before{content:"";position:absolute;left:0;top:50%;width:6px;height:6px;border-radius:50%;background:var(--dov-done);transform:translateY(-50%)}
+.dov-header-actions{display:flex;gap:8px}
+
+/* ---------- Nút ---------- */
+#appScreen #page-dashboard .dov-btn{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:8px 14px;border:1px solid var(--dov-line);border-radius:10px;background:#fff;color:var(--dov-ink);font-size:14px!important;font-weight:600;line-height:1.2;cursor:pointer;transition:background-color .15s,border-color .15s,color .15s}
+#appScreen #page-dashboard .dov-btn:hover{border-color:#b9c6d8;background:var(--dov-soft)}
+#appScreen #page-dashboard .dov-btn.is-primary{border-color:var(--dov-blue);background:var(--dov-blue);color:#fff;box-shadow:0 2px 6px rgba(37,99,235,.22)}
+#appScreen #page-dashboard .dov-btn.is-primary:hover{border-color:#1d4ed8;background:#1d4ed8}
+#appScreen #page-dashboard .dov-btn[hidden]{display:none}
+#appScreen #page-dashboard .dov-btn:disabled{opacity:.6;cursor:wait}
+#page-dashboard .dov-btn svg{width:17px;height:17px;flex:0 0 17px}
+#page-dashboard .dov-btn.is-loading svg{animation:dov-spin .8s linear infinite}
+@keyframes dov-spin{to{transform:rotate(360deg)}}
+#page-dashboard .dov-link-btn{flex:0 0 auto;padding:6px 10px;border:0;border-radius:8px;background:transparent;color:var(--dov-blue);font-size:14px;font-weight:600;cursor:pointer}
+#page-dashboard .dov-link-btn:hover{background:var(--dov-blue-soft)}
+#page-dashboard .dov-link-btn[hidden]{display:none}
+#page-dashboard button:focus-visible,#page-dashboard summary:focus-visible{outline:2px solid var(--dov-blue);outline-offset:2px}
+
+/* ---------- Card ---------- */
+#page-dashboard .dov-card{min-width:0;padding:20px;border:1px solid var(--dov-line);border-radius:16px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.dov-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}
+.dov-card-head h3{margin:0;font-size:17px;line-height:1.35;font-weight:700}
+.dov-card-head p{margin:4px 0 0;color:var(--dov-muted);font-size:14px;line-height:1.5}
+.dov-count{display:inline-flex;min-width:26px;justify-content:center;margin-left:6px;padding:1px 8px;border-radius:999px;background:var(--dov-late-soft);color:var(--dov-late);font-size:13px;font-weight:700;vertical-align:2px}
+.dov-count:empty{display:none}
+#page-dashboard .dov-card.is-collapsed .dov-card-head{margin-bottom:0}
+
+/* ---------- KPI ---------- */
+.dov-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}
+#appScreen #page-dashboard .dov-kpi{display:flex;min-width:0;flex-direction:column;gap:6px;padding:16px 18px;border:1px solid var(--dov-line);border-radius:16px;background:linear-gradient(180deg,#fff 0%,#fbfcfe 100%);color:var(--dov-ink);text-align:left;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+#appScreen #page-dashboard .dov-kpi:hover{border-color:#a9bdd8;box-shadow:0 4px 14px rgba(15,23,42,.06)}
+.dov-kpi-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.dov-kpi-label{color:var(--dov-text);font-size:14px;font-weight:600}
+.dov-kpi-icon{display:grid;flex:0 0 32px;width:32px;height:32px;place-items:center;border-radius:9px}
+.dov-kpi-icon svg{width:18px;height:18px}
+.dov-kpi-value{font-size:32px;line-height:1.1;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.dov-kpi-foot{color:var(--dov-muted);font-size:13px;line-height:1.45}
+.dov-kpi.is-total .dov-kpi-icon{background:#eef2f7;color:#475569}
+.dov-kpi.is-done .dov-kpi-icon{background:var(--dov-done-soft);color:var(--dov-done)}.dov-kpi.is-done .dov-kpi-value{color:#15803d}
+.dov-kpi.is-processing .dov-kpi-icon{background:var(--dov-processing-soft);color:var(--dov-processing)}.dov-kpi.is-processing .dov-kpi-value{color:#1d4ed8}
+.dov-kpi.is-late .dov-kpi-icon{background:var(--dov-late-soft);color:var(--dov-late)}.dov-kpi.is-late .dov-kpi-value{color:#b91c1c}
+.dov-kpi.is-unappraised .dov-kpi-icon{background:var(--dov-unappraised-soft);color:#b45309}.dov-kpi.is-unappraised .dov-kpi-value{color:#a16207}
+
+/* ---------- Hàng tiến độ + lịch ---------- */
+.dov-row{display:grid;gap:20px;align-items:start}
+.dov-row-progress{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.dov-col{display:flex;min-width:0;flex-direction:column;gap:20px}
+
+/* Màu dùng chung */
+.dov-dot{display:inline-block;flex:0 0 10px;width:10px;height:10px;border-radius:3px}
+.is-done.dov-dot,.dov-unit-bar .is-done{background:var(--dov-done)}
+.is-processing.dov-dot,.dov-unit-bar .is-processing{background:var(--dov-processing)}
+.is-unappraised.dov-dot,.dov-unit-bar .is-unappraised{background:var(--dov-unappraised)}
+.is-late.dov-dot,.dov-unit-bar .is-late{background:var(--dov-late)}
+.is-paused.dov-dot,.dov-unit-bar .is-paused{background:var(--dov-paused)}
+
+/* Tiến độ tổng thể */
+.dov-overall{display:flex;align-items:center;gap:24px}
+.dov-donut{position:relative;flex:0 0 168px;width:168px;height:168px}
+.dov-donut svg{width:100%;height:100%;transform:rotate(-90deg)}
+#page-dashboard .dov-arc-track{stroke:#eef2f7;stroke-width:16}
+#page-dashboard .dov-arc{stroke-width:16;stroke-linecap:butt}
+#page-dashboard .dov-arc.is-done{stroke:var(--dov-done)}#page-dashboard .dov-arc.is-processing{stroke:var(--dov-processing)}#page-dashboard .dov-arc.is-unappraised{stroke:var(--dov-unappraised)}#page-dashboard .dov-arc.is-late{stroke:var(--dov-late)}#page-dashboard .dov-arc.is-paused{stroke:var(--dov-paused)}
+.dov-donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.dov-donut-center b{color:var(--dov-ink);font-size:30px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums}
+.dov-donut-center span{margin-top:4px;color:var(--dov-muted);font-size:13px}
+.dov-legend{display:flex;min-width:0;flex:1;flex-direction:column;gap:2px}
+#appScreen #page-dashboard .dov-legend-row{display:grid;grid-template-columns:10px minmax(0,1fr) auto 42px;align-items:center;gap:10px;min-height:38px;padding:6px 8px;border:0;border-radius:8px;background:transparent;color:var(--dov-text);font-size:14px;text-align:left;cursor:pointer;transition:background-color .15s}
+#appScreen #page-dashboard .dov-legend-row:hover{background:var(--dov-soft)}
+.dov-legend-row b{color:var(--dov-ink);font-size:15px;font-variant-numeric:tabular-nums}
+.dov-legend-row small{color:var(--dov-muted);font-size:13px;text-align:right;font-variant-numeric:tabular-nums}
+.dov-legend-total{margin:6px 8px 0;padding-top:10px;border-top:1px solid #eef2f7;color:var(--dov-muted);font-size:14px}
+.dov-legend-total b{color:var(--dov-ink)}
+
+/* Lịch xử lý sắp đến hạn — không chiều cao cố định, không cuộn lồng */
+.dov-due-group+.dov-due-group{margin-top:14px}
+.dov-due-group>header{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-bottom:8px}
+.dov-due-group>header>span{color:var(--dov-ink);font-size:14px;font-weight:700}
+.dov-due-group>header>small{color:var(--dov-muted);font-size:13px}
+.dov-due-badge{display:inline-flex;padding:2px 9px;border-radius:999px;font-size:13px;font-style:normal;font-weight:600;line-height:1.5;white-space:nowrap}
+.dov-due-badge.is-danger{background:var(--dov-late-soft);color:#b91c1c}
+.dov-due-badge.is-warning{background:#fff4e0;color:#b45309}
+.dov-due-badge.is-neutral{background:#f1f5f9;color:#475569}
+.dov-due-group ul,.dov-backlog-list{margin:0;padding:0;list-style:none}
+.dov-due-item{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid #e5ebf2;border-radius:12px;background:#fff}
+.dov-due-item+.dov-due-item{margin-top:8px}
+.dov-due-main{min-width:0;flex:1}
+.dov-due-doc{display:flex;align-items:center;gap:6px;color:#1d4ed8;font-size:14px;font-weight:700;line-height:1.4;overflow-wrap:anywhere}
+.dov-due-text{display:-webkit-box;margin:4px 0 0;overflow:hidden;color:var(--dov-text);font-size:14px;line-height:1.55;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.dov-due-unit{display:block;margin-top:6px;color:var(--dov-muted);font-size:13px}
+#appScreen #page-dashboard .dov-view-btn{display:inline-flex;flex:0 0 auto;align-items:center;gap:6px;min-height:34px;padding:6px 10px;border:1px solid #cfdcf0;border-radius:9px;background:#f5f9ff;color:#1d4ed8;font-size:13px!important;font-weight:600;white-space:nowrap;cursor:pointer;transition:background-color .15s,border-color .15s}
+#appScreen #page-dashboard .dov-view-btn:hover{border-color:#9db8e8;background:var(--dov-blue-soft)}
+.dov-view-btn svg{width:16px;height:16px}
+
+/* Tiến độ theo đơn vị */
+.dov-unit-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:-4px 0 12px;color:var(--dov-muted);font-size:13px}
+.dov-unit-legend span{display:inline-flex;align-items:center;gap:6px}
+.dov-unit-list{display:flex;flex-direction:column}
+#appScreen #page-dashboard .dov-unit-row{display:grid;grid-template-columns:minmax(150px,1fr) minmax(120px,1.2fr) 80px;align-items:center;gap:16px;width:100%;padding:12px 10px;border:0;border-top:1px solid #eef2f7;border-radius:0;background:transparent;color:var(--dov-text);text-align:left;cursor:pointer;transition:background-color .15s}
+#appScreen #page-dashboard .dov-unit-row:first-child{border-top:0}
+#appScreen #page-dashboard .dov-unit-row:hover{background:var(--dov-soft)}
+.dov-unit-name{display:flex;min-width:0;flex-direction:column}
+.dov-unit-name b{color:var(--dov-ink);font-size:15px;font-weight:600;line-height:1.35}
+.dov-unit-name small{margin-top:2px;color:var(--dov-muted);font-size:13px}
+.dov-unit-name small .is-late{color:#b91c1c;font-weight:600}
+.dov-unit-name small span+span:before{content:" · "}
+.dov-unit-bar{display:flex;height:12px;overflow:hidden;border-radius:999px;background:#eef2f7}
+.dov-unit-bar i{display:block;height:100%}
+.dov-unit-bar i+i{box-shadow:inset 1px 0 0 rgba(255,255,255,.7)}
+.dov-unit-pct{display:flex;flex-direction:column;align-items:flex-end}
+.dov-unit-pct b{color:var(--dov-ink);font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+.dov-unit-pct small{color:var(--dov-muted);font-size:13px;white-space:nowrap}
+
+/* Nhiệm vụ tồn đọng */
+.dov-search{position:relative;display:flex;align-items:center;max-width:520px;margin-bottom:12px}
+.dov-search svg{position:absolute;left:12px;width:18px;height:18px;color:var(--dov-muted);pointer-events:none}
+#appScreen #page-dashboard .dov-search input{width:100%;min-height:42px;padding:8px 12px 8px 38px;border:1px solid #cbd5e1!important;border-radius:10px!important;background:#fff!important;color:var(--dov-ink)!important;font-size:14px!important;outline:0}
+#appScreen #page-dashboard .dov-search input:focus{border-color:#3b82f6!important;box-shadow:0 0 0 3px rgba(59,130,246,.12)!important}
+.dov-backlog-row{display:grid;grid-template-columns:minmax(0,1fr) 170px 150px 150px auto;align-items:center;gap:14px;padding:12px 4px;border-top:1px solid #eef2f7}
+.dov-backlog-row:first-child{border-top:0}
+.dov-backlog-row.is-flagged{margin:0 -8px;padding-left:12px;padding-right:12px;border-radius:10px;background:#fff6f6}
+.dov-backlog-main{min-width:0}
+.dov-flag{display:inline-grid;color:var(--dov-late)}.dov-flag svg{width:15px;height:15px}
+.dov-red-note{margin:4px 0 0;color:#9f1239;font-size:13px;font-weight:600;overflow-wrap:anywhere}
+.dov-backlog-unit{color:var(--dov-text);font-size:14px}
+.dov-backlog-due{display:flex;flex-direction:column;align-items:flex-start;gap:4px;font-size:14px}
+.dov-status{justify-self:start;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap}
+.dov-status.is-processing{background:var(--dov-processing-soft);color:#1d4ed8}
+.dov-status.is-unappraised{background:var(--dov-unappraised-soft);color:#a16207}
+.dov-status.is-late{background:var(--dov-late-soft);color:#b91c1c}
+.dov-status.is-paused{background:var(--dov-paused-soft);color:#475569}
+.dov-status.is-done{background:var(--dov-done-soft);color:#15803d}
+.dov-backlog-more{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid #eef2f7;color:var(--dov-muted);font-size:14px}
+
+/* Trạng thái trống: gọn, không để khung trắng cao */
+.dov-empty{display:flex;align-items:center;gap:14px;padding:18px;border:1px dashed #cfd8e3;border-radius:12px;background:#fbfcfe}
+.dov-empty.is-compact{padding:14px 16px}
+.dov-empty>span{display:grid;flex:0 0 40px;width:40px;height:40px;place-items:center;border-radius:10px;background:#eef2f7;color:#64748b}
+.dov-empty svg{width:20px;height:20px}
+.dov-empty b{display:block;color:var(--dov-ink);font-size:15px}
+.dov-empty p{margin:2px 0 0;color:var(--dov-muted);font-size:14px}
+
+/* Công cụ quản trị */
+#page-dashboard .dov-tools{padding:0}
+#page-dashboard .dov-tools>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;list-style:none;cursor:pointer}
+#page-dashboard .dov-tools>summary::-webkit-details-marker{display:none}
+#page-dashboard .dov-tools>summary b{display:block;color:var(--dov-ink);font-size:16px}
+#page-dashboard .dov-tools>summary small{display:block;margin-top:2px;color:var(--dov-muted);font-size:14px}
+#page-dashboard .dov-tools>summary svg{width:20px;height:20px;color:var(--dov-muted);transition:transform .15s}
+#page-dashboard .dov-tools[open]>summary svg{transform:rotate(180deg)}
+#page-dashboard .dov-tools .tool-strip{display:flex;flex-wrap:wrap;gap:8px;padding:0 20px 18px}
+
+/* Khung "Xem tất cả" — trượt từ cạnh phải, cuộn nằm trong khung riêng (không lồng trong Dashboard) */
+#dovDeadlinePanel.dov-panel{align-items:stretch!important;justify-content:flex-end!important;padding:0!important}
+#dovDeadlinePanel .dov-panel-card{display:flex;width:min(560px,100vw);height:100dvh;flex-direction:column;background:#fff;box-shadow:-12px 0 32px rgba(15,23,42,.18);animation:dov-slide .18s ease-out}
+@keyframes dov-slide{from{transform:translateX(24px);opacity:.6}to{transform:none;opacity:1}}
+.dov-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 22px;border-bottom:1px solid var(--dov-line)}
+.dov-panel-head h3{margin:0;color:var(--dov-ink);font-size:18px;font-weight:700}
+.dov-panel-head p{margin:4px 0 0;color:var(--dov-muted);font-size:14px}
+.dov-panel-body{min-height:0;flex:1;overflow-y:auto;padding:18px 22px 28px;overscroll-behavior:contain}
+.dov-icon-btn{display:grid;flex:0 0 36px;width:36px;height:36px;place-items:center;border:1px solid var(--dov-line);border-radius:9px;background:#fff;color:#475569;cursor:pointer}
+.dov-icon-btn:hover{background:var(--dov-soft)}
+.dov-icon-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+
+/* ---------- Màn hình nhỏ ---------- */
+@media(max-width:1280px){.dov-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:1100px){
+  .dov-row-progress{grid-template-columns:1fr}
+  .dov-col{display:contents}
+  .dov-card-overall{order:1}.dov-card-deadlines{order:2}.dov-card-units{order:3}
+  .dov-backlog-row{grid-template-columns:minmax(0,1fr) 150px auto;grid-template-areas:"main due view" "main unit status"}
+  .dov-backlog-main{grid-area:main}.dov-backlog-due{grid-area:due}.dov-backlog-unit{grid-area:unit}.dov-status{grid-area:status}.dov-backlog-row .dov-view-btn{grid-area:view;justify-self:end}
+}
+@media(max-width:720px){
+  #page-dashboard.dov-page{gap:16px}
+  .dov-header{align-items:flex-start}
+  .dov-header h2{font-size:21px}
+  .dov-header-actions{width:100%}
+  #appScreen #page-dashboard .dov-header-actions .dov-btn{flex:1;justify-content:center}
+  .dov-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  #appScreen #page-dashboard .dov-kpi:first-child{grid-column:1/-1}
+  #appScreen #page-dashboard .dov-kpi{padding:14px}
+  .dov-kpi-value{font-size:28px}
+  #page-dashboard .dov-card{padding:16px}
+  .dov-overall{flex-direction:column;align-items:stretch}
+  .dov-donut{align-self:center}
+  #appScreen #page-dashboard .dov-unit-row{grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;padding:12px 4px}
+  .dov-unit-bar{grid-column:1/-1;grid-row:2}
+  .dov-due-item{flex-direction:column}
+  #appScreen #page-dashboard .dov-due-item .dov-view-btn{align-self:flex-start}
+  .dov-backlog-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"main main" "due due" "unit status" "view view"}
+  #appScreen #page-dashboard .dov-backlog-row .dov-view-btn{justify-self:start}
+  .dov-backlog-more{flex-direction:column;align-items:flex-start}
+  .dov-panel-head{padding:16px}.dov-panel-body{padding:14px 16px 24px}
+}
+@media(prefers-reduced-motion:reduce){#dovDeadlinePanel .dov-panel-card{animation:none}#page-dashboard *{transition:none!important}}
+/* Tiêu đề "Tổng quan nhiệm vụ" đã hiện ở thanh đầu trang; giữ bản ẩn cho trình đọc màn hình */
+.dov-sr-only{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.dov-header{align-items:center}
+.dov-header p{margin-top:0}
+#appScreen #page-dashboard #dovBacklogToggle{white-space:nowrap;flex:0 0 auto}

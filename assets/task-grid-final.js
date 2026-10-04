@@ -91,6 +91,24 @@
     return String(values[field]??"");
   }
   window.taskFinalAssessment=finalAssessment;
+  /* Nhóm trạng thái theo Đánh giá của VPĐU — dùng chung cho Tab Nhiệm vụ và Dashboard Tổng quan */
+  const STATUS_GROUPS={
+    done:{label:"Hoàn thành",values:["Hoàn thành"]},
+    processing:{label:"Đang xử lý (gồm Chưa thẩm định)",values:["Đang xử lý","Chưa thẩm định"]},
+    late:{label:"Trễ hạn / Không hoàn thành",values:["Trễ hạn","Không hoàn thành"]},
+    paused:{label:"Tạm dừng",values:["Tạm dừng"]}
+  };
+  function statusGroupOf(task){
+    const value=finalAssessment(task);
+    return Object.keys(STATUS_GROUPS).find(key=>STATUS_GROUPS[key].values.includes(value))||"processing";
+  }
+  function assessmentMatches(task,filter){
+    if(!filter)return true;
+    if(filter.startsWith("group:")){const group=STATUS_GROUPS[filter.slice(6)];return !!group&&group.values.includes(finalAssessment(task));}
+    return finalAssessment(task)===filter;
+  }
+  window.taskStatusGroup=statusGroupOf;
+  window.TASK_STATUS_GROUPS=STATUS_GROUPS;
   taskStatus=function(task){return norm(finalAssessment(task));};
   taskIsDone=function(task){return finalAssessment(task)==="Hoàn thành";};
   taskIsLateUnified=function(task){return ["Trễ hạn","Không hoàn thành"].includes(finalAssessment(task));};
@@ -113,7 +131,7 @@
       const deadline=taskDeadline(task);
       const days=diffDays(deadline);
       if(gridState.sheet!=="all"&&unit!==gridState.sheet)return false;
-      if(gridState.assessment&&assessment!==gridState.assessment)return false;
+      if(gridState.assessment&&!assessmentMatches(task,gridState.assessment))return false;
       if(gridState.month==="none"&&deadline)return false;
       if(gridState.month&&gridState.month!=="none"&&!deadline.startsWith(gridState.month))return false;
       const column=gridState.columns;
@@ -738,6 +756,14 @@
     ["taskCenterSearch","taskGridMonthFilter","taskGridAssessmentFilter"].forEach(id=>{const element=document.getElementById(id);if(element)element.value="";});
     renderTaskListFull();
   };
+  /** Mở Tab Nhiệm vụ với bộ lọc có sẵn. options: {assessment, sheet}. Các bộ lọc khác được xóa để kết quả khớp số liệu trên Dashboard. */
+  window.openTaskGridView=function(options={}){
+    Object.assign(gridState,{search:"",month:"",assessment:String(options.assessment||""),sheet:String(options.sheet||"all"),page:1,selection:null});
+    Object.keys(gridState.columns).forEach(key=>gridState.columns[key]="");
+    const search=document.getElementById("taskCenterSearch");if(search)search.value="";
+    switchPage("tasks");
+    window.scrollTo?.({top:0,behavior:"auto"});
+  };
   window.setTaskGridSheet=function(unit){gridState.sheet=unit||"all";gridState.page=1;renderTaskListFull();};
   window.renderTaskSheetTabs=function(){
     const tabs=document.getElementById("taskSheetTabs");
@@ -751,7 +777,7 @@
     const month=document.getElementById("taskGridMonthFilter");
     const assessment=document.getElementById("taskGridAssessmentFilter");
     if(month)month.innerHTML=`<option value="">Tất cả tháng</option><option value="none" ${gridState.month==="none"?"selected":""}>Chưa có thời hạn</option>${uniqueMonths().map(value=>`<option value="${value}" ${value===gridState.month?"selected":""}>${monthLabel(value)}</option>`).join("")}`;
-    if(assessment)assessment.innerHTML=`<option value="">Tất cả tiến độ</option>${FINAL_OPTIONS.map(value=>`<option value="${html(value)}" ${value===gridState.assessment?"selected":""}>${html(value)}</option>`).join("")}`;
+    if(assessment)assessment.innerHTML=`<option value="">Tất cả tiến độ</option><optgroup label="Theo nhóm">${["processing","late"].map(key=>`<option value="group:${key}" ${gridState.assessment===`group:${key}`?"selected":""}>${html(STATUS_GROUPS[key].label)}</option>`).join("")}</optgroup><optgroup label="Theo Đánh giá của VPĐU">${FINAL_OPTIONS.map(value=>`<option value="${html(value)}" ${value===gridState.assessment?"selected":""}>${html(value)}</option>`).join("")}</optgroup>`;
   };
 
   document.addEventListener("keydown",event=>{
