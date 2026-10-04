@@ -4,6 +4,28 @@
 -- 2) Chỉ Admin và UBKT được xóa nhiệm vụ (VPĐU vẫn thêm và cập nhật được như hiện nay).
 -- Quay lại: supabase/rollbacks/20261005090000_task_role_scope.rollback.sql
 
+-- Hàm toàn quyền được khai báo lại theo kiểu idempotent để migration tự chạy được
+-- cả khi dựng mới hệ thống từ lịch sử trong repository.
+create or replace function private.is_full_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.user_profiles p
+    where p.id = (select auth.uid())
+      and p.role in ('admin', 'ubkt')
+      and p.approval_status = 'approved'
+      and p.is_active is true
+  );
+$$;
+
+revoke all on function private.is_full_admin() from public, anon;
+grant execute on function private.is_full_admin() to authenticated;
+
 create or replace function public.unit_set_task_deadline(
   p_task_id text,
   p_deadline text default null
@@ -68,6 +90,79 @@ $$;
 
 revoke all on function public.unit_set_task_deadline(text, text) from public, anon;
 grant execute on function public.unit_set_task_deadline(text, text) to authenticated;
+
+-- VPĐU chỉ được chốt đúng trường Đánh giá của VPĐU. Việc cập nhật tiến độ đi qua
+-- task_progress_logs và trigger đồng bộ hiện có; VPĐU không UPDATE trực tiếp cả bản ghi.
+create or replace function public.vpdu_set_task_assessment(
+  p_task_id text,
+  p_assessment text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_assessment text := btrim(coalesce(p_assessment, ''));
+  v_today text := to_char((now() at time zone 'Asia/Ho_Chi_Minh')::date, 'YYYY-MM-DD');
+  v_task public.ubkt_tasks%rowtype;
+begin
+  if not exists (
+    select 1 from public.user_profiles p
+    where p.id = (select auth.uid())
+      and p.role = 'vpdu'
+      and p.approval_status = 'approved'
+      and p.is_active is true
+  ) then
+    raise exception 'Chỉ tài khoản VPĐU đã được duyệt mới dùng chức năng này'
+      using errcode = '42501';
+  end if;
+
+  if v_assessment not in ('Chưa thẩm định', 'Đang xử lý', 'Hoàn thành', 'Trễ hạn', 'Tạm dừng', 'Không hoàn thành') then
+    raise exception 'Trạng thái thẩm định không hợp lệ' using errcode = '22023';
+  end if;
+
+  select * into v_task from public.ubkt_tasks where id = p_task_id for update;
+  if not found then
+    raise exception 'Không tìm thấy nhiệm vụ' using errcode = 'P0002';
+  end if;
+
+  update public.ubkt_tasks
+     set data = coalesce(data, '{}'::jsonb)
+                || jsonb_build_object('vpduAssessment', v_assessment, 'updatedAt', v_today),
+         updated_at = now()
+   where id = p_task_id;
+
+  insert into public.ubkt_audit_logs (id, data)
+  values (
+    'vpdu-assessment-' || gen_random_uuid()::text,
+    jsonb_build_object(
+      'time', to_char(now() at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+      'action', 'Chốt đánh giá VPĐU',
+      'doc', coalesce(v_task.data ->> 'doc', v_task.data ->> 'docFull', ''),
+      'unit', coalesce(v_task.data ->> 'unit', ''),
+      'task', left(coalesce(v_task.data ->> 'task', ''), 180),
+      'details', format('vpduAssessment: %s → %s', coalesce(v_task.data ->> 'vpduAssessment', 'Chưa thẩm định'), v_assessment),
+      'actor', (select auth.uid())
+    )
+  );
+
+  return jsonb_build_object('id', p_task_id, 'vpduAssessment', v_assessment, 'updatedAt', v_today);
+end;
+$$;
+
+revoke all on function public.vpdu_set_task_assessment(text, text) from public, anon;
+grant execute on function public.vpdu_set_task_assessment(text, text) to authenticated;
+
+-- Chỉ Admin/UBKT được UPDATE trực tiếp cả bản ghi. VPĐU dùng RPC ở trên;
+-- đơn vị dùng unit_set_task_deadline và task_progress_logs.
+drop policy if exists ubkt_tasks_admin_update on public.ubkt_tasks;
+create policy ubkt_tasks_admin_update
+on public.ubkt_tasks
+for update
+to authenticated
+using ((select private.is_full_admin()))
+with check ((select private.is_full_admin()));
 
 -- Chỉ Admin/UBKT xóa nhiệm vụ.
 drop policy if exists ubkt_tasks_admin_delete on public.ubkt_tasks;

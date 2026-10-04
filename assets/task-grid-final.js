@@ -52,13 +52,13 @@
   /* ---------- Bảng phân quyền giao diện (một nguồn duy nhất) ----------
      Máy chủ (RLS Supabase) vẫn là lớp chặn cuối; bảng này quyết định trang/cột nào hiện và sửa được.
      - Admin, UBKT: toàn quyền.
-     - VPĐU: chỉ Dashboard + Tab Nhiệm vụ (mọi đơn vị); chấm Đánh giá của VPĐU, cập nhật kết quả, thêm nhiệm vụ, Note đỏ.
+     - VPĐU: chỉ Dashboard + Tab Nhiệm vụ (mọi đơn vị); chấm Đánh giá của VPĐU, cập nhật kết quả, thêm nhiệm vụ.
      - Đơn vị: chỉ Tab Nhiệm vụ của đơn vị mình; sửa Thời gian, cập nhật kết quả, tự đánh giá. */
   const FULL_ACCESS={pages:null,edit:["doc","conclusion","unit","deadline","vpduAssessment"],addTask:true,flag:true,selfAssess:true,tools:true};
   const ROLE_ACCESS={
     admin:FULL_ACCESS,
     ubkt:FULL_ACCESS,
-    vpdu:{pages:["dashboard","tasks"],edit:["vpduAssessment"],addTask:true,flag:true,selfAssess:false,tools:false},
+    vpdu:{pages:["dashboard","tasks"],edit:["vpduAssessment"],addTask:true,flag:false,selfAssess:false,tools:false},
     unit:{pages:["tasks"],edit:["deadline"],addTask:false,flag:false,selfAssess:true,tools:false}
   };
   const NO_ACCESS={pages:[],edit:[],addTask:false,flag:false,selfAssess:false,tools:false};
@@ -1014,6 +1014,24 @@
     setTaskGridSyncState("ready","Đã lưu và đồng bộ Dashboard");
     showModuleToast("Đã lưu thời hạn","Thời hạn mới đã được cập nhật cho nhiệm vụ.");
   }
+
+  /** VPĐU chốt đúng một trường thẩm định qua RPC; không có quyền UPDATE trực tiếp cả bản ghi nhiệm vụ. */
+  async function saveVpduAssessment(task,value,element){
+    if(finalAssessment(task)===value)return;
+    setTaskGridSyncState("syncing","Đang lưu đánh giá VPĐU...");
+    element?.classList.add("is-saving");
+    const {data,error}=await getSupabaseClient().rpc("vpdu_set_task_assessment",{p_task_id:String(task.id),p_assessment:value});
+    element?.classList.remove("is-saving");
+    if(error){
+      setTaskGridSyncState("error","Đánh giá chưa được lưu");
+      showModuleToast("Chưa lưu được thẩm định",error.message||"Vui lòng thử lại.");
+      renderTaskListFull();return;
+    }
+    Object.assign(task,{vpduAssessment:data?.vpduAssessment||value,updatedAt:data?.updatedAt||localTodayISO()});
+    persistLocal(false);render();
+    setTaskGridSyncState("ready","Đã lưu và đồng bộ Dashboard");
+    showModuleToast("Đã cập nhật thẩm định","Các số liệu Dashboard đã được tính lại ngay.");
+  }
   window.commitTaskGridDeadline=function(taskId,element){
     const raw=String(element?.value||"").trim();
     const value=raw?dateInputToISO(raw):"";
@@ -1056,6 +1074,7 @@
     const task=tasks.find(item=>String(item.id)===String(taskId));
     if(!task||!canEditTaskCell(task,field))return;
     if(field==="deadline"&&isUnitUser()){await saveUnitDeadline(task,String(value??"").trim(),element);return;}
+    if(field==="vpduAssessment"&&currentProfile?.role==="vpdu"){await saveVpduAssessment(task,String(value??"").trim(),element);return;}
     const clean=String(value??"").trim();
     if(["doc","conclusion","unit"].includes(field)&&!clean){showModuleToast("Chưa đủ thông tin","Trường này không được để trống.");renderTaskListFull();return;}
     const previous=task[field];
