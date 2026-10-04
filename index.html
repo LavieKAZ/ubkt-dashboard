@@ -1282,7 +1282,7 @@ body{
   <link rel="stylesheet" href="./assets/tailwind-compiled.css?v=20260725">
   <link rel="stylesheet" href="./assets/project-manager-v3.css?v=20260806save1">
   <link rel="stylesheet" href="./assets/resolution-tracker.css?v=20261001">
-  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261004gon1">
+  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261004gon2">
 </head>
 <body class="sidebar-collapsed">
   <!-- LANDING -->
@@ -1759,8 +1759,16 @@ body{
     <div id="taskExcelGrid" class="task-excel-wrap" aria-live="polite"></div>
     <div id="taskGridDockSpacer" class="task-grid-dock-spacer" aria-hidden="true"></div>
     <div id="taskGridDock" class="task-grid-dock">
-      <div id="taskGridBottomScrollbar" class="task-grid-bottom-scroll" aria-label="Thanh cuộn ngang bảng nhiệm vụ"><div></div></div>
+      <div id="taskGridBottomScrollbar" class="task-grid-hscroll" role="scrollbar" aria-controls="taskExcelGrid" aria-orientation="horizontal" aria-label="Thanh cuộn ngang bảng nhiệm vụ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+        <button type="button" class="task-hscroll-step" data-step="-1" tabindex="-1" aria-label="Cuộn sang trái"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
+        <div class="task-hscroll-track"><div class="task-hscroll-thumb"></div></div>
+        <button type="button" class="task-hscroll-step" data-step="1" tabindex="-1" aria-label="Cuộn sang phải"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
+      </div>
       <div class="task-sheet-footer">
+        <div id="taskSheetNav" class="task-sheet-nav" hidden>
+          <button type="button" data-tabs-step="-1" aria-label="Xem các tab đơn vị phía trước"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
+          <button type="button" data-tabs-step="1" aria-label="Xem các tab đơn vị phía sau"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
+        </div>
         <div id="taskSheetTabs" class="task-sheet-tabs" data-admin-only aria-label="Chuyển bảng theo đơn vị"></div>
         <div class="task-sheet-footer-status"><span><i></i>Đã liên kết Dashboard</span><span id="taskGridFreezeStatus">Cố định 3 cột đầu</span></div>
       </div>
@@ -9851,7 +9859,7 @@ window.addEventListener("resize", ()=>{
 setTimeout(initLiquidScrollIndicators, 300);
   </script>
   <script src="./assets/resolution-tracker.js?v=20261001"></script>
-  <script src="./assets/task-grid-final.js?v=20261004gon1"></script>
+  <script src="./assets/task-grid-final.js?v=20261004gon2"></script>
   <div id="moduleToast" class="module-toast" role="status" aria-live="polite" aria-atomic="true" data-tone="info">
     <div class="module-toast-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01"/><circle cx="12" cy="12" r="9"/></svg>

@@ -576,7 +576,7 @@
   let dockFrame=0;
   function scheduleTaskGridDock(){
     if(dockFrame)return;
-    dockFrame=window.requestAnimationFrame(()=>{dockFrame=0;updateTaskGridDock();});
+    dockFrame=window.requestAnimationFrame(()=>{dockFrame=0;updateTaskGridDock();paintHorizontalScrollbar();});
   }
   function updateTaskGridDock(){
     const grid=document.getElementById("taskExcelGrid");
@@ -615,12 +615,35 @@
   window.updateTaskGridDock=scheduleTaskGridDock;
 
   /* ---------- [Univer] Tab đơn vị: tự cuộn tới tab đang chọn ---------- */
+  /** Nút ‹ › trước dãy tab đơn vị (thay thanh cuộn có sẵn của trình duyệt dưới các tab). */
+  function paintSheetTabNav(){
+    const tabs=document.getElementById("taskSheetTabs");const nav=document.getElementById("taskSheetNav");
+    if(!tabs||!nav)return;
+    const overflow=!tabs.hidden&&tabs.scrollWidth>tabs.clientWidth+2;
+    nav.hidden=!overflow;
+    if(!overflow)return;
+    nav.querySelector('[data-tabs-step="-1"]').disabled=tabs.scrollLeft<=0;
+    nav.querySelector('[data-tabs-step="1"]').disabled=tabs.scrollLeft>=tabs.scrollWidth-tabs.clientWidth-1;
+  }
+  function installSheetTabNav(){
+    const tabs=document.getElementById("taskSheetTabs");const nav=document.getElementById("taskSheetNav");
+    if(!tabs||!nav||nav.dataset.ready)return;
+    nav.dataset.ready="1";
+    tabs.addEventListener("scroll",paintSheetTabNav,{passive:true});
+    nav.querySelectorAll("button").forEach(button=>button.addEventListener("click",()=>{
+      tabs.scrollBy({left:Number(button.dataset.tabsStep)*Math.max(160,tabs.clientWidth*.7),behavior:"smooth"});
+    }));
+    window.addEventListener("resize",paintSheetTabNav,{passive:true});
+  }
   function revealActiveSheetTab(){
+    installSheetTabNav();
     const tabs=document.getElementById("taskSheetTabs");const active=tabs?.querySelector(".task-sheet-tab.is-active");
-    if(!tabs||!active)return;
-    const left=active.offsetLeft;const right=left+active.offsetWidth;
-    if(left<tabs.scrollLeft)tabs.scrollLeft=Math.max(0,left-8);
-    else if(right>tabs.scrollLeft+tabs.clientWidth)tabs.scrollLeft=right-tabs.clientWidth+8;
+    if(tabs&&active){
+      const left=active.offsetLeft;const right=left+active.offsetWidth;
+      if(left<tabs.scrollLeft)tabs.scrollLeft=Math.max(0,left-8);
+      else if(right>tabs.scrollLeft+tabs.clientWidth)tabs.scrollLeft=right-tabs.clientWidth+8;
+    }
+    paintSheetTabNav();
   }
   window.renderTaskGridPagination=function(total,pageCount){
     const host=document.getElementById("taskGridPagination");if(!host)return;
@@ -629,20 +652,84 @@
     const end=Math.min(total,gridState.page*gridState.pageSize);
     host.innerHTML=`<div><b>${start}–${end}</b><span>trong ${total} nhiệm vụ</span></div><div class="task-grid-page-actions"><label>Hiển thị <select onchange="setTaskGridPageSize(this.value)">${[20,30,50].map(size=>`<option value="${size}" ${size===gridState.pageSize?"selected":""}>${size} dòng</option>`).join("")}</select></label><button type="button" onclick="setTaskGridPage(${gridState.page-1})" ${gridState.page<=1?"disabled":""}>‹ Trước</button><span>Trang ${gridState.page}/${pageCount}</span><button type="button" onclick="setTaskGridPage(${gridState.page+1})" ${gridState.page>=pageCount?"disabled":""}>Sau ›</button></div>`;
   };
-  window.syncTaskGridScrollbars=function(){
+  /* ---------- Thanh cuộn ngang tự vẽ: luôn hiện, kéo chuột được ----------
+     Trước đây dùng thanh cuộn có sẵn của trình duyệt: trên máy Mac nó tự ẩn (chỉ còn dải xám),
+     và khi lướt trackpad thì hiện 2 lằn (thanh của bảng + thanh ở đáy). Nay bảng ẩn thanh ngang
+     của trình duyệt, chỉ còn 1 thanh tự vẽ này. */
+  const HSCROLL_MIN_THUMB=48;
+  function hscrollParts(){
     const grid=document.getElementById("taskExcelGrid");
     const bar=document.getElementById("taskGridBottomScrollbar");
-    const track=bar?.firstElementChild;
-    if(!grid||!bar||!track)return;
-    track.style.width=`${grid.scrollWidth}px`;
-    bar.hidden=grid.scrollWidth<=grid.clientWidth+2;
-    if(!grid.dataset.bottomScrollReady){
-      let syncing=false;
-      grid.addEventListener("scroll",()=>{if(syncing)return;syncing=true;bar.scrollLeft=grid.scrollLeft;syncing=false;},{passive:true});
-      bar.addEventListener("scroll",()=>{if(syncing)return;syncing=true;grid.scrollLeft=bar.scrollLeft;syncing=false;},{passive:true});
-      grid.dataset.bottomScrollReady="1";
-    }
-    bar.scrollLeft=grid.scrollLeft;
+    return {grid,bar,track:bar?.querySelector(".task-hscroll-track"),thumb:bar?.querySelector(".task-hscroll-thumb")};
+  }
+  function hscrollMetrics(grid,track){
+    const maxScroll=Math.max(0,grid.scrollWidth-grid.clientWidth);
+    const trackWidth=track.clientWidth;
+    const thumbWidth=maxScroll?Math.max(HSCROLL_MIN_THUMB,Math.round(trackWidth*grid.clientWidth/grid.scrollWidth)):trackWidth;
+    return {maxScroll,trackWidth,thumbWidth,room:Math.max(0,trackWidth-thumbWidth)};
+  }
+  function paintHorizontalScrollbar(){
+    const {grid,bar,track,thumb}=hscrollParts();
+    if(!grid||!bar||!track||!thumb)return;
+    const overflow=grid.scrollWidth>grid.clientWidth+2;
+    bar.hidden=!overflow;
+    if(!overflow)return;
+    const m=hscrollMetrics(grid,track);
+    const ratio=m.maxScroll?grid.scrollLeft/m.maxScroll:0;
+    thumb.style.width=`${m.thumbWidth}px`;
+    thumb.style.transform=`translateX(${Math.round(ratio*m.room)}px)`;
+    bar.setAttribute("aria-valuenow",String(Math.round(ratio*100)));
+    bar.querySelector('[data-step="-1"]').disabled=grid.scrollLeft<=0;
+    bar.querySelector('[data-step="1"]').disabled=grid.scrollLeft>=m.maxScroll-1;
+  }
+  function installHorizontalScrollbar(){
+    const {grid,bar,track,thumb}=hscrollParts();
+    if(!grid||!bar||!track||!thumb||bar.dataset.ready)return;
+    bar.dataset.ready="1";
+    grid.addEventListener("scroll",paintHorizontalScrollbar,{passive:true});
+    // Kéo tay kéo
+    let drag=null;
+    thumb.addEventListener("pointerdown",event=>{
+      event.preventDefault();event.stopPropagation();
+      drag={startX:event.clientX,startLeft:grid.scrollLeft,m:hscrollMetrics(grid,track)};
+      thumb.setPointerCapture?.(event.pointerId);bar.classList.add("is-dragging");
+    });
+    thumb.addEventListener("pointermove",event=>{
+      if(!drag||!drag.m.room)return;
+      grid.scrollLeft=drag.startLeft+(event.clientX-drag.startX)*drag.m.maxScroll/drag.m.room;
+    });
+    const stop=()=>{drag=null;bar.classList.remove("is-dragging");};
+    thumb.addEventListener("pointerup",stop);thumb.addEventListener("pointercancel",stop);
+    // Bấm vào rãnh: nhảy tới vị trí bấm (tâm tay kéo đặt tại chỗ bấm)
+    track.addEventListener("pointerdown",event=>{
+      if(event.target===thumb)return;
+      const m=hscrollMetrics(grid,track);if(!m.room)return;
+      const x=event.clientX-track.getBoundingClientRect().left-m.thumbWidth/2;
+      grid.scrollTo({left:Math.max(0,Math.min(m.room,x))/m.room*m.maxScroll,behavior:"smooth"});
+    });
+    // Nút ‹ ›: cuộn một khoảng bằng 60% bề ngang đang nhìn thấy
+    bar.querySelectorAll(".task-hscroll-step").forEach(button=>button.addEventListener("click",()=>{
+      grid.scrollBy({left:Number(button.dataset.step)*Math.max(160,grid.clientWidth*.6),behavior:"smooth"});
+    }));
+    // Lăn chuột khi trỏ đang ở trên thanh: cuộn ngang
+    bar.addEventListener("wheel",event=>{
+      const delta=Math.abs(event.deltaX)>Math.abs(event.deltaY)?event.deltaX:event.deltaY;
+      if(!delta)return;
+      event.preventDefault();grid.scrollLeft+=delta;
+    },{passive:false});
+    // Bàn phím khi thanh đang được chọn
+    bar.addEventListener("keydown",event=>{
+      const page=grid.clientWidth*.9;
+      const moves={ArrowLeft:-80,ArrowRight:80,PageUp:-page,PageDown:page};
+      if(event.key==="Home"){event.preventDefault();grid.scrollLeft=0;return;}
+      if(event.key==="End"){event.preventDefault();grid.scrollLeft=grid.scrollWidth;return;}
+      if(moves[event.key]===undefined)return;
+      event.preventDefault();grid.scrollLeft+=moves[event.key];
+    });
+  }
+  window.syncTaskGridScrollbars=function(){
+    installHorizontalScrollbar();
+    paintHorizontalScrollbar();
     scheduleTaskGridDock();
   };
   window.resetTaskGridFilters=function(){
