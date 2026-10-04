@@ -7,7 +7,34 @@
   const GRID_FIELDS=["stt","doc","conclusion","unit","deadline","result","self","final"];
   const GRID_LETTERS=["A","B","C","D","E","F","G","H"];
   const GRID_COLUMN_CLASSES=["col-stt","col-doc","col-content","col-unit","col-date","col-result","col-self","col-final"];
-  const gridState={search:"",month:"",assessment:"",sheet:"all",page:1,pageSize:30,density:"comfortable",selection:null,columns:{flag:"",doc:"",content:"",unit:"",deadline:"",result:"",self:"",final:""}};
+  // [Univer] Độ rộng cột mặc định (px). Người dùng kéo mép chữ cột để đổi; lưu riêng trên trình duyệt.
+  const GRID_DEFAULT_WIDTHS=[82,170,370,215,145,340,235,205];
+  const GRID_MIN_WIDTH=64;
+  const GRID_MAX_WIDTH=820;
+  const GRID_WIDTH_STORE_KEY="ubkt.taskGrid.columnWidths.v1";
+  function clampColumnWidth(value,index){
+    const number=Math.round(Number(value));
+    if(!Number.isFinite(number))return GRID_DEFAULT_WIDTHS[index];
+    return Math.min(GRID_MAX_WIDTH,Math.max(GRID_MIN_WIDTH,number));
+  }
+  function loadColumnWidths(){
+    try{
+      const saved=JSON.parse(window.localStorage.getItem(GRID_WIDTH_STORE_KEY)||"null");
+      if(Array.isArray(saved)&&saved.length===GRID_DEFAULT_WIDTHS.length)return saved.map(clampColumnWidth);
+    }catch(error){/* Trình duyệt chặn bộ nhớ cục bộ: dùng độ rộng mặc định */}
+    return GRID_DEFAULT_WIDTHS.slice();
+  }
+  function saveColumnWidths(widths){
+    try{window.localStorage.setItem(GRID_WIDTH_STORE_KEY,JSON.stringify(widths));}catch(error){/* bỏ qua */}
+  }
+  /** Số cột cố định theo bề ngang màn hình: điện thoại 1 cột, máy tính bảng 2 cột, máy tính 3 cột. */
+  function frozenColumnCount(){
+    const width=window.innerWidth||1440;
+    if(width<=640)return 1;
+    if(width<=1100)return 2;
+    return 3;
+  }
+  const gridState={search:"",month:"",assessment:"",sheet:"all",page:1,pageSize:30,density:"comfortable",selection:null,widths:loadColumnWidths(),frozen:frozenColumnCount(),columns:{flag:"",doc:"",content:"",unit:"",deadline:"",result:"",self:"",final:""}};
   let progressLogs=[];
   let systemNotifications=[];
   let activeLogTaskId="";
@@ -194,6 +221,26 @@
     return `<select class="task-grid-cell-select" onchange="updateTaskGridField('${html(task.id)}','vpduAssessment',this.value,this)">${options(FINAL_OPTIONS,value)}</select><div class="task-grid-save-state">Dùng cho Dashboard</div>`;
   }
 
+  /** Biến CSS cho độ rộng cột và vị trí các cột cố định (thay cho số px viết cứng trước đây). */
+  function tableGeometryStyle(){
+    const widths=gridState.widths;
+    const total=widths.reduce((sum,value)=>sum+value,0);
+    return `--tg-left-1:${widths[0]}px;--tg-left-2:${widths[0]+widths[1]}px;width:${total}px;min-width:${total}px`;
+  }
+  function letterRowHtml(){
+    return `<tr class="task-grid-letter-row">${GRID_LETTERS.map((letter,index)=>`<th class="${GRID_COLUMN_CLASSES[index]}" style="width:${gridState.widths[index]}px" data-letter-col="${index}"><span aria-hidden="true">${letter}</span><span class="task-grid-col-resizer" data-resize-col="${index}" title="Kéo để đổi độ rộng cột ${letter}. Nhấn đúp để trả về mặc định." role="separator" aria-orientation="vertical" aria-label="Đổi độ rộng cột ${letter}"></span></th>`).join("")}</tr>`;
+  }
+  function applyColumnWidths(){
+    const table=document.querySelector("#taskExcelGrid .task-excel-table");
+    if(!table)return;
+    table.setAttribute("style",tableGeometryStyle());
+    table.querySelectorAll(".task-grid-letter-row th").forEach((th,index)=>{th.style.width=`${gridState.widths[index]}px`;});
+  }
+  function updateFreezeStatus(){
+    const status=document.getElementById("taskGridFreezeStatus");
+    if(status)status.textContent=`Cố định ${gridState.frozen} cột đầu`;
+  }
+
   window.renderTaskListFull=function(){
     const wrap=document.getElementById("taskExcelGrid");
     if(!wrap)return;
@@ -216,7 +263,9 @@
       window.requestAnimationFrame(window.syncTaskGridScrollbars);
       return;
     }
-    wrap.innerHTML=`<table class="task-excel-table"><thead><tr class="task-grid-letter-row">${GRID_LETTERS.map((letter,index)=>`<th class="${GRID_COLUMN_CLASSES[index]}" aria-hidden="true">${letter}</th>`).join("")}</tr><tr class="task-grid-column-row">
+    gridState.frozen=frozenColumnCount();
+    updateFreezeStatus();
+    wrap.innerHTML=`<table class="task-excel-table freeze-${gridState.frozen}" style="${tableGeometryStyle()}"><thead>${letterRowHtml()}<tr class="task-grid-column-row">
       ${headerCell("STT","flag","col-stt")}${headerCell("Số văn bản","doc","col-doc")}${headerCell("Nội dung kết luận","content","col-content")}${headerCell("Đơn vị thực hiện",null,"col-unit")}${headerCell("Thời gian","deadline","col-date")}${headerCell("Kết quả thực hiện","result","col-result")}${headerCell("Tự đánh giá của đơn vị","self","col-self")}${headerCell("Đánh giá của VPĐU","final","col-final")}
     </tr></thead><tbody>${rows.map((task,index)=>{const sheetRow=offset+index+2;return `<tr class="${taskFlagged(task)?"is-flagged":""}" data-task-row="${sheetRow}">
       <td ${gridCellAttributes(task,"stt",sheetRow,0)}>${flagCell(task,offset+index+1)}</td>
@@ -293,7 +342,17 @@
     }catch(error){setTaskGridSyncState("error","Đồng bộ chưa thành công");showModuleToast("Chưa làm mới được dữ liệu",error.message||"Vui lòng thử lại.");}
     finally{if(button){button.disabled=false;button.classList.remove("is-loading");button.innerHTML=original;}}
   };
+  function highlightSelectionHeaders(cell){
+    const grid=document.getElementById("taskExcelGrid");if(!grid)return;
+    grid.querySelectorAll(".task-grid-letter-row th.is-active-col").forEach(item=>item.classList.remove("is-active-col"));
+    grid.querySelectorAll("tbody tr.is-active-row").forEach(item=>item.classList.remove("is-active-row"));
+    if(!cell)return;
+    const col=Number(cell.dataset.gridCol)||0;
+    grid.querySelector(`.task-grid-letter-row th[data-letter-col="${col}"]`)?.classList.add("is-active-col");
+    cell.parentElement?.classList.add("is-active-row");
+  }
   function clearTaskGridSelectionUi(){
+    highlightSelectionHeaders(null);
     const name=document.getElementById("taskGridNameBox");const input=document.getElementById("taskGridFormulaInput");const save=document.getElementById("taskGridFormulaSave");
     if(name)name.textContent="—";if(input){input.value="";input.readOnly=true;input.placeholder="Không có ô dữ liệu phù hợp";input.classList.remove("is-dirty");}if(save){save.hidden=true;save.classList.remove("is-ready");}
   }
@@ -306,6 +365,7 @@
   function selectTaskGridCell(cell,scroll=true){
     if(!cell)return;
     document.querySelectorAll("#taskExcelGrid td.is-selected-cell").forEach(item=>item.classList.remove("is-selected-cell"));cell.classList.add("is-selected-cell");
+    highlightSelectionHeaders(cell);
     const task=tasks.find(item=>String(item.id)===String(cell.dataset.taskId));if(!task)return;
     const field=cell.dataset.gridField;const row=Number(cell.dataset.gridRow)||2;const col=Number(cell.dataset.gridCol)||0;
     gridState.selection={taskId:String(task.id),field,row,col};
@@ -313,7 +373,24 @@
     if(name)name.textContent=`${GRID_LETTERS[col]||"A"}${row}`;
     if(input){input.value=gridCellValue(task,field,row);input.readOnly=!(isOversightUser()&&["doc","conclusion"].includes(field));input.placeholder=input.readOnly?"Ô này được thao tác bằng điều khiển trong bảng":"Sửa nội dung và nhấn Ctrl + Enter để lưu";input.classList.remove("is-dirty");input.dataset.original=input.value;}
     if(save){save.hidden=input?.readOnly!==false;save.classList.remove("is-ready");}
-    if(scroll)cell.scrollIntoView({block:"nearest",inline:"nearest"});
+    if(scroll)ensureCellVisible(cell);
+  }
+  /** Cuộn để ô đang chọn không bị che bởi các cột cố định hoặc hàng tiêu đề dính trên. */
+  function ensureCellVisible(cell){
+    const grid=document.getElementById("taskExcelGrid");const table=cell.closest("table");
+    if(!grid||!table){cell.scrollIntoView({block:"nearest",inline:"nearest"});return;}
+    const col=Number(cell.dataset.gridCol)||0;
+    if(col>=gridState.frozen){
+      const frozenWidth=gridState.widths.slice(0,gridState.frozen).reduce((sum,value)=>sum+value,0);
+      const left=cell.offsetLeft;const right=left+cell.offsetWidth;
+      if(left<grid.scrollLeft+frozenWidth)grid.scrollLeft=Math.max(0,left-frozenWidth);
+      else if(right>grid.scrollLeft+grid.clientWidth)grid.scrollLeft=right-grid.clientWidth;
+    }
+    const headerHeight=table.tHead?.offsetHeight||0;
+    const top=table.offsetTop+cell.offsetTop;const bottom=top+cell.offsetHeight;
+    if(top<grid.scrollTop+headerHeight)grid.scrollTop=Math.max(0,top-headerHeight);
+    else if(bottom>grid.scrollTop+grid.clientHeight)grid.scrollTop=Math.min(top-headerHeight,bottom-grid.clientHeight);
+    cell.scrollIntoView({block:"nearest",inline:"nearest"});
   }
   window.taskGridFormulaChanged=function(){
     const input=document.getElementById("taskGridFormulaInput");if(!input||input.readOnly)return;
@@ -325,36 +402,225 @@
     setTaskGridSyncState("syncing","Đang lưu ô đã chỉnh sửa...");
     await updateTaskGridField(selection.taskId,selection.field,input.value,button);
   };
+  /* ---------- [Univer] Thao tác bảng tính bằng bàn phím và chuột ---------- */
+  function gridCellAt(row,col){
+    return document.querySelector(`#taskExcelGrid td[data-grid-row="${row}"][data-grid-col="${col}"]`);
+  }
+  function pageRowBounds(){
+    const rows=[...document.querySelectorAll("#taskExcelGrid tbody tr[data-task-row]")].map(item=>Number(item.dataset.taskRow));
+    return rows.length?{first:Math.min(...rows),last:Math.max(...rows)}:null;
+  }
+  function focusGridCell(cell){
+    if(!cell)return false;
+    selectTaskGridCell(cell,true);
+    cell.focus({preventScroll:true});
+    return true;
+  }
+  /** Chuyển trang rồi chọn ô ở dòng đầu (hoặc cuối) trang mới, giữ nguyên cột. */
+  function moveToPage(page,col,atEnd){
+    const pageCount=Math.max(1,Math.ceil(filteredGridRows().length/gridState.pageSize));
+    if(page<1||page>pageCount)return false;
+    gridState.page=page;
+    renderTaskListFull();
+    const bounds=pageRowBounds();if(!bounds)return false;
+    const grid=document.getElementById("taskExcelGrid");if(grid&&!atEnd)grid.scrollTop=0;
+    return focusGridCell(gridCellAt(atEnd?bounds.last:bounds.first,col));
+  }
+  /** Mở ô để sửa (Enter / F2 / nhấn đúp). Ô chỉ đọc thì không làm gì. */
+  function enterTaskGridCell(cell){
+    if(!cell)return;
+    const field=cell.dataset.gridField;
+    if(field==="result"){openTaskLogModal(cell.dataset.taskId);return;}
+    if(field==="stt"){if(canFlagTask())openTaskRedFlagModal(cell.dataset.taskId);return;}
+    const control=cell.querySelector("input.task-grid-cell-input,textarea.task-grid-cell-textarea,select.task-grid-cell-select");
+    if(!control)return;
+    control.focus({preventScroll:true});
+    if(control.tagName==="SELECT"){try{control.showPicker?.();}catch(error){/* trình duyệt không hỗ trợ mở sẵn danh sách */}return;}
+    const end=control.value.length;
+    try{control.setSelectionRange(end,end);}catch(error){/* ô ngày không hỗ trợ đặt con trỏ */}
+  }
+  /** Esc khi đang sửa: trả lại giá trị cũ rồi quay về chế độ chọn ô (không lưu gì). */
+  function cancelCellEdit(control){
+    if(control.tagName==="SELECT"){
+      const index=[...control.options].findIndex(option=>option.defaultSelected);
+      if(index>=0)control.selectedIndex=index;
+    }else{
+      control.value=control.defaultValue;
+    }
+    const cell=control.closest("td[data-grid-field]");
+    control.blur();
+    if(cell){selectTaskGridCell(cell,false);cell.focus({preventScroll:true});}
+  }
+  async function copySelectedCell(){
+    const selection=gridState.selection;if(!selection)return;
+    const task=tasks.find(item=>String(item.id)===String(selection.taskId));if(!task)return;
+    const value=gridCellValue(task,selection.field,selection.row);
+    try{
+      await navigator.clipboard.writeText(value);
+      showModuleToast("Đã sao chép ô",`${GRID_LETTERS[selection.col]||""}${selection.row}: ${value.length>80?`${value.slice(0,80)}…`:value||"(trống)"}`);
+    }catch(error){
+      showModuleToast("Chưa sao chép được","Trình duyệt chưa cho phép truy cập bộ nhớ tạm. Hãy chọn nội dung ở thanh fx rồi sao chép.");
+    }
+  }
+  function handleGridKey(event){
+    const page=document.getElementById("page-tasks");
+    if(!page||page.classList.contains("hidden"))return;
+    if(document.querySelector(".modal.open"))return;
+    const target=event.target;
+    // Đang sửa trong ô: Esc hủy, Enter (ô một dòng) lưu và xuống dòng dưới
+    const control=target.closest?.("#taskExcelGrid td[data-grid-field] input,#taskExcelGrid td[data-grid-field] textarea,#taskExcelGrid td[data-grid-field] select");
+    if(control){
+      if(event.key==="Escape"){event.preventDefault();cancelCellEdit(control);return;}
+      if(event.key==="Enter"&&control.tagName==="INPUT"&&!event.isComposing){
+        event.preventDefault();
+        const cell=control.closest("td[data-grid-field]");
+        const below=cell?gridCellAt(Number(cell.dataset.gridRow)+1,Number(cell.dataset.gridCol)):null;
+        control.blur();
+        if(below)focusGridCell(below);else if(cell){selectTaskGridCell(cell,false);cell.focus({preventScroll:true});}
+      }
+      return;
+    }
+    if(target.closest?.("input,textarea,select,button,[contenteditable='true'],summary,a"))return;
+    if(!gridState.selection)return;
+    // Chỉ nhận phím khi tiêu điểm đang ở trong bảng (hoặc chưa ở đâu cả), tránh chiếm phím của phần khác trên trang
+    const inGrid=!!target.closest?.("#taskExcelGrid");
+    if(!inGrid&&target!==document.body&&target!==document.documentElement)return;
+    const lastCol=GRID_FIELDS.length-1;
+    let {row,col}=gridState.selection;
+    const bounds=pageRowBounds();if(!bounds)return;
+    const key=event.key;
+    const ctrl=event.ctrlKey||event.metaKey;
+    if(ctrl&&String(key).toLowerCase()==="c"){
+      if(String(window.getSelection?.()||"").trim())return; // đang bôi đen chữ: để trình duyệt sao chép như thường
+      event.preventDefault();copySelectedCell();return;
+    }
+    if(["Tab","Home","End","PageUp","PageDown"].includes(key)&&!inGrid)return;
+    if(key==="Enter"||key==="F2"){event.preventDefault();enterTaskGridCell(gridCellAt(row,col));return;}
+    if(key==="PageDown"){event.preventDefault();moveToPage(gridState.page+1,col,false);return;}
+    if(key==="PageUp"){event.preventDefault();moveToPage(gridState.page-1,col,false);return;}
+    if(key==="Home"){event.preventDefault();focusGridCell(gridCellAt(ctrl?bounds.first:row,0));return;}
+    if(key==="End"){event.preventDefault();focusGridCell(gridCellAt(ctrl?bounds.last:row,lastCol));return;}
+    if(key==="Tab"){
+      if(event.shiftKey){if(col>0)col-=1;else if(row>bounds.first){row-=1;col=lastCol;}else return;}
+      else{if(col<lastCol)col+=1;else if(row<bounds.last){row+=1;col=0;}else return;}
+      event.preventDefault();focusGridCell(gridCellAt(row,col));return;
+    }
+    if(!["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(key))return;
+    event.preventDefault();
+    if(key==="ArrowLeft")col=ctrl?0:Math.max(0,col-1);
+    if(key==="ArrowRight")col=ctrl?lastCol:Math.min(lastCol,col+1);
+    if(key==="ArrowUp"){
+      if(ctrl)row=bounds.first;
+      else if(row<=bounds.first){moveToPage(gridState.page-1,col,true);return;}
+      else row-=1;
+    }
+    if(key==="ArrowDown"){
+      if(ctrl)row=bounds.last;
+      else if(row>=bounds.last){moveToPage(gridState.page+1,col,false);return;}
+      else row+=1;
+    }
+    focusGridCell(gridCellAt(row,col));
+  }
+  /** Kéo mép chữ cột (A, B, C...) để đổi độ rộng; nhấn đúp để trả về mặc định. */
+  function installColumnResize(wrap){
+    let drag=null;
+    wrap.addEventListener("pointerdown",event=>{
+      const handle=event.target.closest(".task-grid-col-resizer");if(!handle)return;
+      event.preventDefault();
+      const index=Number(handle.dataset.resizeCol);
+      drag={index,startX:event.clientX,startWidth:gridState.widths[index],handle};
+      handle.setPointerCapture?.(event.pointerId);
+      handle.classList.add("is-dragging");document.body.classList.add("task-grid-resizing");
+    });
+    wrap.addEventListener("pointermove",event=>{
+      if(!drag)return;
+      gridState.widths[drag.index]=clampColumnWidth(drag.startWidth+(event.clientX-drag.startX),drag.index);
+      applyColumnWidths();
+    });
+    const finish=()=>{
+      if(!drag)return;
+      drag.handle.classList.remove("is-dragging");document.body.classList.remove("task-grid-resizing");
+      drag=null;saveColumnWidths(gridState.widths);window.syncTaskGridScrollbars();
+    };
+    wrap.addEventListener("pointerup",finish);
+    wrap.addEventListener("pointercancel",finish);
+    wrap.addEventListener("dblclick",event=>{
+      const handle=event.target.closest(".task-grid-col-resizer");
+      if(handle){
+        const index=Number(handle.dataset.resizeCol);
+        gridState.widths[index]=GRID_DEFAULT_WIDTHS[index];
+        applyColumnWidths();saveColumnWidths(gridState.widths);window.syncTaskGridScrollbars();
+        return;
+      }
+      const cell=event.target.closest("td[data-grid-field]");
+      if(cell&&!event.target.closest("input,textarea,select,button,a")){selectTaskGridCell(cell,false);enterTaskGridCell(cell);}
+    });
+  }
   function installTaskSheetInteractions(){
     const wrap=document.getElementById("taskExcelGrid");
     if(!wrap||wrap.dataset.sheetInteractionsReady)return;
     wrap.dataset.sheetInteractionsReady="1";
     wrap.addEventListener("click",event=>{
       const cell=event.target.closest("td[data-grid-field]");
-      if(cell)selectTaskGridCell(cell,false);
+      if(!cell)return;
+      selectTaskGridCell(cell,false);
+      // Bấm vào vùng trống của ô: đặt tiêu điểm vào ô để dùng ngay phím mũi tên
+      if(!event.target.closest("input,textarea,select,button,a,summary"))cell.focus({preventScroll:true});
     });
-    document.addEventListener("keydown",event=>{
-      const page=document.getElementById("page-tasks");
-      if(!page||page.classList.contains("hidden")||!gridState.selection)return;
-      if(event.target.closest("input,textarea,select,button,[contenteditable='true']"))return;
-      if(!["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Enter"].includes(event.key))return;
-      if(event.key==="Enter"){
-        if(gridState.selection.field==="result"){
-          event.preventDefault();
-          openTaskLogModal(gridState.selection.taskId);
-        }
-        return;
-      }
-      let {row,col}=gridState.selection;
-      if(event.key==="ArrowUp")row-=1;
-      if(event.key==="ArrowDown")row+=1;
-      if(event.key==="ArrowLeft")col-=1;
-      if(event.key==="ArrowRight")col+=1;
-      col=Math.max(0,Math.min(GRID_FIELDS.length-1,col));
-      const next=wrap.querySelector(`td[data-grid-row="${row}"][data-grid-col="${col}"]`);
-      if(!next)return;
-      event.preventDefault();selectTaskGridCell(next,true);next.focus({preventScroll:true});
-    });
+    installColumnResize(wrap);
+    document.addEventListener("keydown",handleGridKey);
+    installTaskGridDock();
+  }
+
+  /* ---------- [Univer] Thanh cuộn ngang + tab đơn vị luôn dính đáy màn hình ---------- */
+  let dockFrame=0;
+  function scheduleTaskGridDock(){
+    if(dockFrame)return;
+    dockFrame=window.requestAnimationFrame(()=>{dockFrame=0;updateTaskGridDock();});
+  }
+  function updateTaskGridDock(){
+    const grid=document.getElementById("taskExcelGrid");
+    const dock=document.getElementById("taskGridDock");
+    const spacer=document.getElementById("taskGridDockSpacer");
+    const page=document.getElementById("page-tasks");
+    if(!grid||!dock||!spacer)return;
+    const floating=dock.classList.contains("is-floating");
+    const release=()=>{
+      if(!floating)return;
+      dock.classList.remove("is-floating");dock.style.left="";dock.style.width="";spacer.style.height="0px";
+    };
+    if(!page||page.classList.contains("hidden")||!grid.offsetParent){release();return;}
+    const viewport=window.innerHeight||document.documentElement.clientHeight;
+    const dockHeight=dock.offsetHeight;
+    const gridRect=grid.getBoundingClientRect();
+    // Vị trí "tự nhiên" của khối đáy: khi đang ghim thì đo theo khoảng giữ chỗ
+    const naturalTop=(floating?spacer:dock).getBoundingClientRect().top;
+    // Chỉ ghim khi bảng đã lộ đủ vài dòng (≥160px), tránh rối mắt lúc bảng mới ló lên ở mép dưới
+    const gridVisible=gridRect.top<viewport-dockHeight-160&&gridRect.bottom>dockHeight+48;
+    const shouldFloat=gridVisible&&naturalTop+dockHeight>viewport+1;
+    if(!shouldFloat){release();return;}
+    spacer.style.height=`${dockHeight}px`;
+    dock.classList.add("is-floating");
+    dock.style.left=`${Math.round(gridRect.left)}px`;
+    dock.style.width=`${Math.round(gridRect.width)}px`;
+  }
+  function installTaskGridDock(){
+    const grid=document.getElementById("taskExcelGrid");if(!grid||grid.dataset.dockReady)return;
+    grid.dataset.dockReady="1";
+    // Trang cuộn bằng thân trang (body) nên lắng nghe ở pha "capture" để bắt mọi vùng cuộn
+    document.addEventListener("scroll",scheduleTaskGridDock,{capture:true,passive:true});
+    window.addEventListener("resize",scheduleTaskGridDock,{passive:true});
+    if("ResizeObserver" in window)new ResizeObserver(scheduleTaskGridDock).observe(grid);
+  }
+  window.updateTaskGridDock=scheduleTaskGridDock;
+
+  /* ---------- [Univer] Tab đơn vị: tự cuộn tới tab đang chọn ---------- */
+  function revealActiveSheetTab(){
+    const tabs=document.getElementById("taskSheetTabs");const active=tabs?.querySelector(".task-sheet-tab.is-active");
+    if(!tabs||!active)return;
+    const left=active.offsetLeft;const right=left+active.offsetWidth;
+    if(left<tabs.scrollLeft)tabs.scrollLeft=Math.max(0,left-8);
+    else if(right>tabs.scrollLeft+tabs.clientWidth)tabs.scrollLeft=right-tabs.clientWidth+8;
   }
   window.renderTaskGridPagination=function(total,pageCount){
     const host=document.getElementById("taskGridPagination");if(!host)return;
@@ -377,6 +643,7 @@
       grid.dataset.bottomScrollReady="1";
     }
     bar.scrollLeft=grid.scrollLeft;
+    scheduleTaskGridDock();
   };
   window.resetTaskGridFilters=function(){
     Object.assign(gridState,{search:"",month:"",assessment:"",sheet:"all",page:1});
@@ -390,7 +657,8 @@
     if(!tabs||!isOversightUser())return;
     const all=activeTasks();
     const items=[{key:"all",label:"Tất cả nhiệm vụ",count:all.length},...uniqueUnits().map(unit=>({key:unit,label:unit,count:all.filter(task=>taskUnit(task)===unit).length}))];
-    tabs.innerHTML=items.map(item=>`<button type="button" class="task-sheet-tab ${gridState.sheet===item.key?"is-active":""}" onclick="setTaskGridSheet('${html(item.key).replace(/'/g,"&#39;")}')">${html(item.label)} <small>${item.count}</small></button>`).join("");
+    tabs.innerHTML=items.map(item=>`<button type="button" class="task-sheet-tab ${gridState.sheet===item.key?"is-active":""}" aria-pressed="${gridState.sheet===item.key}" onclick="setTaskGridSheet('${html(item.key).replace(/'/g,"&#39;")}')">${html(item.label)} <small>${item.count}</small></button>`).join("");
+    window.requestAnimationFrame(revealActiveSheetTab);
   };
   window.renderTaskGridFilterOptions=function(){
     const month=document.getElementById("taskGridMonthFilter");
@@ -406,7 +674,12 @@
     if(!page||page.classList.contains("hidden")||!input)return;
     event.preventDefault();input.focus();input.select();
   });
-  window.addEventListener("resize",()=>window.requestAnimationFrame(window.syncTaskGridScrollbars));
+  window.addEventListener("resize",()=>window.requestAnimationFrame(()=>{
+    // Đổi giữa điện thoại / máy tính bảng / máy tính thì số cột cố định thay đổi → vẽ lại bảng
+    const page=document.getElementById("page-tasks");
+    if(frozenColumnCount()!==gridState.frozen&&page&&!page.classList.contains("hidden"))renderTaskListFull();
+    else window.syncTaskGridScrollbars();
+  }));
 
   window.commitTaskGridDeadline=function(taskId,element){
     const raw=String(element?.value||"").trim();
