@@ -1,0 +1,182 @@
+/* =====================================================================
+   Duyệt cập nhật tiến độ (05/10/2026)
+   Cùng hệ màu với Dashboard và Tab Nhiệm vụ: xanh #2563eb, viền #dbe3ee, chữ #172033 / #334155.
+   Nội dung 14–15px, tiêu đề khối 16–17px. Không cuộn lồng trong trang; chỉ phần thân cửa sổ chi tiết được cuộn.
+   ===================================================================== */
+.tap-page,.tap-modal{
+  --tap-ink:#172033;--tap-text:#334155;--tap-muted:#5b6b80;--tap-line:#dbe3ee;--tap-soft:#f6f8fb;
+  --tap-blue:#2563eb;--tap-blue-soft:#eaf1ff;
+  --tap-amber:#b45309;--tap-amber-soft:#fef6e7;--tap-amber-line:#f5d9a8;
+  --tap-green:#15803d;--tap-green-soft:#e8f7ee;
+  --tap-red:#b91c1c;--tap-red-soft:#fdecec;
+}
+#page-approvals.tap-page{display:flex;flex-direction:column;gap:20px;padding:4px 0 32px;color:var(--tap-text);font-size:15px;line-height:1.55}
+#page-approvals.tap-page.hidden,#page-approvals.tap-page[hidden]{display:none!important}
+.tap-page svg,.tap-modal svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tap-sr-only{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Đầu trang */
+.tap-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+#appScreen .tap-header h2{margin:0;color:var(--tap-ink)!important;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.01em}
+.tap-header p{max-width:70ch;margin:0;color:var(--tap-muted);font-size:14px}
+
+/* Nút */
+.tap-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:8px 14px;border:1px solid var(--tap-line);border-radius:10px;background:#fff;color:var(--tap-ink);font:inherit;font-size:14px!important;font-weight:600;line-height:1.2;white-space:nowrap;cursor:pointer;transition:background-color .15s,border-color .15s,color .15s}
+.tap-btn:hover{border-color:#b9c6d8;background:var(--tap-soft)}
+.tap-btn.is-primary{border-color:var(--tap-blue);background:var(--tap-blue);color:#fff}
+.tap-btn.is-primary:hover{border-color:#1d4ed8;background:#1d4ed8}
+.tap-btn.is-danger{border-color:#f3b4b4;background:#fff;color:var(--tap-red)}
+.tap-btn.is-danger:hover{border-color:#e98b8b;background:var(--tap-red-soft)}
+.tap-btn:disabled{opacity:.6;cursor:wait}
+.tap-btn[hidden]{display:none}
+.tap-btn svg{width:17px;height:17px;flex:0 0 17px}
+.tap-btn.is-loading svg{animation:tap-spin .8s linear infinite}
+@keyframes tap-spin{to{transform:rotate(360deg)}}
+.tap-btn:focus-visible,.tap-filter:focus-visible,.tap-link:focus-visible,.tap-icon-btn:focus-visible{outline:2px solid var(--tap-blue);outline-offset:2px}
+.tap-icon-btn{display:grid;flex:0 0 40px;width:40px;height:40px;place-items:center;border:1px solid var(--tap-line);border-radius:10px;background:#fff;color:#475569;cursor:pointer}
+.tap-icon-btn:hover{background:var(--tap-soft)}
+.tap-icon-btn svg{width:18px;height:18px}
+.tap-link{align-self:flex-start;padding:2px 0;border:0;background:none;color:var(--tap-blue);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.tap-link:hover{text-decoration:underline}
+
+/* Bộ đếm = bộ lọc trạng thái */
+.tap-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,.7fr);gap:12px}
+.tap-filter{position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:64px;padding:12px 16px;border:1px solid var(--tap-line);border-radius:14px;background:#fff;color:var(--tap-text);font:inherit;text-align:left;cursor:pointer;transition:border-color .15s,background-color .15s,box-shadow .15s}
+.tap-filter span{font-size:14px;font-weight:600}
+.tap-filter b{color:var(--tap-ink);font-size:26px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums}
+.tap-filter:hover{border-color:#b9c6d8}
+.tap-filter[aria-pressed="true"]{border-color:var(--tap-blue);box-shadow:inset 0 0 0 1px var(--tap-blue);background:#fbfdff}
+.tap-filter.is-pending b{color:var(--tap-amber)}
+.tap-filter.is-approved b{color:var(--tap-green)}
+.tap-filter.is-rejected b{color:var(--tap-red)}
+.tap-filter.is-all b{color:var(--tap-muted);font-size:22px}
+
+/* Khung danh sách */
+.tap-panel{border:1px solid var(--tap-line);border-radius:16px;background:#fff}
+.tap-toolbar{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--tap-line)}
+.tap-search{position:relative;display:flex;flex:1;max-width:560px;align-items:center}
+.tap-search svg{position:absolute;left:12px;width:18px;height:18px;color:#64748b;pointer-events:none}
+#appScreen .tap-search input{width:100%;min-height:42px;padding:9px 12px 9px 38px;border:1px solid var(--tap-line)!important;border-radius:10px!important;background:#fff!important;color:var(--tap-ink)!important;font-size:15px!important;box-shadow:none!important}
+#appScreen .tap-search input:focus{outline:0;border-color:var(--tap-blue)!important;box-shadow:0 0 0 3px rgba(37,99,235,.14)!important}
+.tap-result-count{color:var(--tap-muted);font-size:14px;white-space:nowrap}
+.tap-list{display:flex;flex-direction:column}
+
+/* Một đề nghị */
+.tap-item{display:grid;grid-template-columns:minmax(0,1fr) 230px auto;gap:16px 24px;align-items:start;padding:18px 16px;border-top:1px solid #eef2f7}
+.tap-item:first-child{border-top:0}
+.tap-item.is-pending{box-shadow:inset 3px 0 0 #f0b44c}
+.tap-item-main{display:flex;min-width:0;flex-direction:column;gap:8px}
+.tap-item-title{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
+#appScreen .tap-item-title h4{margin:0;color:var(--tap-ink)!important;font-size:16px;line-height:1.4;font-weight:700;overflow-wrap:anywhere}
+.tap-item-content{margin:0;color:var(--tap-text);font-size:15px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.tap-item-content.is-clamped{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:4}
+.tap-item-content.is-muted,.tap-muted{color:var(--tap-muted)}
+.tap-item-review{margin:0;padding:8px 10px;border-radius:8px;background:var(--tap-soft);color:var(--tap-text);font-size:14px;overflow-wrap:anywhere}
+.tap-item-meta{display:flex;flex-direction:column;gap:8px;margin:0}
+.tap-item-meta div{min-width:0}
+.tap-item-meta dt{color:var(--tap-muted);font-size:13px}
+.tap-item-meta dd{margin:0;color:var(--tap-ink);font-size:14px;font-weight:600;overflow-wrap:anywhere}
+.tap-item-action{display:flex;justify-content:flex-end}
+.tap-chips{display:flex;flex-wrap:wrap;gap:6px}
+.tap-chip{display:inline-flex;align-items:center;min-height:26px;padding:3px 9px;border:1px solid var(--tap-line);border-radius:999px;background:var(--tap-soft);color:var(--tap-text);font-size:13px;font-weight:600}
+.tap-chip.is-changed{border-color:var(--tap-amber-line);background:var(--tap-amber-soft);color:#92400e}
+
+/* Nhãn trạng thái */
+.tap-status{display:inline-flex;align-items:center;min-height:24px;padding:2px 9px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap}
+.tap-status.is-pending{background:var(--tap-amber-soft);color:var(--tap-amber)}
+.tap-status.is-approved{background:var(--tap-green-soft);color:var(--tap-green)}
+.tap-status.is-rejected{background:var(--tap-red-soft);color:var(--tap-red)}
+.tap-status:empty{display:none}
+
+/* Trạng thái trống / đang tải */
+.tap-empty{display:flex;flex-direction:column;align-items:center;gap:6px;padding:36px 20px;text-align:center}
+.tap-empty svg{width:34px;height:34px;color:#94a3b8}
+.tap-empty b{color:var(--tap-ink);font-size:16px}
+.tap-empty p{max-width:52ch;margin:0;color:var(--tap-muted);font-size:14px}
+.tap-item.is-skeleton i{display:block;height:12px;margin:8px 0;border-radius:6px;background:linear-gradient(90deg,#eef2f7 0%,#f6f8fb 50%,#eef2f7 100%);background-size:200% 100%;animation:tap-shimmer 1.2s ease-in-out infinite}
+@keyframes tap-shimmer{from{background-position:100% 0}to{background-position:-100% 0}}
+
+/* ---------- Cửa sổ chi tiết: đầu và chân cố định, chỉ thân cuộn ---------- */
+#taskApprovalModal.modal{align-items:center;justify-content:center;padding:16px}
+.tap-modal-card{display:flex;width:min(980px,100%);max-height:min(90dvh,900px);flex-direction:column;overflow:hidden;border:1px solid var(--tap-line);border-radius:16px;background:#fff;color:var(--tap-text);font-size:15px;line-height:1.55;box-shadow:0 24px 60px rgba(15,23,42,.22);animation:tap-in .18s ease-out}
+@keyframes tap-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.tap-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 20px 14px;border-bottom:1px solid var(--tap-line)}
+.tap-modal-heading{display:flex;min-width:0;flex-direction:column;align-items:flex-start;gap:6px}
+.tap-modal-heading h3{display:-webkit-box;margin:0;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:3;color:var(--tap-ink);font-size:18px;line-height:1.35;font-weight:700;overflow-wrap:anywhere}
+.tap-modal-heading p{margin:0;color:var(--tap-muted);font-size:14px;overflow-wrap:anywhere}
+.tap-modal-body{min-height:0;flex:1;overflow-y:auto;overscroll-behavior:contain;padding:18px 20px;display:flex;flex-direction:column;gap:20px}
+.tap-modal-body:focus-visible{outline:2px solid var(--tap-blue);outline-offset:-2px}
+.tap-section h4{margin:0 0 10px;color:var(--tap-ink);font-size:16px;font-weight:700}
+.tap-task-content{margin:0 0 14px;max-width:80ch;color:var(--tap-text);font-size:15px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+.tap-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 20px;margin:0;padding:12px 14px;border-radius:10px;background:var(--tap-soft)}
+.tap-facts dt{color:var(--tap-muted);font-size:13px}
+.tap-facts dd{margin:0;color:var(--tap-ink);font-size:14px;font-weight:600;overflow-wrap:anywhere}
+.tap-review-note{margin:0;padding:10px 12px;border-radius:10px;background:var(--tap-soft);white-space:pre-wrap;overflow-wrap:anywhere}
+
+/* Bảng so sánh hai cột */
+.tap-compare{border:1px solid var(--tap-line);border-radius:12px;overflow:hidden}
+.tap-compare-row{display:grid;grid-template-columns:180px minmax(0,1fr) minmax(0,1fr);border-top:1px solid #eef2f7}
+.tap-compare-row:first-child{border-top:0}
+.tap-compare-row.is-head{background:var(--tap-soft);color:var(--tap-muted);font-size:13px;font-weight:700}
+.tap-compare-row>span{min-width:0;padding:10px 12px;white-space:pre-wrap;overflow-wrap:anywhere}
+.tap-compare-row>span+span{border-left:1px solid #eef2f7}
+.tap-compare-label{display:flex;flex-direction:column;align-items:flex-start;gap:4px;color:var(--tap-ink);font-size:14px;font-weight:600}
+.tap-compare-label em{padding:1px 8px;border-radius:999px;background:var(--tap-amber-soft);color:#92400e;font-size:12px;font-style:normal;font-weight:700}
+.tap-compare-label em.is-same{background:#f1f5f9;color:var(--tap-muted)}
+.tap-compare-cell{font-size:15px;line-height:1.6}
+.tap-compare-row.is-changed{box-shadow:inset 3px 0 0 #f0b44c}
+.tap-compare-row.is-changed .tap-compare-cell.is-next{background:#fffaf0;color:var(--tap-ink)}
+
+/* Chân cửa sổ */
+.tap-modal-foot{display:flex;flex-direction:column;gap:10px;padding:14px 20px 16px;border-top:1px solid var(--tap-line);background:#fbfcfe}
+.tap-note[hidden]{display:none}
+.tap-note label{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-bottom:6px;color:var(--tap-ink);font-size:14px;font-weight:700}
+.tap-note small{color:var(--tap-muted);font-size:13px;font-weight:500}
+.tap-note textarea{display:block;width:100%;min-height:64px;max-height:160px;padding:10px 12px;border:1px solid var(--tap-line);border-radius:10px;background:#fff;color:var(--tap-ink);font:inherit;font-size:15px;line-height:1.5;resize:vertical}
+.tap-note textarea:focus{outline:0;border-color:var(--tap-blue);box-shadow:0 0 0 3px rgba(37,99,235,.14)}
+.tap-note textarea.is-invalid{border-color:#e98b8b;box-shadow:0 0 0 3px rgba(220,38,38,.12)}
+.tap-error{margin:0;padding:8px 12px;border-radius:8px;background:var(--tap-red-soft);color:var(--tap-red);font-size:14px;font-weight:600}
+.tap-error[hidden]{display:none}
+.tap-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+
+/* ---------- Màn hình nhỏ ---------- */
+@media(max-width:1100px){
+  .tap-item{grid-template-columns:minmax(0,1fr) auto}
+  .tap-item-meta{grid-column:1/-1;grid-row:2;flex-direction:row;flex-wrap:wrap;gap:6px 20px}
+  .tap-item-action{grid-column:2;grid-row:1}
+}
+@media(max-width:720px){
+  #page-approvals.tap-page{gap:16px}
+  .tap-filters{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .tap-filter{min-height:56px;padding:10px 12px}
+  .tap-filter b{font-size:22px}
+  .tap-toolbar{flex-wrap:wrap;padding:12px}
+  .tap-search{max-width:none;flex-basis:100%}
+  .tap-item{grid-template-columns:1fr;padding:16px 12px}
+  .tap-item-meta{grid-row:auto}
+  .tap-item-action{grid-column:1;grid-row:auto;justify-content:stretch}
+  .tap-item-action .tap-btn{width:100%;min-height:44px}
+  #taskApprovalModal.modal{align-items:flex-end;padding:0}
+  .tap-modal-card{width:100%;max-height:94dvh;border-radius:16px 16px 0 0;padding-bottom:env(safe-area-inset-bottom)}
+  .tap-modal-head,.tap-modal-body{padding-inline:16px}
+  .tap-modal-foot{padding:12px 16px}
+  .tap-compare-row.is-head{display:none}
+  .tap-compare-row{grid-template-columns:1fr}
+  .tap-compare-row>span+span{border-left:0;border-top:1px dashed #eef2f7}
+  .tap-compare-cell::before{content:attr(data-label);display:block;margin-bottom:2px;color:var(--tap-muted);font-size:12px;font-weight:700}
+  .tap-actions{display:grid;grid-template-columns:1fr 1fr}
+  .tap-actions #taskApprovalCloseButton{grid-column:1/-1;order:3}
+  .tap-actions .tap-btn{min-height:44px}
+  .tap-icon-btn{flex-basis:44px;width:44px;height:44px}
+}
+@media(prefers-reduced-motion:reduce){.tap-modal-card,.tap-item.is-skeleton i,.tap-btn.is-loading svg{animation:none}}
+
+/* Phân quyền: thuộc tính hidden phải thắng mọi quy tắc hiển thị khác */
+[data-task-creator][hidden],[data-task-oversight][hidden],[data-update-reviewer][hidden]{display:none!important}
+
+/* Điện thoại: khi cửa sổ dạng tấm trượt đáy đang mở, đưa thông báo nhanh lên trên để không che nút hành động */
+@media(max-width:720px){
+  body:has(.modal.open) .module-toast{top:max(12px,env(safe-area-inset-top,12px))!important;bottom:auto!important}
+  .tap-note textarea{min-height:52px}
+  .tap-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
