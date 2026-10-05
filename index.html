@@ -1285,27 +1285,138 @@ body{
   <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261005tap1">
   <link rel="stylesheet" href="./assets/task-approvals.css?v=20261005tap1">
   <link rel="stylesheet" href="./assets/dashboard-overview.css?v=20261004dov3">
+  <link rel="stylesheet" href="./assets/auth-experience.css?v=20261005auth1">
 </head>
 <body class="sidebar-collapsed">
   <!-- LANDING -->
-  <section id="loginScreen" class="screen active">
-    <div class="login-bg">
-      <div class="login-card card rounded-[2rem] w-full max-w-md p-8 text-center">
-        <div class="mx-auto w-24 h-24 rounded-[1.6rem] bg-white p-1 shadow-xl mb-5"><img src="./assets/ubkt-logo.png" alt="Logo Ủy ban Kiểm tra" class="w-full h-full object-contain rounded-2xl"></div>
-        <h1 class="text-xl sm:text-2xl font-extrabold leading-tight">ỦY BAN KIỂM TRA</h1>
-        <p class="font-extrabold text-red-600 mt-1">ĐẢNG ỦY PHƯỜNG TÂN MỸ</p>
-        <p class="text-sm text-slate-500 mt-2">Hệ thống giám sát, kiểm tra trên dữ liệu</p>
-        <div class="mt-7 space-y-3 text-left">
-          <label class="text-xs font-extrabold text-slate-500 uppercase">Tài khoản</label>
-          <input id="loginUser" class="field" placeholder="admin" value="admin" autocomplete="username" required>
-          <label class="text-xs font-extrabold text-slate-500 uppercase">Mật khẩu</label>
-          <div class="relative"><input id="loginPass" class="field pr-14" placeholder="Nhập mật khẩu" type="password" autocomplete="current-password" required><button type="button" onclick="toggleLoginPassword()" class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-xl text-xs font-extrabold text-blue-600 hover:bg-blue-50">Hiện</button></div>
-          <p id="loginErr" class="hidden text-sm text-red-500 font-bold">Vui lòng nhập mật khẩu.</p><p class="text-xs text-slate-500">Vui lòng nhập mật khẩu để đăng nhập hệ thống.</p>
-          <button onclick="login()" class="btn btn-primary w-full mt-2">Đăng nhập hệ thống</button>
-          <button type="button" onclick="openRegisterModal()" class="btn btn-ghost w-full">Đơn vị đăng ký tài khoản</button>
+  <section id="loginScreen" class="screen active" aria-label="Đăng nhập hệ thống">
+    <div class="ax-shell">
+      <div class="ax-card" id="authCard">
+        <header class="ax-brand">
+          <img src="./assets/ubkt-logo.png" alt="" class="ax-logo" width="56" height="56">
+          <div>
+            <p class="ax-org">ỦY BAN KIỂM TRA</p>
+            <p class="ax-org-sub">ĐẢNG ỦY PHƯỜNG TÂN MỸ</p>
+          </div>
+        </header>
+
+        <!-- Đăng nhập -->
+        <div class="ax-view" data-auth-view="login">
+          <h1 class="ax-title" tabindex="-1">Đăng nhập hệ thống</h1>
+          <p class="ax-sub">Hệ thống giám sát, kiểm tra trên dữ liệu</p>
+          <div id="authNotice" class="ax-alert" role="status" aria-live="polite" hidden></div>
+          <form id="loginForm" class="ax-form" novalidate>
+            <div class="ax-field">
+              <label for="loginUser">Email hoặc tài khoản</label>
+              <input id="loginUser" name="username" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="ten@donvi.vn" required aria-describedby="loginErr">
+            </div>
+            <div class="ax-field">
+              <div class="ax-label-row">
+                <label for="loginPass">Mật khẩu</label>
+                <button type="button" class="ax-link" onclick="openForgotPasswordModal()">Quên mật khẩu?</button>
+              </div>
+              <div class="ax-pass">
+                <input id="loginPass" name="password" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu" required aria-describedby="loginErr">
+                <button type="button" class="ax-eye" data-toggle-password="loginPass" aria-controls="loginPass" aria-pressed="false" aria-label="Hiện mật khẩu"></button>
+              </div>
+            </div>
+            <p id="loginErr" class="ax-error" role="alert" aria-live="assertive" hidden></p>
+            <button id="loginSubmit" type="submit" class="ax-btn ax-btn-primary">
+              <span class="ax-spinner" aria-hidden="true"></span><span data-label>Đăng nhập</span>
+            </button>
+          </form>
+          <div class="ax-divider" role="separator"><span>Hoặc</span></div>
+          <button id="googleSignInButton" type="button" class="ax-btn ax-btn-google" onclick="signInWithGoogle()">
+            <span class="ax-spinner" aria-hidden="true"></span>
+            <svg class="ax-google-icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+            <span data-label>Tiếp tục với Google</span>
+          </button>
+          <div class="ax-register">
+            <button type="button" class="ax-btn ax-btn-outline" onclick="openRegisterModal()">Đơn vị đăng ký tài khoản</button>
+            <p class="ax-note">Tài khoản đơn vị chỉ sử dụng được sau khi Admin/UBKT phê duyệt.</p>
+          </div>
         </div>
-        <p class="text-xs text-slate-400 mt-5">Tài khoản đơn vị chỉ sử dụng được sau khi Admin phê duyệt.</p>
+
+        <!-- Đang xử lý (quay lại từ Google / liên kết email) -->
+        <div class="ax-view ax-center" data-auth-view="loading" hidden>
+          <span class="ax-spinner is-lg" aria-hidden="true"></span>
+          <h1 class="ax-title" tabindex="-1">Đang xác thực…</h1>
+          <p class="ax-sub" id="authLoadingText" role="status" aria-live="polite">Vui lòng chờ trong giây lát.</p>
+        </div>
+
+        <!-- Hoàn tất đăng ký (lần đầu đăng nhập Google) -->
+        <div class="ax-view" data-auth-view="complete" hidden>
+          <h1 class="ax-title" tabindex="-1">Hoàn tất đăng ký tài khoản</h1>
+          <p class="ax-sub">Bạn đăng nhập Google lần đầu. Vui lòng cho biết đơn vị công tác để Admin/UBKT phê duyệt.</p>
+          <form id="completeRegistrationForm" class="ax-form" novalidate>
+            <div class="ax-field">
+              <label for="completeEmail">Email Google</label>
+              <input id="completeEmail" type="email" readonly aria-readonly="true" class="is-readonly">
+            </div>
+            <div class="ax-field">
+              <label for="completeFullName">Họ và tên <span class="ax-req" aria-hidden="true">*</span></label>
+              <input id="completeFullName" type="text" autocomplete="name" maxlength="120" required aria-required="true">
+            </div>
+            <div class="ax-field">
+              <label for="completeUnit">Tên đơn vị <span class="ax-req" aria-hidden="true">*</span></label>
+              <select id="completeUnit" required aria-required="true" aria-describedby="completeUnitHelp"><option value="">Chọn đơn vị trong danh mục</option></select>
+              <small id="completeUnitHelp" class="ax-help">Sau khi được duyệt, tài khoản chỉ làm việc với nhiệm vụ của đơn vị này.</small>
+            </div>
+            <div class="ax-field">
+              <label for="completePosition">Chức vụ / bộ phận <span class="ax-optional">(không bắt buộc)</span></label>
+              <input id="completePosition" type="text" autocomplete="organization-title" maxlength="120">
+            </div>
+            <p id="completeMessage" class="ax-error" role="alert" hidden></p>
+            <button id="completeSubmit" type="submit" class="ax-btn ax-btn-primary">
+              <span class="ax-spinner" aria-hidden="true"></span><span data-label>Gửi yêu cầu cấp tài khoản</span>
+            </button>
+            <button type="button" class="ax-btn ax-btn-ghost" onclick="cancelAuthFlow()">Hủy và đăng xuất</button>
+          </form>
+        </div>
+
+        <!-- Trạng thái tài khoản: chờ duyệt / bị từ chối / tạm ngưng -->
+        <div class="ax-view ax-center" data-auth-view="status" hidden>
+          <span id="authStatusIcon" class="ax-status-icon" data-tone="pending" aria-hidden="true"></span>
+          <h1 id="authStatusTitle" class="ax-title" tabindex="-1">Tài khoản đang chờ phê duyệt</h1>
+          <p id="authStatusText" class="ax-sub"></p>
+          <dl class="ax-status-meta">
+            <div><dt>Email</dt><dd id="authStatusEmail">—</dd></div>
+            <div><dt>Đơn vị đăng ký</dt><dd id="authStatusUnit">—</dd></div>
+            <div><dt>Trạng thái</dt><dd><span id="authStatusBadge" class="ax-badge" data-tone="pending">Chờ phê duyệt</span></dd></div>
+          </dl>
+          <p id="authStatusContact" class="ax-note">Cần hỗ trợ, vui lòng liên hệ Ủy ban Kiểm tra Đảng ủy phường hoặc quản trị viên hệ thống.</p>
+          <button type="button" class="ax-btn ax-btn-primary" onclick="showAuthView('login')">Quay lại đăng nhập</button>
+        </div>
+
+        <!-- Đặt mật khẩu mới (từ liên kết khôi phục trong email) -->
+        <div class="ax-view" data-auth-view="reset" hidden>
+          <h1 class="ax-title" tabindex="-1">Đặt mật khẩu mới</h1>
+          <p class="ax-sub">Tạo mật khẩu mới cho tài khoản <b id="resetEmail"></b>.</p>
+          <form id="resetPasswordForm" class="ax-form" novalidate>
+            <div class="ax-field">
+              <label for="resetPassword">Mật khẩu mới</label>
+              <div class="ax-pass">
+                <input id="resetPassword" type="password" autocomplete="new-password" required aria-describedby="resetRules">
+                <button type="button" class="ax-eye" data-toggle-password="resetPassword" aria-controls="resetPassword" aria-pressed="false" aria-label="Hiện mật khẩu"></button>
+              </div>
+            </div>
+            <div class="ax-field">
+              <label for="resetPasswordConfirm">Nhập lại mật khẩu mới</label>
+              <div class="ax-pass">
+                <input id="resetPasswordConfirm" type="password" autocomplete="new-password" required aria-describedby="resetRules">
+                <button type="button" class="ax-eye" data-toggle-password="resetPasswordConfirm" aria-controls="resetPasswordConfirm" aria-pressed="false" aria-label="Hiện mật khẩu"></button>
+              </div>
+            </div>
+            <ul id="resetRules" class="ax-rules" data-password-rules="resetPassword" data-password-confirm="resetPasswordConfirm" aria-live="polite"></ul>
+            <p id="resetMessage" class="ax-error" role="alert" hidden></p>
+            <button id="resetSubmit" type="submit" class="ax-btn ax-btn-primary">
+              <span class="ax-spinner" aria-hidden="true"></span><span data-label>Cập nhật mật khẩu</span>
+            </button>
+            <button type="button" class="ax-btn ax-btn-ghost" onclick="cancelAuthFlow()">Hủy</button>
+          </form>
+        </div>
       </div>
+      <p class="ax-footer">© Ủy ban Kiểm tra Đảng ủy phường Tân Mỹ</p>
     </div>
   </section>
 
@@ -2031,49 +2142,100 @@ body{
     </div>
   </section>
 
-  <div id="registerModal" class="modal">
-    <div class="modal-card card rounded-[2rem] w-full max-w-2xl">
-      <div class="p-5 border-b border-slate-200 flex items-start justify-between gap-3">
+  <div id="registerModal" class="ax-modal" role="dialog" aria-modal="true" aria-labelledby="registerTitle" hidden>
+    <div class="ax-modal-card">
+      <header class="ax-modal-head">
         <div>
-          <div class="antd-modal-kicker">ĐĂNG KÝ DÀNH CHO ĐƠN VỊ</div>
-          <h3 class="text-xl font-extrabold">Tạo yêu cầu cấp tài khoản</h3>
-          <p class="text-sm text-slate-500 mt-1">Dùng chính email và mật khẩu này để đăng nhập sau khi Admin hoàn tất kích hoạt.</p>
+          <p class="ax-kicker">Dành cho đơn vị</p>
+          <h2 id="registerTitle" class="ax-modal-title">Đăng ký tài khoản đơn vị</h2>
         </div>
-        <button type="button" onclick="closeRegisterModal()" class="btn btn-ghost px-3" aria-label="Đóng">✕</button>
+        <button type="button" class="ax-close" onclick="closeRegisterModal()" aria-label="Đóng"></button>
+      </header>
+      <form id="registerForm" class="ax-form ax-modal-body" novalidate>
+        <ol class="ax-steps" aria-label="Quy trình cấp tài khoản">
+          <li class="is-active"><b>1</b> Gửi yêu cầu</li>
+          <li><b>2</b> Admin/UBKT duyệt</li>
+          <li><b>3</b> Đăng nhập</li>
+        </ol>
+        <div class="ax-grid">
+          <div class="ax-field ax-span-2">
+            <label for="registerFullName">Họ và tên <span class="ax-req" aria-hidden="true">*</span></label>
+            <input id="registerFullName" type="text" autocomplete="name" maxlength="120" placeholder="Nguyễn Văn A" required aria-required="true">
+          </div>
+          <div class="ax-field ax-span-2">
+            <label for="registerEmail">Email công vụ <span class="ax-req" aria-hidden="true">*</span></label>
+            <input id="registerEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" maxlength="254" placeholder="ten@donvi.vn" required aria-required="true" aria-describedby="registerEmailHelp">
+            <small id="registerEmailHelp" class="ax-help">Dùng email này để đăng nhập sau khi được phê duyệt.</small>
+          </div>
+          <div class="ax-field">
+            <label for="registerUnit">Tên đơn vị <span class="ax-req" aria-hidden="true">*</span></label>
+            <select id="registerUnit" required aria-required="true"><option value="">Chọn đơn vị trong danh mục</option></select>
+          </div>
+          <div class="ax-field">
+            <label for="registerPosition">Chức vụ / bộ phận <span class="ax-optional">(không bắt buộc)</span></label>
+            <input id="registerPosition" type="text" autocomplete="organization-title" maxlength="120" placeholder="VD: Chuyên viên">
+          </div>
+          <div class="ax-field">
+            <label for="registerPassword">Mật khẩu <span class="ax-req" aria-hidden="true">*</span></label>
+            <div class="ax-pass">
+              <input id="registerPassword" type="password" autocomplete="new-password" required aria-required="true" aria-describedby="registerRules">
+              <button type="button" class="ax-eye" data-toggle-password="registerPassword" aria-controls="registerPassword" aria-pressed="false" aria-label="Hiện mật khẩu"></button>
+            </div>
+          </div>
+          <div class="ax-field">
+            <label for="registerPasswordConfirm">Xác nhận mật khẩu <span class="ax-req" aria-hidden="true">*</span></label>
+            <div class="ax-pass">
+              <input id="registerPasswordConfirm" type="password" autocomplete="new-password" required aria-required="true" aria-describedby="registerRules">
+              <button type="button" class="ax-eye" data-toggle-password="registerPasswordConfirm" aria-controls="registerPasswordConfirm" aria-pressed="false" aria-label="Hiện mật khẩu"></button>
+            </div>
+          </div>
+          <ul id="registerRules" class="ax-rules ax-span-2" data-password-rules="registerPassword" data-password-confirm="registerPasswordConfirm" aria-live="polite"></ul>
+        </div>
+        <p id="registerMessage" class="ax-error" role="alert" hidden></p>
+        <footer class="ax-modal-foot">
+          <button type="button" class="ax-btn ax-btn-ghost" onclick="closeRegisterModal()">Hủy</button>
+          <button id="registerSubmitButton" type="submit" class="ax-btn ax-btn-primary">
+            <span class="ax-spinner" aria-hidden="true"></span><span data-label>Gửi yêu cầu cấp tài khoản</span>
+          </button>
+        </footer>
+      </form>
+      <div id="registerSuccess" class="ax-modal-body ax-center" hidden>
+        <span class="ax-status-icon" data-tone="success" aria-hidden="true"></span>
+        <h3 id="registerSuccessTitle" class="ax-title" tabindex="-1">Đã gửi yêu cầu cấp tài khoản</h3>
+        <dl class="ax-status-meta">
+          <div><dt>Email</dt><dd id="registerSuccessEmail">—</dd></div>
+          <div><dt>Đơn vị đăng ký</dt><dd id="registerSuccessUnit">—</dd></div>
+          <div><dt>Trạng thái</dt><dd><span class="ax-badge" data-tone="pending">Chờ phê duyệt</span></dd></div>
+        </dl>
+        <p class="ax-note">Admin/UBKT sẽ kiểm tra và kích hoạt tài khoản. Sau khi được duyệt, hãy đăng nhập bằng email và mật khẩu vừa tạo. Cần hỗ trợ, vui lòng liên hệ Ủy ban Kiểm tra Đảng ủy phường.</p>
+        <button type="button" class="ax-btn ax-btn-primary" onclick="closeRegisterModal()">Về trang đăng nhập</button>
       </div>
-      <div class="pm-registration-flow" aria-label="Quy trình cấp tài khoản">
-        <span><b>1</b> Gửi đăng ký</span>
-        <span><b>2</b> Admin kiểm tra</span>
-        <span><b>3</b> Kích hoạt đăng nhập</span>
-      </div>
-      <div class="p-5 grid sm:grid-cols-2 gap-4">
-        <label class="text-sm font-bold sm:col-span-2">Họ và tên người phụ trách <span class="text-red-500">*</span>
-          <input id="registerFullName" class="field mt-1" autocomplete="name" placeholder="Nhập họ và tên">
-        </label>
-        <label class="text-sm font-bold">Email đăng nhập <span class="text-red-500">*</span>
-          <input id="registerEmail" class="field mt-1" type="email" autocomplete="email" placeholder="ten@donvi.vn">
-        </label>
-        <label class="text-sm font-bold">Số điện thoại
-          <input id="registerPhone" class="field mt-1" autocomplete="tel" placeholder="Số điện thoại liên hệ">
-        </label>
-        <label class="text-sm font-bold sm:col-span-2">Đơn vị đề nghị cấp tài khoản <span class="text-red-500">*</span>
-          <select id="registerUnit" class="field mt-1">
-            <option value="">Chọn đơn vị trong danh mục</option>
-          </select>
-          <small class="pm-field-help">Tài khoản sau khi được duyệt chỉ xem nhiệm vụ gắn với đơn vị này.</small>
-        </label>
-        <label class="text-sm font-bold">Mật khẩu <span class="text-red-500">*</span>
-          <input id="registerPassword" class="field mt-1" type="password" autocomplete="new-password" placeholder="Tối thiểu 8 ký tự">
-        </label>
-        <label class="text-sm font-bold">Nhập lại mật khẩu <span class="text-red-500">*</span>
-          <input id="registerPasswordConfirm" class="field mt-1" type="password" autocomplete="new-password" placeholder="Nhập lại mật khẩu">
-        </label>
-        <p id="registerMessage" class="hidden sm:col-span-2 rounded-2xl border p-3 text-sm font-bold"></p>
-      </div>
-      <div class="p-5 border-t border-slate-200 flex flex-col sm:flex-row justify-end gap-2">
-        <button type="button" onclick="closeRegisterModal()" class="btn btn-ghost">Hủy</button>
-        <button id="registerSubmitButton" type="button" onclick="registerAccount()" class="btn btn-primary">Gửi đăng ký</button>
-      </div>
+    </div>
+  </div>
+
+  <div id="forgotPasswordModal" class="ax-modal" role="dialog" aria-modal="true" aria-labelledby="forgotTitle" hidden>
+    <div class="ax-modal-card is-narrow">
+      <header class="ax-modal-head">
+        <div>
+          <p class="ax-kicker">Khôi phục truy cập</p>
+          <h2 id="forgotTitle" class="ax-modal-title">Quên mật khẩu</h2>
+        </div>
+        <button type="button" class="ax-close" onclick="closeForgotPasswordModal()" aria-label="Đóng"></button>
+      </header>
+      <form id="forgotPasswordForm" class="ax-form ax-modal-body" novalidate>
+        <p class="ax-sub is-left">Nhập email đã đăng ký. Hệ thống sẽ gửi liên kết để bạn đặt mật khẩu mới.</p>
+        <div class="ax-field">
+          <label for="forgotEmail">Email</label>
+          <input id="forgotEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" maxlength="254" placeholder="ten@donvi.vn" required aria-required="true">
+        </div>
+        <p id="forgotMessage" class="ax-error" role="alert" hidden></p>
+        <footer class="ax-modal-foot">
+          <button type="button" class="ax-btn ax-btn-ghost" onclick="closeForgotPasswordModal()">Đóng</button>
+          <button id="forgotSubmit" type="submit" class="ax-btn ax-btn-primary">
+            <span class="ax-spinner" aria-hidden="true"></span><span data-label>Gửi hướng dẫn</span>
+          </button>
+        </footer>
+      </form>
     </div>
   </div>
   <!-- DOSSIER INPUT MODAL -->
@@ -3396,6 +3558,15 @@ body{
       return ["Chưa xác nhận email","is-warning"];
     }
 
+    function accountProviderPills(profile){
+      const providers=Array.isArray(profile?.auth_providers)?profile.auth_providers:[];
+      if(!providers.length)return "";
+      const labels={email:"Mật khẩu",google:"Google"};
+      return `<span class="pm-provider-pills" aria-label="Phương thức đăng nhập">${providers
+        .map(provider=>`<span class="pm-provider-pill is-${escapeHtml(provider)}">${escapeHtml(labels[provider]||provider)}</span>`)
+        .join("")}</span>`;
+    }
+
     function setAccountFilter(filter){
       accountFilter=filter;
       document.querySelectorAll("[data-account-filter]").forEach(button=>{
@@ -3445,6 +3616,7 @@ body{
           profile.full_name,
           profile.email,
           profile.phone,
+          profile.position_title,
           profile.requested_unit,
           profile.unit_name,
           profile.role==="admin"?"Quản trị hệ thống":profile.role==="vpdu"?"Văn phòng Đảng ủy":profile.role==="ubkt"?"Ủy ban Kiểm tra":"Tài khoản đơn vị"
@@ -3470,6 +3642,7 @@ body{
               <span>
                 <b>${escapeHtml(profile.full_name||"Chưa cập nhật họ tên")}</b>
                 <small>${escapeHtml(profile.email||"—")}${profile.phone?` · ${escapeHtml(profile.phone)}`:""}</small>
+                ${profile.position_title?`<small class="pm-cell-note">${escapeHtml(profile.position_title)}</small>`:""}
               </span>
             </div>
             <div class="pm-table-stack" role="cell">
@@ -3478,6 +3651,7 @@ body{
             </div>
             <div role="cell">
               <span class="pm-auth-pill ${authClass}"><i></i>${authLabel}</span>
+              ${accountProviderPills(profile)}
               ${profile.last_sign_in_at?`<small class="pm-cell-note">Đăng nhập: ${formatAdminDate(profile.last_sign_in_at,true)}</small>`:""}
             </div>
             <div role="cell">
@@ -3919,6 +4093,7 @@ body{
     function populateOrganizationUnitSelects(){
       [
         ["registerUnit","Chọn đơn vị trong danh mục"],
+        ["completeUnit","Chọn đơn vị trong danh mục"],
         ["inUnit","Chọn đơn vị chủ trì"],
         ["inCoUnit","Không có / chưa phân công"],
         ["userEditUnit","Chọn đơn vị được cấp quyền"]
@@ -3986,210 +4161,8 @@ body{
     let editingTaskId = null;
     let currentUser = null;
 
-    function setLoginMessage(message){
-      const el=document.getElementById("loginErr");
-      el.textContent=message;
-      el.classList.remove("hidden");
-    }
-
-    function clearLoginMessage(){
-      document.getElementById("loginErr")?.classList.add("hidden");
-    }
-
-    function friendlyAuthError(error){
-      const code=String(error?.code||"").toLowerCase();
-      const message=String(error?.message||"").toLowerCase();
-      if(code==="email_not_confirmed"||message.includes("email not confirmed")){
-        return "Tài khoản chưa được Admin kích hoạt trên Supabase Auth. Vui lòng liên hệ Admin kiểm tra trạng thái duyệt.";
-      }
-      if(code==="invalid_credentials"||message.includes("invalid login credentials")){
-        return "Email hoặc mật khẩu chưa đúng. Hãy dùng đúng mật khẩu đã tạo khi đăng ký.";
-      }
-      if(error?.name==="AuthRetryableFetchError"||message.includes("failed to fetch")){
-        return "Chưa kết nối được máy chủ đăng nhập. Vui lòng kiểm tra mạng và thử lại.";
-      }
-      if(message.includes("user already registered")){
-        return "Email này đã có tài khoản. Hãy đăng nhập hoặc liên hệ Admin nếu quên mật khẩu.";
-      }
-      return error?.message||"Không đăng nhập được.";
-    }
-
-    function openRegisterModal(){
-      clearRegisterMessage();
-      document.getElementById("registerModal")?.classList.add("open");
-      lockScroll();
-      setTimeout(()=>document.getElementById("registerFullName")?.focus(),80);
-    }
-
-    function closeRegisterModal(){
-      document.getElementById("registerModal")?.classList.remove("open");
-      unlockScroll();
-    }
-
-    function setRegisterMessage(message, success=false){
-      const el=document.getElementById("registerMessage");
-      if(!el)return;
-      el.textContent=message;
-      el.classList.remove("hidden","border-red-200","bg-red-50","text-red-700","border-green-200","bg-green-50","text-green-700");
-      el.classList.add(...(success
-        ? ["border-green-200","bg-green-50","text-green-700"]
-        : ["border-red-200","bg-red-50","text-red-700"]));
-    }
-
-    function clearRegisterMessage(){
-      document.getElementById("registerMessage")?.classList.add("hidden");
-    }
-
-    async function registerAccount(){
-      const fullName=document.getElementById("registerFullName")?.value.trim()||"";
-      const email=document.getElementById("registerEmail")?.value.trim().toLowerCase()||"";
-      const phone=document.getElementById("registerPhone")?.value.trim()||"";
-      const requestedUnit=canonicalUnitValue(document.getElementById("registerUnit")?.value||"");
-      const password=document.getElementById("registerPassword")?.value||"";
-      const passwordConfirm=document.getElementById("registerPasswordConfirm")?.value||"";
-      if(!fullName || !email || !requestedUnit || !password){
-        setRegisterMessage("Vui lòng nhập đủ họ tên, email, chọn đơn vị và mật khẩu.");
-        return;
-      }
-      if(password.length<8){
-        setRegisterMessage("Mật khẩu cần có tối thiểu 8 ký tự.");
-        return;
-      }
-      if(password!==passwordConfirm){
-        setRegisterMessage("Hai lần nhập mật khẩu chưa khớp.");
-        return;
-      }
-      const client=getSupabaseClient();
-      if(!client){
-        setRegisterMessage("Hệ thống chưa kết nối cơ sở dữ liệu.");
-        return;
-      }
-      const button=document.getElementById("registerSubmitButton");
-      if(button){button.disabled=true;button.textContent="Đang gửi...";}
-      try{
-        const {data,error}=await client.auth.signUp({
-          email,
-          password,
-          options:{data:{full_name:fullName,phone,requested_unit:requestedUnit}}
-        });
-        if(error)throw error;
-        if(data?.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0){
-          throw new Error("Email này đã có tài khoản. Hãy đăng nhập hoặc liên hệ Admin nếu quên mật khẩu.");
-        }
-        if(data.session)await client.auth.signOut();
-        ["registerFullName","registerEmail","registerPhone","registerUnit","registerPassword","registerPasswordConfirm"]
-          .forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
-        setRegisterMessage("Đã gửi đăng ký. Sau khi Admin duyệt, hệ thống sẽ kích hoạt Supabase Auth; hãy đăng nhập bằng chính email và mật khẩu vừa tạo.",true);
-      }catch(error){
-        console.error("Đăng ký tài khoản lỗi",error);
-        setRegisterMessage(friendlyAuthError(error));
-      }finally{
-        if(button){button.disabled=false;button.textContent="Gửi đăng ký";}
-      }
-    }
-
-    function toggleLoginPassword(){
-      const input=document.getElementById("loginPass");
-      const btn=input?.parentElement?.querySelector("button");
-      if(!input) return;
-      const show=input.type==="password";
-      input.type=show?"text":"password";
-      if(btn) btn.textContent=show?"Ẩn":"Hiện";
-    }
-
-    function getLoginReturnTarget(){
-      const next = new URLSearchParams(location.search).get("next");
-      if(!next || next.includes("://") || next.startsWith("//")) return "";
-      if(next === "index.html" || next === "./index.html") return "";
-      return next;
-    }
-
-    async function login(){
-      const userInput=document.getElementById("loginUser");
-      const passInput=document.getElementById("loginPass");
-      const u=userInput.value.trim();
-      const p=passInput.value.trim();
-
-      if(!u){
-        setLoginMessage("Vui lòng nhập tài khoản.");
-        userInput.focus();
-        return;
-      }
-      if(!p){
-        setLoginMessage("Vui lòng nhập mật khẩu.");
-        passInput.focus();
-        return;
-      }
-
-      const cfg=getSupabaseConfig();
-      const useSupabaseAuth = cfg.authMode==="supabase" && isSupabaseConfigured();
-
-      try{
-        if(useSupabaseAuth){
-          setLoginMessage("Đang xác thực với cơ sở dữ liệu...");
-          // Map username → email nếu chưa phải email
-          const accountAliases={
-            admin:"ubkt@tanmy.hcm",
-            ubkt:"ubkt@tanmy.hcm"
-          };
-          const emailToUse = u.includes('@')
-            ? u
-            : (accountAliases[u.toLowerCase()] || u+'@tanmy.vn');
-          const authData=await signInWithSupabase(emailToUse, p);
-          currentProfile=await fetchCurrentProfile(authData.user?.id);
-          lastAccessProfileRefreshAt=Date.now();
-          if(currentProfile.approval_status!=="approved" || currentProfile.is_active!==true){
-            await getSupabaseClient().auth.signOut();
-            databaseReady=false;
-            const statusMessage={
-              pending:"Tài khoản đang chờ Admin phê duyệt.",
-              rejected:"Tài khoản chưa được phê duyệt. Vui lòng liên hệ Admin.",
-              suspended:"Tài khoản đang tạm ngưng. Vui lòng liên hệ Admin."
-            };
-            throw new Error(statusMessage[currentProfile.approval_status]||"Tài khoản chưa được phép sử dụng hệ thống.");
-          }
-          if(currentProfile.role==="unit"&&!canonicalUnitValue(currentProfile.unit_name)){
-            await getSupabaseClient().auth.signOut();
-            databaseReady=false;
-            throw new Error("Tài khoản chưa được gán đơn vị hợp lệ. Vui lòng liên hệ Admin để cập nhật quyền.");
-          }
-          currentUser={
-            id:currentProfile.id,
-            username:u,
-            email:currentProfile.email||emailToUse,
-            name:currentProfile.full_name||currentProfile.unit_name||u,
-            role:isAdminUser()?"Quản trị hệ thống":`Đơn vị · ${canonicalUnitValue(currentProfile.unit_name)}`,
-            unit:canonicalUnitValue(currentProfile.unit_name),
-            permissions:isAdminUser()?["all"]:["tasks"]
-          };
-        }else{
-          throw new Error("Đăng nhập an toàn chưa được cấu hình. Vui lòng liên hệ quản trị hệ thống.");
-        }
-
-        clearLoginMessage();
-        const returnTarget = getLoginReturnTarget();
-        if(returnTarget){
-          location.href = returnTarget;
-          return;
-        }
-        document.getElementById("loginScreen").classList.remove("active");
-        document.getElementById("appScreen").classList.add("active");
-        applyAccessControl();
-        window.scrollTo(0,0);
-        if(isSupabaseConfigured()){
-          const loaded=await loadFromDatabase();
-          if(!loaded)render();
-        }else{
-          updateDbStatus("CSDL: chưa cấu hình","db-offline");
-          render();
-        }
-        revealInit();
-      }catch(error){
-        console.error("Đăng nhập/CSDL lỗi", error);
-        setLoginMessage(friendlyAuthError(error));
-        updateDbStatus("CSDL: lỗi kết nối","db-error");
-      }
-    }
+    /* Đăng nhập (mật khẩu, Google), đăng ký đơn vị, quên/đặt lại mật khẩu, màn hình trạng thái tài khoản
+       và hết phiên: xem assets/auth-experience.js (login, setLoginMessage, friendlyAuthError, ...). */
 
     function applyAccessControl(){
       const unitMode=isUnitUser();
@@ -9664,14 +9637,6 @@ function normalizeConclusion(raw){
       if(isSupabaseConfigured()) updateDbStatus("CSDL: chờ đăng nhập","db-offline");
       else updateDbStatus("CSDL: chưa cấu hình","db-offline");
 
-      const pass=document.getElementById("loginPass");
-      const user=document.getElementById("loginUser");
-      [pass,user].forEach(input=>{
-        input?.addEventListener("input", clearLoginMessage);
-        input?.addEventListener("keydown", e=>{
-          if(e.key==="Enter") login();
-        });
-      });
       window.addEventListener("focus",()=>{
         refreshCurrentAccessProfile(true);
       });
@@ -9744,6 +9709,7 @@ setTimeout(initLiquidScrollIndicators, 300);
   <script src="./assets/task-grid-final.js?v=20261005tap1"></script>
   <script src="./assets/task-approvals.js?v=20261005tap1"></script>
   <script src="./assets/dashboard-overview.js?v=20261004dov3"></script>
+  <script src="./assets/auth-experience.js?v=20261005auth1"></script>
   <div id="moduleToast" class="module-toast" role="status" aria-live="polite" aria-atomic="true" data-tone="info">
     <div class="module-toast-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01"/><circle cx="12" cy="12" r="9"/></svg>

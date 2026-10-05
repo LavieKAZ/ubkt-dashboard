@@ -1,0 +1,206 @@
+/* Đăng nhập / đăng ký / khôi phục mật khẩu — tiền tố .ax- để không đụng style cũ của ứng dụng. */
+:root{
+  --ax-bg:#f3f5fa;
+  --ax-card:#ffffff;
+  --ax-border:#e3e7ef;
+  --ax-border-strong:#cbd2de;
+  --ax-text:#0f172a;
+  --ax-muted:#526075;
+  --ax-primary:#1d4ed8;
+  --ax-primary-hover:#1e40af;
+  --ax-ring:rgba(29,78,216,.32);
+  --ax-danger:#b42318;
+  --ax-danger-bg:#fef3f2;
+  --ax-success:#067647;
+  --ax-success-bg:#ecfdf3;
+  --ax-warning:#b54708;
+  --ax-warning-bg:#fffaeb;
+  --ax-red:#c8102e;
+  --ax-radius:14px;
+}
+
+#loginScreen.active{display:block}
+.ax-modal .sr-only,#loginScreen .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+#loginScreen{background:var(--ax-bg);color:var(--ax-text);font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#loginScreen *,.ax-modal *{box-sizing:border-box}
+.ax-shell{
+  min-height:100vh;min-height:100dvh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  padding:max(24px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));
+  background:
+    radial-gradient(900px 420px at 12% -10%,rgba(29,78,216,.09),transparent 60%),
+    radial-gradient(700px 360px at 110% 110%,rgba(200,16,46,.06),transparent 60%),
+    var(--ax-bg);
+}
+.ax-card{
+  width:100%;max-width:428px;background:var(--ax-card);
+  border:1px solid var(--ax-border);border-radius:18px;
+  box-shadow:0 1px 2px rgba(16,24,40,.04),0 12px 32px -12px rgba(16,24,40,.16);
+  padding:28px 32px 30px;
+}
+.ax-brand{display:flex;align-items:center;gap:14px;padding-bottom:20px;margin-bottom:22px;border-bottom:1px solid var(--ax-border)}
+.ax-logo{width:56px;height:56px;flex:none;border-radius:14px;object-fit:contain;background:#fff;box-shadow:0 0 0 1px var(--ax-border)}
+.ax-org{margin:0;font-size:15px;font-weight:800;letter-spacing:.02em;color:var(--ax-text);line-height:1.25}
+.ax-org-sub{margin:2px 0 0;font-size:12.5px;font-weight:800;letter-spacing:.03em;color:var(--ax-red);line-height:1.25}
+.ax-view[hidden]{display:none!important}
+.ax-center{text-align:center}
+.ax-title{margin:0;font-size:22px;line-height:1.3;font-weight:750;letter-spacing:-.015em;color:var(--ax-text);outline:none}
+.ax-sub{margin:6px 0 0;font-size:14px;line-height:1.55;color:var(--ax-muted)}
+.ax-sub.is-left{text-align:left;margin:0}
+.ax-form{display:flex;flex-direction:column;gap:14px;margin-top:22px}
+.ax-modal-body.ax-form{margin-top:0}
+.ax-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ax-field label,.ax-label-row label{font-size:13.5px;font-weight:650;color:#1e293b}
+.ax-label-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ax-req{color:var(--ax-danger)}
+.ax-optional{font-weight:500;color:var(--ax-muted)}
+.ax-help{font-size:12.5px;line-height:1.45;color:var(--ax-muted)}
+#loginScreen input,#loginScreen select,.ax-modal input,.ax-modal select{
+  width:100%;min-height:46px;margin:0;
+  border:1px solid var(--ax-border-strong);border-radius:10px;background:#fff;color:var(--ax-text);
+  padding:10px 13px;font:inherit;font-size:15px;line-height:1.4;
+  transition:border-color .15s ease,box-shadow .15s ease;
+  -webkit-appearance:none;appearance:none;
+}
+#loginScreen select,.ax-modal select{
+  padding-right:38px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23526075'%3E%3Cpath d='M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;background-size:18px;
+}
+#loginScreen input::placeholder,.ax-modal input::placeholder{color:#8a94a6}
+#loginScreen input:focus,#loginScreen select:focus,.ax-modal input:focus,.ax-modal select:focus{outline:none;border-color:var(--ax-primary);box-shadow:0 0 0 3px var(--ax-ring)}
+#loginScreen input[aria-invalid="true"],.ax-modal input[aria-invalid="true"],.ax-modal select[aria-invalid="true"],#loginScreen select[aria-invalid="true"]{border-color:var(--ax-danger)}
+#loginScreen input.is-readonly{background:#f6f7fa;color:var(--ax-muted)}
+.ax-pass{position:relative}
+.ax-pass input{padding-right:52px!important}
+.ax-eye{
+  position:absolute;top:50%;right:5px;transform:translateY(-50%);
+  width:40px;height:36px;display:inline-flex;align-items:center;justify-content:center;
+  border:0;border-radius:8px;background:transparent;color:var(--ax-muted);cursor:pointer;padding:0;
+}
+.ax-eye:hover{background:#f1f4f9;color:var(--ax-text)}
+.ax-eye svg{width:20px;height:20px}
+.ax-link{border:0;background:none;padding:2px 0;font:inherit;font-size:13.5px;font-weight:650;color:var(--ax-primary);cursor:pointer;border-radius:4px}
+.ax-link:hover{text-decoration:underline}
+.ax-btn{
+  position:relative;width:100%;min-height:46px;display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  border-radius:10px;border:1px solid transparent;padding:10px 16px;
+  font:inherit;font-size:15px;font-weight:650;line-height:1.2;cursor:pointer;
+  transition:background-color .15s ease,border-color .15s ease,color .15s ease,box-shadow .15s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.ax-btn-primary{background:var(--ax-primary);color:#fff}
+.ax-btn-primary:hover:not(:disabled){background:var(--ax-primary-hover)}
+.ax-btn-google{background:#fff;color:#1f2937;border-color:var(--ax-border-strong)}
+.ax-btn-google:hover:not(:disabled){background:#f7f8fb;border-color:#b8c1cf}
+.ax-btn-outline{background:#fff;color:var(--ax-primary);border-color:#bfccec}
+.ax-btn-outline:hover:not(:disabled){background:#f3f6fe;border-color:var(--ax-primary)}
+.ax-btn-ghost{background:transparent;color:var(--ax-muted)}
+.ax-btn-ghost:hover:not(:disabled){background:#f1f4f9;color:var(--ax-text)}
+.ax-btn:disabled{cursor:not-allowed;opacity:.72}
+.ax-btn[aria-busy="true"]{cursor:progress}
+.ax-google-icon{width:20px;height:20px;flex:none}
+.ax-spinner{display:none;width:18px;height:18px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:ax-spin .7s linear infinite;flex:none}
+.ax-btn[aria-busy="true"] .ax-spinner{display:inline-block}
+.ax-btn-google[aria-busy="true"] .ax-google-icon{display:none}
+.ax-spinner.is-lg{display:inline-block;width:40px;height:40px;border-width:3px;color:var(--ax-primary);margin:6px auto 14px}
+@keyframes ax-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.ax-spinner{animation-duration:1.6s}}
+
+#loginScreen :focus-visible,.ax-modal :focus-visible{outline:2px solid var(--ax-primary);outline-offset:2px}
+#loginScreen .ax-title:focus,.ax-modal .ax-title:focus{outline:none}
+#loginScreen input:focus-visible,#loginScreen select:focus-visible,.ax-modal input:focus-visible,.ax-modal select:focus-visible{outline:none}
+
+.ax-divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--ax-muted);font-size:13px}
+.ax-divider::before,.ax-divider::after{content:"";flex:1;height:1px;background:var(--ax-border)}
+.ax-register{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+.ax-note{margin:0;font-size:12.5px;line-height:1.5;color:var(--ax-muted);text-align:center}
+.ax-error,.ax-alert{margin:0;border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.5;border:1px solid}
+.ax-error{color:var(--ax-danger);background:var(--ax-danger-bg);border-color:#fecdca}
+.ax-error.is-info{color:#1e3a8a;background:#eff4ff;border-color:#c7d7fe}
+.ax-error[hidden],.ax-alert[hidden]{display:none}
+.ax-alert{margin-top:16px;color:var(--ax-success);background:var(--ax-success-bg);border-color:#abefc6}
+.ax-alert.is-warning{color:var(--ax-warning);background:var(--ax-warning-bg);border-color:#fedf89}
+.ax-alert.is-danger{color:var(--ax-danger);background:var(--ax-danger-bg);border-color:#fecdca}
+.ax-footer{margin:0;font-size:12px;color:#7a8597;text-align:center}
+
+/* Kiểm tra mật khẩu */
+.ax-rules{list-style:none;margin:-2px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:12.5px;color:var(--ax-muted)}
+.ax-rules li{display:flex;align-items:center;gap:6px;line-height:1.4}
+.ax-rules li::before{content:"";width:14px;height:14px;flex:none;border-radius:50%;border:1.5px solid #a3adbd}
+.ax-rules li[data-ok="true"]{color:var(--ax-success)}
+.ax-rules li[data-ok="true"]::before{border-color:var(--ax-success);background:var(--ax-success) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.4'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5'/%3E%3C/svg%3E") center/12px no-repeat}
+
+/* Trạng thái tài khoản */
+.ax-status-icon{
+  width:56px;height:56px;margin:2px auto 16px;border-radius:50%;display:block;
+  background:#eef2ff center/28px no-repeat;
+}
+.ax-status-icon[data-tone="pending"]{background-color:var(--ax-warning-bg);box-shadow:0 0 0 8px #fffcf2;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b54708' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E")}
+.ax-status-icon[data-tone="danger"]{background-color:var(--ax-danger-bg);box-shadow:0 0 0 8px #fffafa;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b42318' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7.5v5.5M12 16.5v.01'/%3E%3C/svg%3E")}
+.ax-status-icon[data-tone="success"]{background-color:var(--ax-success-bg);box-shadow:0 0 0 8px #f6fef9;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23067647' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E")}
+.ax-status-meta{margin:20px 0 16px;padding:4px 14px;border:1px solid var(--ax-border);border-radius:12px;background:#fafbfd;text-align:left}
+.ax-status-meta>div{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--ax-border)}
+.ax-status-meta>div:first-child{border-top:0}
+.ax-status-meta dt{font-size:13px;color:var(--ax-muted);flex:none}
+.ax-status-meta dd{margin:0;font-size:13.5px;font-weight:650;color:var(--ax-text);text-align:right;overflow-wrap:anywhere}
+.ax-badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12.5px;font-weight:700}
+.ax-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.ax-badge[data-tone="pending"]{color:var(--ax-warning);background:var(--ax-warning-bg)}
+.ax-badge[data-tone="danger"]{color:var(--ax-danger);background:var(--ax-danger-bg)}
+.ax-view[data-auth-view="status"] .ax-btn{margin-top:18px}
+.ax-view .ax-btn-ghost{margin-top:-4px}
+
+/* Hộp thoại */
+.ax-modal{position:fixed;inset:0;z-index:6000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.52);font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ax-text)}
+.ax-modal[hidden]{display:none}
+.ax-modal-card{
+  width:100%;max-width:580px;max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:auto;overscroll-behavior:contain;
+  background:#fff;border-radius:16px;border:1px solid var(--ax-border);box-shadow:0 24px 64px -16px rgba(15,23,42,.35);
+}
+.ax-modal-card.is-narrow{max-width:440px}
+.ax-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:20px 24px 16px;border-bottom:1px solid var(--ax-border);position:sticky;top:0;background:#fff;z-index:1}
+.ax-kicker{margin:0 0 4px;font-size:12px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:var(--ax-primary)}
+.ax-modal-title{margin:0;font-size:19px;font-weight:750;line-height:1.3}
+.ax-close{width:40px;height:40px;flex:none;border:0;border-radius:10px;background:transparent;cursor:pointer;color:var(--ax-muted);position:relative}
+.ax-close:hover{background:#f1f4f9;color:var(--ax-text)}
+.ax-close::before,.ax-close::after{content:"";position:absolute;left:12px;right:12px;top:19px;height:2px;border-radius:2px;background:currentColor;transform:rotate(45deg)}
+.ax-close::after{transform:rotate(-45deg)}
+.ax-modal-body{padding:20px 24px 24px;display:flex;flex-direction:column;gap:16px}
+.ax-modal-body[hidden]{display:none}
+.ax-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+.ax-span-2{grid-column:1/-1}
+.ax-modal-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:4px}
+.ax-modal-foot .ax-btn{width:auto;min-width:120px}
+.ax-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ax-steps li{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:#f6f7fa;font-size:12.5px;font-weight:650;color:var(--ax-muted);line-height:1.3}
+.ax-steps b{width:22px;height:22px;flex:none;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#e3e7ef;color:var(--ax-muted);font-size:12px}
+.ax-steps li.is-active{background:#eff4ff;color:var(--ax-primary)}
+.ax-steps li.is-active b{background:var(--ax-primary);color:#fff}
+#registerSuccess .ax-btn{margin-top:4px}
+
+/* Danh sách tài khoản: phương thức đăng nhập */
+.pm-provider-pills{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.pm-provider-pill{display:inline-flex;align-items:center;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:700;background:#f1f4f9;color:#475467;border:1px solid #e3e7ef}
+.pm-provider-pill.is-google{background:#eff4ff;color:#1d4ed8;border-color:#c7d7fe}
+
+@media (max-width:560px){
+  .ax-shell{justify-content:flex-start;padding-top:max(20px,env(safe-area-inset-top))}
+  .ax-card{padding:22px 20px 24px;border-radius:16px}
+  .ax-title{font-size:20px}
+  .ax-grid{grid-template-columns:1fr}
+  .ax-rules{grid-template-columns:1fr}
+  .ax-modal{align-items:flex-end;padding:0}
+  .ax-modal-card,.ax-modal-card.is-narrow{max-width:none;border-radius:16px 16px 0 0;max-height:calc(100dvh - 24px)}
+  .ax-modal-head{padding:16px 18px 12px}
+  .ax-modal-body{padding:16px 18px calc(20px + env(safe-area-inset-bottom))}
+  .ax-modal-foot{flex-direction:column-reverse}
+  .ax-modal-foot .ax-btn{width:100%}
+  .ax-steps{gap:6px}
+  .ax-steps li{flex-direction:column;justify-content:center;text-align:center;gap:4px;padding:8px 4px;font-size:11.5px}
+  /* iOS: cỡ chữ ≥16px để Safari không tự phóng to khi nhập */
+  #loginScreen input,#loginScreen select,.ax-modal input,.ax-modal select{font-size:16px}
+}
+@media (min-width:561px) and (max-height:760px){
+  .ax-shell{justify-content:flex-start}
+}
