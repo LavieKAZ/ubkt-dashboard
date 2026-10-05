@@ -43,25 +43,34 @@
   let taskGridSearchTimer=null;
   let taskLogsLoading=false;
 
-  window.isSystemAdminUser=function(){
-    return currentProfile?.role==="admin"&&currentProfile?.approval_status==="approved"&&currentProfile?.is_active===true;
-  };
-  window.isOversightUser=function(){
-    return ["admin","vpdu","ubkt"].includes(currentProfile?.role)&&currentProfile?.approval_status==="approved"&&currentProfile?.is_active===true;
-  };
+  /* ---------- Vai trò (tách rõ, không dùng chung một hàm "admin") ----------
+     System Admin  : admin                 → quản trị tài khoản, đổi quyền
+     Full Oversight: admin, ubkt           → toàn quyền hệ thống (isAdminUser của mã cũ)
+     VPĐU          : vpdu                  → Dashboard + Nhiệm vụ + Duyệt cập nhật
+     Task oversight: admin, ubkt, vpdu     → xem nhiệm vụ mọi đơn vị trong Tab Nhiệm vụ
+     Unit          : unit                  → chỉ nhiệm vụ của đơn vị mình */
+  function activeRole(){
+    const profile=currentProfile;
+    if(!profile||profile.approval_status!=="approved"||profile.is_active!==true)return "";
+    return String(profile.role||"");
+  }
+  window.isSystemAdminUser=function(){return activeRole()==="admin";};
+  window.isFullOversightUser=function(){return ["admin","ubkt"].includes(activeRole());};
+  window.isVpduUser=function(){return activeRole()==="vpdu";};
+  window.isOversightUser=function(){return ["admin","vpdu","ubkt"].includes(activeRole());};
   /* ---------- Bảng phân quyền giao diện (một nguồn duy nhất) ----------
      Máy chủ (RLS Supabase) vẫn là lớp chặn cuối; bảng này quyết định trang/cột nào hiện và sửa được.
      - Admin, UBKT: toàn quyền.
-     - VPĐU: chỉ Dashboard + Tab Nhiệm vụ (mọi đơn vị); chấm Đánh giá của VPĐU, cập nhật kết quả, thêm nhiệm vụ.
+     - VPĐU: Dashboard + Tab Nhiệm vụ (mọi đơn vị) + Duyệt cập nhật; chấm Đánh giá của VPĐU, cập nhật kết quả, thêm nhiệm vụ mới.
      - Đơn vị: chỉ Tab Nhiệm vụ của đơn vị mình; sửa Thời gian, cập nhật kết quả, tự đánh giá. */
-  const FULL_ACCESS={pages:null,edit:["doc","conclusion","unit","deadline","vpduAssessment"],addTask:true,flag:true,selfAssess:true,tools:true};
-  const ROLE_ACCESS={
+  const FULL_ACCESS=Object.freeze({pages:null,edit:["doc","conclusion","unit","deadline","vpduAssessment"],addTask:true,flag:true,selfAssess:true,tools:true,review:true});
+  const ROLE_ACCESS=Object.freeze({
     admin:FULL_ACCESS,
     ubkt:FULL_ACCESS,
-    vpdu:{pages:["dashboard","tasks"],edit:["vpduAssessment"],addTask:true,flag:false,selfAssess:false,tools:false},
-    unit:{pages:["tasks"],edit:["deadline"],addTask:false,flag:false,selfAssess:true,tools:false}
-  };
-  const NO_ACCESS={pages:[],edit:[],addTask:false,flag:false,selfAssess:false,tools:false};
+    vpdu:Object.freeze({pages:["dashboard","tasks","approvals"],edit:["vpduAssessment"],addTask:true,flag:false,selfAssess:false,tools:false,review:true}),
+    unit:Object.freeze({pages:["tasks"],edit:["deadline"],addTask:false,flag:false,selfAssess:true,tools:false,review:false})
+  });
+  const NO_ACCESS=Object.freeze({pages:[],edit:[],addTask:false,flag:false,selfAssess:false,tools:false,review:false});
   window.taskRoleAccess=function(){
     const profile=currentProfile;
     if(!profile||profile.approval_status!=="approved"||profile.is_active!==true)return NO_ACCESS;
@@ -70,17 +79,20 @@
   window.canEditTaskField=function(field){return window.taskRoleAccess().edit.includes(field);};
   window.canAccessPage=function(page){const pages=window.taskRoleAccess().pages;return pages===null||pages.includes(page);};
   window.canFlagTask=function(){return window.taskRoleAccess().flag;};
+  window.canAddTasks=function(){return window.taskRoleAccess().addTask;};
+  window.canReviewTaskUpdates=function(){return window.taskRoleAccess().review;};
   /** Quyền theo từng ô: đơn vị chỉ sửa Thời gian của nhiệm vụ mình chủ trì (không sửa nhiệm vụ chỉ phối hợp). */
   function canEditTaskCell(task,field){
     if(!canEditTaskField(field))return false;
     if(isUnitUser())return canonicalUnitValue(taskUnit(task))===canonicalUnitValue(currentProfile?.unit_name);
     return true;
   }
-  isAdminUser=window.isOversightUser;
+  // Mã cũ dùng isAdminUser() cho mọi chức năng quản trị: chỉ Admin/UBKT. VPĐU được mở đúng phần của mình qua canAddTasks/canReviewTaskUpdates.
+  isAdminUser=window.isFullOversightUser;
   syncCurrentUserWithProfile=function(profile){
     if(!currentUser||!profile)return;
     const roleLabel=profile.role==="admin"?"Quản trị hệ thống":profile.role==="vpdu"?"Văn phòng Đảng ủy":profile.role==="ubkt"?"Ủy ban Kiểm tra":`Đơn vị · ${canonicalUnitValue(profile.unit_name)}`;
-    currentUser={...currentUser,id:profile.id,email:profile.email||currentUser.email,name:profile.full_name||profile.unit_name||currentUser.name,role:roleLabel,unit:canonicalUnitValue(profile.unit_name),permissions:isOversightUser()?["all"]:["tasks"]};
+    currentUser={...currentUser,id:profile.id,email:profile.email||currentUser.email,name:profile.full_name||profile.unit_name||currentUser.name,role:roleLabel,unit:canonicalUnitValue(profile.unit_name),permissions:isFullOversightUser()?["all"]:isVpduUser()?["dashboard","tasks","approvals"]:["tasks"]};
   };
 
   function finalAssessment(task){
@@ -1230,7 +1242,7 @@
     let section=null,visibleInSection=0;
     const closeSection=()=>{if(section)section.hidden=section.hidden||visibleInSection===0;};
     [...nav.children].forEach(item=>{
-      if(item.classList.contains("pm-nav-section")){closeSection();section=item;visibleInSection=0;if(access.pages!==null&&!item.hasAttribute("data-admin-only"))item.hidden=false;return;}
+      if(item.classList.contains("pm-nav-section")){closeSection();section=item;visibleInSection=0;if(access.pages!==null)item.hidden=false;return;}
       if(!item.classList.contains("nav-item"))return;
       const page=item.dataset.page;
       const allowed=page?canAccessPage(page):access.pages===null;
@@ -1240,6 +1252,9 @@
     });
     closeSection();
     document.querySelectorAll("[data-full-access-only]").forEach(element=>{element.hidden=!access.tools;});
+    document.querySelectorAll("[data-task-creator]").forEach(element=>{element.hidden=!access.addTask;});
+    document.querySelectorAll("[data-task-oversight]").forEach(element=>{element.hidden=!isOversightUser();});
+    document.querySelectorAll("[data-update-reviewer]").forEach(element=>{element.hidden=!access.review;});
   }
   applyAccessControl=function(){
     legacyApplyAccessControl();
@@ -1247,17 +1262,38 @@
     applyNavigationScope();
     const current=document.querySelector("section.page:not(.hidden)")?.id?.replace("page-","");
     if(current&&!canAccessPage(current))switchPage(current);
+    if(window.location.hash)routeFromHash();
   };
+  const PAGE_IDS=["dashboard","projects","roadmap","tasks","resolutions","opinion","conclusions","baseorgs","dossiers","accounts","approvals"];
+  function pageScopeMessage(){
+    if(isUnitUser())return ["Chỉ truy cập Tab Nhiệm vụ","Tài khoản đơn vị chỉ được xem và cập nhật nhiệm vụ thuộc đơn vị mình."];
+    if(isVpduUser())return ["Không thuộc phạm vi tài khoản","Tài khoản Văn phòng Đảng ủy dùng Dashboard tổng quan, Tab Nhiệm vụ và Duyệt cập nhật tiến độ."];
+    return ["Không có quyền truy cập","Tài khoản chưa được cấp quyền cho khu vực này."];
+  }
   const legacySwitchPage=switchPage;
   switchPage=function(page){
     const access=taskRoleAccess();
+    if(!PAGE_IDS.includes(page))page=access.pages?.[0]||"dashboard";
     if(currentProfile&&!canAccessPage(page)){
-      const fallback=access.pages?.[0]||"tasks";
-      showModuleToast(isUnitUser()?"Chỉ truy cập Tab Nhiệm vụ":"Không thuộc phạm vi tài khoản",isUnitUser()?"Tài khoản đơn vị chỉ được xem và cập nhật nhiệm vụ thuộc đơn vị mình.":"Tài khoản Văn phòng Đảng ủy chỉ dùng Dashboard tổng quan và Tab Nhiệm vụ.");
-      page=fallback;
+      const [title,body]=pageScopeMessage();showModuleToast(title,body);
+      page=access.pages?.[0]||"tasks";
     }
     legacySwitchPage(page);
   };
+  /** Lớp chặn thứ hai: trang đang hiện phải thuộc phạm vi vai trò, kể cả khi bị bật bằng URL (#accounts), console hay mã khác. */
+  function enforceVisiblePageScope(){
+    if(!currentProfile)return;
+    const visible=document.querySelector("#appScreen section.page:not(.hidden)");
+    const page=visible?.id?.replace("page-","");
+    if(page&&!canAccessPage(page))switchPage(page);
+  }
+  const legacyRenderForScope=render;
+  render=function(...args){enforceVisiblePageScope();return legacyRenderForScope.apply(this,args);};
+  function routeFromHash(){
+    const page=String(window.location.hash||"").replace(/^#(page-)?/,"").trim();
+    if(page&&PAGE_IDS.includes(page)&&currentProfile)switchPage(page);
+  }
+  window.addEventListener("hashchange",routeFromHash);
 
   const legacyBuildWorkflowNotifications=buildWorkflowNotifications;
   buildWorkflowNotifications=function(){

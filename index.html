@@ -1282,7 +1282,8 @@ body{
   <link rel="stylesheet" href="./assets/tailwind-compiled.css?v=20260725">
   <link rel="stylesheet" href="./assets/project-manager-v3.css?v=20260806save1">
   <link rel="stylesheet" href="./assets/resolution-tracker.css?v=20261001">
-  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261005role1">
+  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261005tap1">
+  <link rel="stylesheet" href="./assets/task-approvals.css?v=20261005tap1">
   <link rel="stylesheet" href="./assets/dashboard-overview.css?v=20261004dov3">
 </head>
 <body class="sidebar-collapsed">
@@ -1397,7 +1398,7 @@ body{
               </div>
               <div class="dov-header-actions">
                 <button type="button" class="dov-btn" onclick="refreshTaskGridData(this)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Làm mới</span></button>
-                <button type="button" class="dov-btn is-primary" onclick="openTaskIntakeChooser()" data-admin-only><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Thêm nhiệm vụ</span></button>
+                <button type="button" class="dov-btn is-primary" onclick="openTaskIntakeChooser()" data-admin-only data-task-creator><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Thêm nhiệm vụ</span></button>
               </div>
             </header>
 
@@ -1603,7 +1604,7 @@ body{
             <label class="task-view-switch"><input id="taskGridFocusToggle" type="checkbox" role="switch" onchange="setTaskGridView('focus',this.checked)"><span class="task-view-switch-track" aria-hidden="true"></span><span><b>Chế độ tập trung</b><small id="taskGridFocusHint">Ẩn cột Đơn vị, Thời gian, Tự đánh giá</small></span></label>
           </div>
         </div>
-        <button type="button" class="task-sheet-add" onclick="openTaskIntakeChooser()" data-admin-only><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Thêm<span class="task-sheet-add-long"> nhiệm vụ</span></button>
+        <button type="button" class="task-sheet-add" onclick="openTaskIntakeChooser()" data-admin-only data-task-creator><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Thêm<span class="task-sheet-add-long"> nhiệm vụ</span></button>
       </div>
     </div>
     <div class="task-scope-note" data-unit-only hidden>
@@ -1638,7 +1639,7 @@ body{
           <button type="button" data-tabs-step="-1" aria-label="Xem các tab đơn vị phía trước"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
           <button type="button" data-tabs-step="1" aria-label="Xem các tab đơn vị phía sau"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
         </div>
-        <div id="taskSheetTabs" class="task-sheet-tabs" data-admin-only aria-label="Chuyển bảng theo đơn vị"></div>
+        <div id="taskSheetTabs" class="task-sheet-tabs" data-admin-only data-task-oversight aria-label="Chuyển bảng theo đơn vị"></div>
         <div class="task-sheet-footer-status"><span><i></i>Đã liên kết Dashboard</span><span id="taskGridFreezeStatus">Cố định 3 cột đầu</span></div>
       </div>
     </div>
@@ -1994,44 +1995,34 @@ body{
             </section>
           </section>
 
-          <section id="page-approvals" class="page hidden pm-admin-workspace" data-admin-only>
-            <header class="pm-admin-hero">
+          <section id="page-approvals" class="page hidden tap-page" data-admin-only data-update-reviewer aria-labelledby="tapTitle">
+            <header class="tap-header">
               <div>
-                <div class="antd-eyebrow">WORKFLOW · APPROVAL QUEUE</div>
-                <h3>Duyệt cập nhật tiến độ</h3>
-                <p>So sánh dữ liệu hiện tại với nội dung đơn vị đề nghị trước khi ghi chính thức vào nhiệm vụ.</p>
+                <h2 id="tapTitle" class="tap-sr-only">Duyệt cập nhật tiến độ</h2>
+                <p>Đơn vị gửi đề nghị thay đổi trạng thái, tiến độ, kết quả hoặc kiến nghị. Đối chiếu với dữ liệu hiện tại rồi phê duyệt hoặc từ chối.</p>
               </div>
-              <button type="button" class="btn btn-ghost" onclick="loadAdminQueues(true)">
-                <span aria-hidden="true">↻</span> Làm mới hàng đợi
+              <button id="tapRefresh" type="button" class="tap-btn" onclick="refreshTaskApprovals(this)">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Làm mới</span>
               </button>
             </header>
 
-            <div class="pm-admin-kpis is-three" aria-label="Thống kê đề nghị cập nhật">
-              <article><span class="is-amber">⌛</span><div><small>Chờ duyệt</small><b id="updatePending">0</b><p>Cần Admin xử lý</p></div></article>
-              <article><span class="is-green">✓</span><div><small>Đã duyệt</small><b id="updateApproved">0</b><p>Đã cập nhật nhiệm vụ</p></div></article>
-              <article><span class="is-red">×</span><div><small>Từ chối</small><b id="updateRejected">0</b><p>Đã phản hồi đơn vị</p></div></article>
+            <div class="tap-filters" role="group" aria-label="Lọc theo trạng thái">
+              <button type="button" class="tap-filter is-pending" data-approval-filter="pending" aria-pressed="true" onclick="setApprovalFilter('pending')"><span>Chờ duyệt</span><b id="updatePending">0</b></button>
+              <button type="button" class="tap-filter is-approved" data-approval-filter="approved" aria-pressed="false" onclick="setApprovalFilter('approved')"><span>Đã duyệt</span><b id="updateApproved">0</b></button>
+              <button type="button" class="tap-filter is-rejected" data-approval-filter="rejected" aria-pressed="false" onclick="setApprovalFilter('rejected')"><span>Từ chối</span><b id="updateRejected">0</b></button>
+              <button type="button" class="tap-filter is-all" data-approval-filter="all" aria-pressed="false" onclick="setApprovalFilter('all')"><span>Tất cả</span><b id="updateAll">0</b></button>
             </div>
 
-            <section class="pm-admin-panel">
-              <div class="pm-admin-panel-head">
-                <div>
-                  <h4>Hàng đợi phê duyệt</h4>
-                  <p>Mỗi đề nghị có người gửi, thời điểm, dữ liệu trước/sau và ý kiến xử lý.</p>
-                </div>
-                <div class="pm-admin-segmented" role="tablist" aria-label="Lọc đề nghị cập nhật">
-                  <button type="button" class="active" data-approval-filter="pending" onclick="setApprovalFilter('pending')">Chờ duyệt</button>
-                  <button type="button" data-approval-filter="approved" onclick="setApprovalFilter('approved')">Đã duyệt</button>
-                  <button type="button" data-approval-filter="rejected" onclick="setApprovalFilter('rejected')">Từ chối</button>
-                  <button type="button" data-approval-filter="all" onclick="setApprovalFilter('all')">Tất cả</button>
-                </div>
-              </div>
-              <div class="pm-admin-toolbar">
-                <label class="pm-admin-search">
-                  <span aria-hidden="true">⌕</span>
-                  <input id="approvalSearch" type="search" placeholder="Tìm nhiệm vụ, đơn vị, người gửi..." oninput="renderTaskApprovals()">
+            <section class="tap-panel" aria-labelledby="tapListTitle">
+              <div class="tap-toolbar">
+                <h3 id="tapListTitle" class="tap-sr-only">Danh sách đề nghị</h3>
+                <label class="tap-search" for="approvalSearch">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+                  <input id="approvalSearch" type="search" autocomplete="off" placeholder="Tìm số văn bản, nội dung, đơn vị hoặc người gửi" aria-label="Tìm đề nghị theo số văn bản, nội dung, đơn vị hoặc người gửi" oninput="queueApprovalSearch()">
                 </label>
+                <span id="tapResultCount" class="tap-result-count" aria-live="polite"></span>
               </div>
-              <div id="taskApprovalList" class="pm-admin-table-wrap"></div>
+              <div id="taskApprovalList" class="tap-list" aria-busy="false"></div>
             </section>
           </section>
 
@@ -2744,30 +2735,31 @@ body{
   </div>
 
   <!-- REVIEW TASK UPDATE -->
-  <div id="taskApprovalModal" class="modal">
-    <div class="modal-card card w-full max-w-5xl pm-filament-modal pm-approval-review-modal">
-      <div class="pm-modal-heading">
-        <div class="pm-modal-heading-icon is-blue" aria-hidden="true">✓</div>
-        <div>
-          <div class="antd-modal-kicker">APPROVAL WORKFLOW</div>
-          <h3>Duyệt cập nhật tiến độ</h3>
-          <p>Đối chiếu dữ liệu hiện tại và đề nghị của đơn vị trước khi phê duyệt.</p>
+  <div id="taskApprovalModal" class="modal tap-modal" role="dialog" aria-modal="true" aria-labelledby="tapModalTitle" onclick="if(event.target===this)closeTaskApprovalModal()">
+    <section class="tap-modal-card">
+      <header class="tap-modal-head">
+        <div class="tap-modal-heading">
+          <span id="tapModalStatus" class="tap-status"></span>
+          <h3 id="tapModalTitle">Đề nghị cập nhật</h3>
+          <p id="tapModalSubtitle"></p>
         </div>
-        <button type="button" class="pm-modal-close" onclick="closeTaskApprovalModal()" aria-label="Đóng">✕</button>
-      </div>
+        <button type="button" class="tap-icon-btn" onclick="closeTaskApprovalModal()" aria-label="Đóng"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
       <input id="taskApprovalReviewId" type="hidden">
-      <div id="taskApprovalReviewBody" class="pm-approval-review-body"></div>
-      <div id="taskApprovalReviewNoteWrap" class="pm-approval-review-note">
-        <label>Ý kiến của Admin
-          <textarea id="taskApprovalReviewNote" class="field" rows="3" placeholder="Nhập ý kiến duyệt hoặc lý do từ chối"></textarea>
-        </label>
-      </div>
-      <div class="pm-modal-footer">
-        <button type="button" class="btn btn-ghost" onclick="closeTaskApprovalModal()">Đóng</button>
-        <button id="taskApprovalRejectButton" type="button" class="btn btn-danger" onclick="submitTaskApprovalDecision('rejected')">Từ chối</button>
-        <button id="taskApprovalApproveButton" type="button" class="btn btn-primary" onclick="submitTaskApprovalDecision('approved')">Phê duyệt cập nhật</button>
-      </div>
-    </div>
+      <div id="taskApprovalReviewBody" class="tap-modal-body" tabindex="0"></div>
+      <footer class="tap-modal-foot">
+        <div id="taskApprovalReviewNoteWrap" class="tap-note">
+          <label for="taskApprovalReviewNote">Ý kiến xử lý <small id="tapNoteHint">Bắt buộc khi từ chối — đơn vị sẽ thấy nội dung này.</small></label>
+          <textarea id="taskApprovalReviewNote" rows="2" maxlength="2000" placeholder="Nhập ý kiến khi phê duyệt hoặc lý do từ chối" oninput="clearApprovalError()"></textarea>
+        </div>
+        <p id="tapModalError" class="tap-error" role="alert" hidden></p>
+        <div class="tap-actions">
+          <button id="taskApprovalCloseButton" type="button" class="tap-btn" onclick="closeTaskApprovalModal()">Đóng</button>
+          <button id="taskApprovalRejectButton" type="button" class="tap-btn is-danger" onclick="submitTaskApprovalDecision('rejected')">Từ chối</button>
+          <button id="taskApprovalApproveButton" type="button" class="tap-btn is-primary" onclick="submitTaskApprovalDecision('approved')">Phê duyệt</button>
+        </div>
+      </footer>
+    </section>
   </div>
 
 
@@ -3130,6 +3122,17 @@ body{
           );
           taskUpdateRequests = remoteRequests.data || [];
           databaseReady=true;
+          updateDbStatus("CSDL: đã kết nối","db-online");
+          persistLocal(false);
+          render();
+          return true;
+        }
+
+        // VPĐU: chỉ tải nhiệm vụ (mọi đơn vị) và hàng đợi duyệt; không tải dữ liệu các phân hệ khác hay tài khoản.
+        if(typeof window.isVpduUser==="function"&&window.isVpduUser()){
+          tasks=await fetchCollection(DB_TABLES.tasks);
+          databaseReady=true;
+          await loadAdminQueues(false);
           updateDbStatus("CSDL: đã kết nối","db-online");
           persistLocal(false);
           render();
@@ -3878,32 +3881,31 @@ body{
       {value:"VPĐU",label:"Văn phòng Đảng ủy (VPĐU)"}
     ]);
 
-    function normalizeUnitName(value){
-      if(value===undefined || value===null) return value;
-      let text=String(value).replace(/\\n|\n/g," ").replace(/\s+/g," ").trim();
-      if(!text) return text;
-      const key=norm(text).replace(/đ/g,"d");
-      if(/\bban\s*x\s*d\s*dang\b/.test(key) || /\bban\s*xdd\b/.test(key) || /\bban\s*xd\s*dang\b/.test(key) || key.includes("ban xay dung dang")){
-        return "Ban Xây dựng Đảng";
-      }
-      if((key.includes("cong an") && (key.includes("bch") || key.includes("dang uy"))) || key==="cong an phuong" || key==="bch cong an phuong"){
-        return "Đảng uỷ - BCH Công an phường";
-      }
-      if(["ubnd","ubnd phuong","uy ban nhan dan","uy ban nhan dan phuong"].includes(key)){
-        return "UBND Phường";
-      }
-      if(["vpdu","van phong dang uy","van phong dang uy phuong"].includes(key))return "VPĐU";
-      if(["mttq","uy ban mttq","uy ban mttq viet nam","uy ban mttq viet nam phuong"].includes(key))return "MTTQ";
-      if(["ubkt","uy ban kiem tra","uy ban kiem tra dang uy"].includes(key))return "UBKT";
-      if(["hdnd","hoi dong nhan dan"].includes(key))return "HĐND";
-      if(["bchqs","ban chi huy quan su"].includes(key))return "BCHQS";
-      if(["ttct","trung tam chinh tri"].includes(key))return "TTCT";
-      return text.replace(/\s*,\s*/g,", ");
+    /* Chuẩn hóa tên đơn vị về đúng danh mục ORGANIZATION_UNITS (khớp hàm private.normalize_unit_name trên Supabase).
+       Trả "" nếu không thuộc danh mục. Chỉ đối chiếu nguyên cụm để không gán nhầm đơn vị. */
+    const UNIT_ALIASES=Object.freeze({
+      "Ban Xây dựng Đảng":["ban xay dung dang","ban xdd","ban xd dang","ban x d dang"],
+      "BCHQS":["bchqs","ban chi huy quan su","ban chi huy quan su phuong","bchqs - ban chi huy quan su","quan su"],
+      "Đảng uỷ - BCH Công an phường":["dang uy - bch cong an phuong","bch cong an phuong","bch cong an","cong an phuong","cong an"],
+      "HĐND":["hdnd","hoi dong nhan dan"],
+      "MTTQ":["mttq","uy ban mttq","uy ban mttq viet nam","uy ban mttq viet nam phuong","uy ban mat tran to quoc viet nam phuong"],
+      "TTCT":["ttct","trung tam chinh tri","ttct - trung tam chinh tri"],
+      "UBKT":["ubkt","uy ban kiem tra","uy ban kiem tra dang uy"],
+      "UBND Phường":["ubnd","ubnd phuong","uy ban nhan dan","uy ban nhan dan phuong"],
+      "VPĐU":["vpdu","van phong dang uy","van phong dang uy phuong"]
+    });
+    const UNIT_ALIAS_LOOKUP=Object.freeze(Object.entries(UNIT_ALIASES).reduce((map,[unit,keys])=>{keys.forEach(key=>{map[key]=unit;});return map;},{}));
+    function unitAliasKey(value){
+      return String(value??"").replace(/\\n|\n/g," ").normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .toLowerCase().replace(/đ/g,"d").replace(/\s*[–—-]\s*/g," - ").replace(/\s+/g," ").trim();
+    }
+    function canonicalUnitName(value){
+      if(value===undefined||value===null)return "";
+      return UNIT_ALIAS_LOOKUP[unitAliasKey(value)]||"";
     }
 
     function canonicalUnitValue(value){
-      const normalized=normalizeUnitName(value);
-      return ORGANIZATION_UNITS.some(unit=>unit.value===normalized)?normalized:"";
+      return canonicalUnitName(value);
     }
 
     function organizationUnitOptions(selected="",blankLabel="Chọn đơn vị"){
@@ -4307,12 +4309,15 @@ body{
 
 
     function switchPage(page){
-      if(isUnitUser()&&!(["tasks","resolutions"].includes(page))){
+      // Khi đã nạp bảng phân quyền (task-grid-final.js), quyền trang do canAccessPage quyết định; đoạn dưới chỉ là dự phòng.
+      if(typeof window.canAccessPage==="function"&&currentProfile){
+        if(!window.canAccessPage(page))page=(window.taskRoleAccess?.().pages||["tasks"])[0]||"tasks";
+      }else if(isUnitUser()&&!(["tasks","resolutions"].includes(page))){
         showModuleToast("Chỉ truy cập nhiệm vụ của đơn vị","Tài khoản đơn vị không được mở các khu vực quản trị hoặc dữ liệu khác.");
         page="tasks";
       }
       const adminPages=["opinion","conclusions","baseorgs","dossiers","accounts","approvals"];
-      if(adminPages.includes(page) && !isAdminUser()){
+      if(typeof window.canAccessPage!=="function" && adminPages.includes(page) && !isAdminUser()){
         showModuleToast("Không có quyền truy cập","Tài khoản đơn vị chỉ được xem các nhiệm vụ thuộc đơn vị mình.");
         page="tasks";
       }
@@ -4486,10 +4491,8 @@ function taskValue(t, key, fallback=""){
 function normalizeUnitName(unitName){
   const raw=String(unitName ?? "").replace(/\s+/g," ").trim();
   if(!raw) return "Chưa xác định đơn vị";
-  const n=norm(raw);
-  if(n.includes("ban xd") || n.includes("ban x d") || n.includes("ban xay dung dang")) return "Ban Xây dựng Đảng";
-  if(n.includes("cong an") || n.includes("bch cong an")) return "Đảng uỷ - BCH Công an phường";
-  return raw;
+  // Tên thuộc danh mục (kể cả tên cũ như "Quân sự", "Công an", "UBND") → giá trị chuẩn; tên khác giữ nguyên để không mất dữ liệu.
+  return canonicalUnitName(raw)||raw;
 }
 
 function taskStatus(t){
@@ -4908,7 +4911,8 @@ function filtered(){
         const patch=request.proposed_data||{};
         const meta=notificationStatusMeta(request.status);
         const unit=request.unit_name||profile?.unit_name||currentProfile?.unit_name||"Đơn vị";
-        const titles=isAdminUser()
+        const reviewer=typeof window.canReviewTaskUpdates==="function"?window.canReviewTaskUpdates():isAdminUser();
+        const titles=reviewer
           ? {
               pending:"Đơn vị gửi cập nhật nhiệm vụ",
               approved:"Đã phê duyệt cập nhật nhiệm vụ",
@@ -4930,8 +4934,8 @@ function filtered(){
           statusLabel:meta.label,
           tone:meta.tone,
           time:request.reviewed_at||request.created_at,
-          actionLabel:isAdminUser()&&request.status==="pending"?"Phê duyệt cập nhật":"Xem nhiệm vụ",
-          action:isAdminUser()
+          actionLabel:reviewer&&request.status==="pending"?"Phê duyệt cập nhật":"Xem nhiệm vụ",
+          action:reviewer
             ? `closeAlertsModal();switchPage('approvals')`
             : `closeAlertsModal();openDetailModal('${String(request.task_id).replace(/'/g,"")}')`
         });
@@ -5035,7 +5039,7 @@ function filtered(){
       lockScroll();
       notificationTabs.innerHTML="";
       alertsList.innerHTML=`<div class="pm-alert-loading">Đang đồng bộ thông báo...</div>`;
-      if(isAdminUser())await loadAdminQueues(false);
+      if(typeof window.canReviewTaskUpdates==="function"?window.canReviewTaskUpdates():isAdminUser())await loadAdminQueues(false);
       renderWorkflowNotifications();
       try{
         localStorage.setItem(
@@ -8064,7 +8068,7 @@ function filterDashboardByDeadline(deadline){
       render();
     }
 function openTaskIntakeChooser(){
-  if(!isAdminUser()){
+  if(!canCreateTasks()){
     showModuleToast("Không có quyền tạo nhiệm vụ","Nhiệm vụ mới do Admin tiếp nhận từ văn bản chỉ đạo.");
     return;
   }
@@ -8349,7 +8353,7 @@ function parseBulkTaskPaste(text){
 }
 
 async function saveBulkTasks(triggerButton){
-  if(!isAdminUser())return;
+  if(!canCreateTasks())return;
   if(!validateBulkTasks(false)) return;
 
   const rows = getValidBulkRows();
@@ -8484,8 +8488,16 @@ async function saveBulkTasks(triggerButton){
       return errs;
     }
 
+    function canCreateTasks(){
+      return typeof window.canAddTasks==="function"?window.canAddTasks():isAdminUser();
+    }
+
     async function saveTask(addMore,triggerButton){
-      if(!isAdminUser())return;
+      if(!canCreateTasks())return;
+      if(editingTaskId!==null&&!isAdminUser()){
+        showModuleToast("Không sửa được nhiệm vụ đã có","Văn phòng Đảng ủy chỉ thêm nhiệm vụ mới; số văn bản, nội dung, đơn vị và thời hạn của nhiệm vụ cũ do Admin/UBKT điều chỉnh.");
+        return;
+      }
       if(!ensureValidDateInputs(inDate,inMeet,inDeadline))return;
       const t=formData(),errs=validateTask(t);
       if(errs.length){alert(errs.join("\n"));return}
@@ -9729,7 +9741,8 @@ window.addEventListener("resize", ()=>{
 setTimeout(initLiquidScrollIndicators, 300);
   </script>
   <script src="./assets/resolution-tracker.js?v=20261001"></script>
-  <script src="./assets/task-grid-final.js?v=20261005role2"></script>
+  <script src="./assets/task-grid-final.js?v=20261005tap1"></script>
+  <script src="./assets/task-approvals.js?v=20261005tap1"></script>
   <script src="./assets/dashboard-overview.js?v=20261004dov3"></script>
   <div id="moduleToast" class="module-toast" role="status" aria-live="polite" aria-atomic="true" data-tone="info">
     <div class="module-toast-icon" aria-hidden="true">
