@@ -286,7 +286,7 @@ div.task-grid-wrap+.task-grid-expand{margin-left:-8px}
 .task-text-viewer-card{display:flex;width:min(760px,100%);max-height:min(82dvh,760px);flex-direction:column;overflow:hidden;border:1px solid #dbe3ee;border-radius:14px;background:#fff;box-shadow:0 24px 60px rgba(15,23,42,.22);animation:taskViewerIn .18s ease-out}
 @keyframes taskViewerIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .task-text-viewer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 20px 14px;border-bottom:1px solid #e5eaf1}
-.task-text-viewer-head h3{margin:0;color:#172033;font-size:18px;font-weight:700;line-height:1.35}
+.task-text-viewer-head h3{display:-webkit-box;margin:0;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:3;color:#172033;font-size:18px;font-weight:700;line-height:1.35;overflow-wrap:anywhere}
 .task-text-viewer-head span{display:-webkit-box;margin-top:4px;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:3;color:#5b6b80;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
 .task-text-viewer-close{display:grid;flex:0 0 40px;width:40px;height:40px;place-items:center;border:1px solid #dbe3ee;border-radius:10px;background:#fff;color:#475569;cursor:pointer}
 .task-text-viewer-close:hover{background:#f1f5f9}
@@ -314,3 +314,81 @@ div.task-grid-wrap+.task-grid-expand{margin-left:-8px}
   .task-grid-expand{min-height:36px}
 }
 @media(prefers-reduced-motion:reduce){.task-text-viewer-card{animation:none}}
+
+/* ---------- Cột Thời gian: bỏ khoảng chừa cho mũi tên của ô ngày dùng chung (ô trong bảng không có mũi tên) ---------- */
+#appScreen #taskExcelGrid .task-grid-cell-input.date-input-vi{padding-right:.5rem!important;text-align:center;font-variant-numeric:tabular-nums}
+
+/* ---------- Chiều cao dòng: Gọn / Tiêu chuẩn / Thoáng ---------- */
+.task-grid-workspace.is-spacious .task-grid-text-cell{--tg-wrap-lines:6;--tg-wrap-lh:1.7}
+.task-grid-workspace.is-spacious .task-grid-text-cell[data-wrap-field="conclusion"]{--tg-wrap-lines:12}
+.task-grid-workspace.is-spacious .task-excel-table td{padding:1rem .9rem}
+
+/* ---------- Chữ lớn: dành cho người cần đọc rõ hơn ---------- */
+#appScreen .task-grid-workspace.is-large-text .task-excel-table td,
+#appScreen .task-grid-workspace.is-large-text .task-excel-table :is(input,textarea,select){font-size:16px!important}
+#appScreen .task-grid-workspace.is-large-text .task-excel-table th{font-size:14px!important}
+#appScreen .task-grid-workspace.is-large-text .task-grid-letter-row th{font-size:13px!important}
+.task-grid-workspace.is-large-text .task-grid-expand{font-size:15px}
+.task-grid-workspace.is-large-text .task-final-chip{font-size:14px}
+.task-grid-workspace.is-large-text .task-grid-result-log small,.task-grid-workspace.is-large-text .task-grid-save-state{font-size:13px}
+.task-grid-workspace.is-large-text .task-sheet-tab{font-size:15px}
+.task-grid-workspace.is-large-text .task-sheet-footer-status{font-size:13px}
+
+/* ---------- Chế độ tập trung: ẩn cột theo vai trò (D Đơn vị, E Thời gian, G Tự đánh giá) ---------- */
+.task-excel-table.hide-col-3 :is(th,td):nth-child(4),
+.task-excel-table.hide-col-4 :is(th,td):nth-child(5),
+.task-excel-table.hide-col-6 :is(th,td):nth-child(7){display:none}
+
+/* ---------- Số thứ tự là nút "Xem nhanh cả dòng" ---------- */
+.task-grid-row-index{flex-direction:column;gap:6px}
+.task-row-open{display:inline-flex;min-width:36px;min-height:28px;align-items:center;justify-content:center;gap:3px;padding:2px 6px;border:1px solid transparent;border-radius:7px;background:transparent;color:inherit;font:inherit;font-weight:800;cursor:pointer;transition:background-color .15s,border-color .15s}
+.task-row-open svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.45}
+.task-row-open:hover{border-color:#bfdbfe;background:#eff6ff;color:#1d4ed8}
+.task-row-open:hover svg{opacity:1}
+.task-row-open:focus-visible{outline:2px solid #2563eb;outline-offset:1px}
+@media(max-width:640px){.task-row-open{min-width:40px;min-height:40px}.task-row-open svg{opacity:.8}}
+
+/* Nội dung "Xem nhanh cả dòng" */
+.task-row-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px;margin:0}
+.task-row-field{min-width:0}
+.task-row-field.is-wide{grid-column:1/-1}
+.task-row-field dt{margin-bottom:4px;color:#5b6b80;font-size:13px;font-weight:600}
+.task-row-field dd{margin:0;color:#1e293b;font-size:15px;line-height:1.6;overflow-wrap:anywhere}
+.task-row-field dd small{display:block;margin-top:4px;color:#5b6b80;font-size:13px}
+.task-row-field .is-muted{color:#94a3b8}
+.task-row-field .task-text-viewer-text{font-size:15px;line-height:1.7}
+#taskTextViewer.is-row-view .task-red-note{margin:0 0 16px}
+@media(max-width:640px){.task-row-fields{grid-template-columns:1fr}}
+
+/* ---------- Nút "Hiển thị" và bảng tùy chọn ---------- */
+.task-view-menu{position:relative}
+.task-view-dot{width:7px;height:7px;margin-left:2px;border-radius:999px;background:#2563eb}
+.task-view-dot[hidden]{display:none}
+.task-view-panel{position:absolute;top:calc(100% + 6px);right:0;z-index:60;display:flex;width:300px;flex-direction:column;gap:14px;padding:14px;border:1px solid #dbe3ee;border-radius:12px;background:#fff;box-shadow:0 14px 34px rgba(15,23,42,.14)}
+.task-view-panel[hidden]{display:none}
+.task-view-group{min-width:0;margin:0;padding:0;border:0}
+.task-view-group legend{margin-bottom:6px;padding:0;color:#334155;font-size:13px;font-weight:700}
+.task-view-segment{display:flex;padding:3px;border-radius:9px;background:#f1f5f9}
+.task-view-segment label{position:relative;flex:1;min-width:0}
+.task-view-segment input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.task-view-segment span{display:flex;min-height:34px;align-items:center;justify-content:center;border-radius:7px;color:#475569;font-size:13px;font-weight:600;white-space:nowrap;transition:background-color .15s,color .15s}
+.task-view-segment input:checked+span{background:#fff;color:#1d4ed8;box-shadow:0 1px 3px rgba(15,23,42,.12)}
+.task-view-segment input:focus-visible+span{outline:2px solid #2563eb;outline-offset:1px}
+.task-view-switch{position:relative;display:flex;align-items:flex-start;gap:10px;cursor:pointer}
+.task-view-switch input{position:absolute;width:40px;height:22px;margin:0;opacity:0;cursor:pointer}
+.task-view-switch-track{position:relative;flex:0 0 40px;height:22px;margin-top:1px;border-radius:999px;background:#cbd5e1;transition:background-color .15s}
+.task-view-switch-track::after{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.25);content:"";transition:transform .15s}
+.task-view-switch input:checked+.task-view-switch-track{background:#2563eb}
+.task-view-switch input:checked+.task-view-switch-track::after{transform:translateX(18px)}
+.task-view-switch input:focus-visible+.task-view-switch-track{outline:2px solid #2563eb;outline-offset:2px}
+.task-view-switch b{display:block;color:#1e293b;font-size:14px;font-weight:600}
+.task-view-switch small{display:block;margin-top:2px;color:#5b6b80;font-size:13px;line-height:1.4}
+@media(max-width:900px){.task-sheet-app-actions{overflow:visible;flex-wrap:wrap}}
+@media(max-width:640px){
+  .task-view-panel{position:fixed;right:12px;left:12px;width:auto;max-height:calc(100dvh - 140px);overflow-y:auto}
+  .task-view-segment span{min-height:40px}
+}
+@media(prefers-reduced-motion:reduce){.task-view-segment span,.task-view-switch-track,.task-view-switch-track::after,.task-row-open{transition:none}}
+
+/* Menu theo vai trò: thuộc tính hidden phải thắng các quy tắc display:flex!important của sidebar/dock */
+#sidebar .nav-item[hidden],#sidebar .pm-nav-section[hidden],[data-full-access-only][hidden]{display:none!important}

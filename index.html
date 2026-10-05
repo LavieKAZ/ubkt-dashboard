@@ -1282,7 +1282,7 @@ body{
   <link rel="stylesheet" href="./assets/tailwind-compiled.css?v=20260725">
   <link rel="stylesheet" href="./assets/project-manager-v3.css?v=20260806save1">
   <link rel="stylesheet" href="./assets/resolution-tracker.css?v=20261001">
-  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261004wrap1">
+  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261005role1">
   <link rel="stylesheet" href="./assets/dashboard-overview.css?v=20261004dov3">
 </head>
 <body class="sidebar-collapsed">
@@ -1438,7 +1438,7 @@ body{
             </section>
 
             <!-- Công cụ quản trị (giữ nguyên chức năng cũ) -->
-            <details class="dov-card dov-tools antd-tools-card">
+            <details class="dov-card dov-tools antd-tools-card" data-full-access-only>
               <summary>
                 <span><b>Công cụ quản trị và xuất dữ liệu</b><small>Lịch công việc, nhật ký, cảnh báo, CSV, JSON và khôi phục</small></span>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
@@ -1584,13 +1584,31 @@ body{
       </div>
       <div class="task-sheet-app-actions">
         <button type="button" onclick="refreshTaskGridData(this)" title="Tải lại dữ liệu mới nhất"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>Làm mới</button>
-        <button id="taskGridDensityButton" type="button" onclick="toggleTaskGridDensity()" title="Đổi giữa bảng thoáng và bảng thu gọn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Thu gọn</button>
+        <div class="task-view-menu">
+          <button id="taskGridViewButton" type="button" onclick="toggleTaskGridViewPanel()" aria-haspopup="true" aria-expanded="false" aria-controls="taskGridViewPanel" title="Chiều cao dòng, cỡ chữ, chế độ tập trung"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Hiển thị<i id="taskGridViewSummary" class="task-view-dot" hidden></i></button>
+          <div id="taskGridViewPanel" class="task-view-panel" role="group" aria-label="Tùy chọn hiển thị bảng" hidden>
+            <fieldset class="task-view-group"><legend>Chiều cao dòng</legend>
+              <div class="task-view-segment">
+                <label><input type="radio" name="taskGridDensity" value="compact" onchange="setTaskGridView('density',this.value)"><span>Gọn</span></label>
+                <label><input type="radio" name="taskGridDensity" value="comfortable" onchange="setTaskGridView('density',this.value)"><span>Tiêu chuẩn</span></label>
+                <label><input type="radio" name="taskGridDensity" value="spacious" onchange="setTaskGridView('density',this.value)"><span>Thoáng</span></label>
+              </div>
+            </fieldset>
+            <fieldset class="task-view-group"><legend>Cỡ chữ</legend>
+              <div class="task-view-segment">
+                <label><input type="radio" name="taskGridTextSize" value="normal" onchange="setTaskGridView('largeText',false)"><span>Thường</span></label>
+                <label><input type="radio" name="taskGridTextSize" value="large" onchange="setTaskGridView('largeText',true)"><span>Chữ lớn</span></label>
+              </div>
+            </fieldset>
+            <label class="task-view-switch"><input id="taskGridFocusToggle" type="checkbox" role="switch" onchange="setTaskGridView('focus',this.checked)"><span class="task-view-switch-track" aria-hidden="true"></span><span><b>Chế độ tập trung</b><small id="taskGridFocusHint">Ẩn cột Đơn vị, Thời gian, Tự đánh giá</small></span></label>
+          </div>
+        </div>
         <button type="button" class="task-sheet-add" onclick="openTaskIntakeChooser()" data-admin-only><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Thêm<span class="task-sheet-add-long"> nhiệm vụ</span></button>
       </div>
     </div>
     <div class="task-scope-note" data-unit-only hidden>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.4 3 8.4 7 10 4-1.6 7-5.6 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
-      <p><b>Phạm vi: <strong id="unitScopeName">Đơn vị</strong>.</b> Chỉ hiển thị nhiệm vụ của đơn vị. Anh/chị cập nhật kết quả thực hiện và tự đánh giá; các cột giao việc được khóa.</p>
+      <p><b>Phạm vi: <strong id="unitScopeName">Đơn vị</strong>.</b> Chỉ hiển thị nhiệm vụ của đơn vị. Anh/chị cập nhật kết quả thực hiện, tự đánh giá và thời hạn; số văn bản và nội dung kết luận được khóa.</p>
     </div>
     <div class="task-grid-toolbar">
       <div class="task-grid-search-shell">
@@ -9711,7 +9729,7 @@ window.addEventListener("resize", ()=>{
 setTimeout(initLiquidScrollIndicators, 300);
   </script>
   <script src="./assets/resolution-tracker.js?v=20261001"></script>
-  <script src="./assets/task-grid-final.js?v=20261004wrap1"></script>
+  <script src="./assets/task-grid-final.js?v=20261005role2"></script>
   <script src="./assets/dashboard-overview.js?v=20261004dov3"></script>
   <div id="moduleToast" class="module-toast" role="status" aria-live="polite" aria-atomic="true" data-tone="info">
     <div class="module-toast-icon" aria-hidden="true">
