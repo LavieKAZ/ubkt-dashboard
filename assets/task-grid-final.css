@@ -402,3 +402,9 @@ div.task-grid-wrap+.task-grid-expand{margin-left:-8px}
   .task-create-footer>div:last-child{grid-template-columns:1fr 1fr 1.25fr}
   .task-create-footer .task-create-save-more{grid-column:1/-1;order:1}
 }
+/* Khung chờ khi đang tải nhiệm vụ lần đầu */
+.task-grid-skeleton{display:flex;flex-direction:column;gap:10px;padding:16px}
+.task-grid-skeleton i{display:block;height:54px;border-radius:10px;background:linear-gradient(90deg,#eef2f7 25%,#f7f9fc 50%,#eef2f7 75%);background-size:200% 100%;animation:ubkt-shimmer 1.2s ease-in-out infinite}
+.task-grid-skeleton .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+@keyframes ubkt-shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+@media (prefers-reduced-motion:reduce){.task-grid-skeleton i{animation:none}}

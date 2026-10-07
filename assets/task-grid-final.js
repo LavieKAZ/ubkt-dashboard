@@ -315,7 +315,10 @@
     renderTaskSheetTabs();
     renderTaskGridFilterOptions();
     if(!rows.length){
-      wrap.innerHTML=`<div class="task-grid-empty"><div><b>Không có nhiệm vụ phù hợp</b><span>Thử thay đổi từ khóa hoặc bộ lọc đang chọn.</span></div></div>`;
+      const initialLoading=document.body.classList.contains("ubkt-initial-loading")&&!all.length;
+      wrap.innerHTML=initialLoading
+        ?`<div class="task-grid-skeleton" role="status" aria-live="polite"><span class="sr-only">Đang tải danh sách nhiệm vụ…</span>${'<i></i>'.repeat(6)}</div>`
+        :`<div class="task-grid-empty"><div><b>Không có nhiệm vụ phù hợp</b><span>Thử thay đổi từ khóa hoặc bộ lọc đang chọn.</span></div></div>`;
       updateTaskGridSearchUi(0,all.length);
       renderTaskGridPagination(0,1);
       clearTaskGridSelectionUi();
@@ -1103,6 +1106,12 @@
     showModuleToast(field==="vpduAssessment"?"Đã cập nhật thẩm định":"Đã lưu thay đổi",field==="vpduAssessment"?"Các số liệu Dashboard đã được tính lại ngay.":"Dữ liệu nhiệm vụ đã được đồng bộ.");
   };
 
+  /* Khung chờ nhẹ cho Tab Nhiệm vụ: chỉ thay nội dung bảng, không chạy toàn bộ render (để không làm chậm việc gửi truy vấn). */
+  window.paintTaskGridSkeleton=function(){
+    const wrap=document.getElementById("taskExcelGrid");
+    if(!wrap||(Array.isArray(tasks)&&tasks.length))return;
+    wrap.innerHTML=`<div class="task-grid-skeleton" role="status" aria-live="polite"><span class="sr-only">Đang tải danh sách nhiệm vụ…</span>${'<i></i>'.repeat(6)}</div>`;
+  };
   async function loadTaskGridCollections(){
     if(!databaseReady||!getSupabaseClient())return;
     const client=getSupabaseClient();
@@ -1118,8 +1127,10 @@
   }
   const legacyLoadFromDatabase=loadFromDatabase;
   loadFromDatabase=async function(){
-    const loaded=await legacyLoadFromDatabase();
-    if(loaded){await loadTaskGridCollections();installTaskGridRealtime();render();setTaskGridSyncState("ready","Dữ liệu Dashboard được liên kết trực tiếp");}
+    // Thông báo hệ thống tải song song với dữ liệu nhiệm vụ (trước đây chạy nối tiếp sau khi tải xong)
+    const [loaded]=await Promise.all([legacyLoadFromDatabase(),loadTaskGridCollections().catch(error=>console.warn("Chưa tải được thông báo",error?.code||error?.name||""))]);
+    // loadFromDatabase gốc đã vẽ lại toàn trang; ở đây chỉ cập nhật thanh điều hướng (tránh vẽ lại lần 2 ngay lập tức)
+    if(loaded){installTaskGridRealtime();if(typeof renderProjectManagerChrome==="function")renderProjectManagerChrome();setTaskGridSyncState("ready","Dữ liệu Dashboard được liên kết trực tiếp");}
     else setTaskGridSyncState("error","Đang dùng dữ liệu cục bộ");
     return loaded;
   };
@@ -1132,8 +1143,8 @@
       refreshTimer=window.setTimeout(async()=>{
         try{
           setTaskGridSyncState("syncing","Đang nhận thay đổi mới...");
-          const loaded=await legacyLoadFromDatabase();
-          if(loaded){await loadTaskGridCollections();if(activeLogTaskId){await loadTaskLogs(activeLogTaskId);renderTaskLogHistory();}persistLocal(false);render();setTaskGridSyncState("ready","Vừa nhận dữ liệu mới");}
+          const [loaded]=await Promise.all([legacyLoadFromDatabase(),loadTaskGridCollections().catch(()=>{})]);
+          if(loaded){if(activeLogTaskId){await loadTaskLogs(activeLogTaskId);renderTaskLogHistory();}persistLocal(false);render();setTaskGridSyncState("ready","Vừa nhận dữ liệu mới");}
         }catch(error){setTaskGridSyncState("error","Mất kết nối cập nhật trực tiếp");console.warn("Task grid realtime refresh failed",error);}
       },220);
     };

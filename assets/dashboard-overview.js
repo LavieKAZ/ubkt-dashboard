@@ -255,6 +255,15 @@
     // Tài khoản đơn vị không được xem số liệu tổng hợp
     if(typeof isUnitUser==="function"&&isUnitUser()){["dovKpis","dovOverall","dovUnits","dovDeadlines","dovBacklogList"].forEach(id=>paint(id,""));return;}
     const headerButton=document.getElementById("headerTaskBtn");if(headerButton)headerButton.style.display="none";
+    // Đang tải lần đầu: vẽ khung chờ thay cho "Chưa có nhiệm vụ" để không hiện số liệu sai
+    const initialLoading=document.body.classList.contains("ubkt-initial-loading")&&!(Array.isArray(tasks)&&tasks.length);
+    page.classList.toggle("is-loading",initialLoading);
+    if(initialLoading){
+      paint("dovKpis",`<span class="sr-only" role="status" aria-live="polite">Đang tải số liệu Dashboard…</span>${'<i class="dov-skel dov-skel-kpi" aria-hidden="true"></i>'.repeat(5)}`);
+      ["dovOverall","dovUnits","dovDeadlines"].forEach(id=>paint(id,`<div class="dov-skel-block" aria-hidden="true">${'<i class="dov-skel"></i>'.repeat(id==="dovUnits"?6:4)}</div>`));
+      const updated=document.getElementById("dovUpdated");if(updated)updated.textContent="Đang tải dữ liệu…";
+      return;
+    }
     const s=summarizeDashboard(Array.isArray(tasks)?tasks:[]);
     lastSummary=s;
     trackUpdated(s);

@@ -169,6 +169,9 @@
     if(code === "user_already_exists" || code === "email_exists" || message.includes("already registered")){
       return "Email này đã có tài khoản. Vui lòng đăng nhập, hoặc chọn “Quên mật khẩu?” nếu không nhớ mật khẩu.";
     }
+    if(message.includes("provider is not enabled") || message.includes("unsupported provider")){
+      return "Đăng nhập Google chưa được bật trên hệ thống. Vui lòng đăng nhập bằng email và mật khẩu, hoặc liên hệ quản trị viên.";
+    }
     if(code === "same_password"){
       return "Mật khẩu mới phải khác mật khẩu đang dùng.";
     }
@@ -355,11 +358,20 @@
     showAuthView("login", { focus: false });
     $("loginScreen").classList.remove("active");
     $("appScreen").classList.add("active");
+    document.body.classList.add("ubkt-initial-loading");
     applyAccessControl();
     window.scrollTo(0, 0);
     if(isSupabaseConfigured()){
-      const loaded = await loadFromDatabase();
-      if(!loaded) render();
+      // Gửi truy vấn trước, rồi vẽ khung chờ nhẹ (Dashboard / Tab Nhiệm vụ) trong lúc chờ dữ liệu
+      const loading = loadFromDatabase();
+      try{
+        if(typeof renderDashboardOverview === "function") renderDashboardOverview();
+        if(typeof window.paintTaskGridSkeleton === "function") window.paintTaskGridSkeleton();
+      }catch(error){ console.warn("Chưa vẽ được khung chờ", error?.name || ""); }
+      let loaded = false;
+      try{ loaded = await loading; }
+      finally{ document.body.classList.remove("ubkt-initial-loading"); }
+      if(!loaded || !(Array.isArray(tasks) && tasks.length)) render();
     }else{
       updateDbStatus("CSDL: chưa cấu hình", "db-offline");
       render();
@@ -474,15 +486,24 @@
     clearLoginMessage();
     writePending("oauth");
     try{
-      const { error } = await client.auth.signInWithOAuth({
+      // Lấy URL đăng nhập từ Supabase nhưng chưa chuyển trang, để kiểm tra trước nhà cung cấp Google đã bật chưa.
+      // Nếu chưa bật, Supabase trả về trang lỗi JSON thô thay vì màn hình chọn tài khoản Google.
+      const { data, error } = await client.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: authRedirectUrl(),
-          queryParams: { prompt: "select_account" }
+          queryParams: { prompt: "select_account" },
+          skipBrowserRedirect: true
         }
       });
       if(error) throw error;
-      // Trình duyệt chuyển sang Google; giữ trạng thái bận cho tới khi rời trang.
+      if(!data?.url) throw authError("Không tạo được liên kết đăng nhập Google. Vui lòng thử lại.");
+      const enabled = await googleProviderEnabled();
+      if(enabled === false){
+        throw authError("Đăng nhập Google chưa được bật trên hệ thống. Vui lòng đăng nhập bằng email và mật khẩu, hoặc liên hệ quản trị viên.");
+      }
+      // Chuyển hướng cùng tab tới Google (luồng chuẩn của Supabase); giữ trạng thái bận cho tới khi rời trang.
+      window.location.assign(data.url);
     }catch(error){
       takePending();
       console.warn("Không mở được đăng nhập Google", error?.code || error?.name || "");
@@ -490,6 +511,35 @@
       loginBusy = false;
       setBusy(button, false);
       $("loginSubmit").disabled = false;
+    }
+  }
+
+  /* Đọc cấu hình công khai của Supabase Auth (/auth/v1/settings — chỉ cần publishable key).
+     true/false nếu đọc được; null nếu không xác định (khi đó vẫn để Supabase xử lý như cũ). */
+  let googleProviderCache = null;
+  async function googleProviderEnabled(){
+    if(googleProviderCache !== null) return googleProviderCache;
+    const cfg = getSupabaseConfig();
+    if(!cfg?.url || !cfg?.anonKey || typeof fetch !== "function") return null;
+    const controller = typeof AbortController === "function" ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), 4000) : null;
+    try{
+      const response = await fetch(`${String(cfg.url).replace(/\/+$/, "")}/auth/v1/settings`, {
+        headers: { apikey: cfg.anonKey },
+        signal: controller?.signal,
+        credentials: "omit",
+        cache: "no-store"
+      });
+      if(!response.ok) return null;
+      const settings = await response.json();
+      if(typeof settings?.external?.google !== "boolean") return null;
+      googleProviderCache = settings.external.google;
+      if(!googleProviderCache) setTimeout(() => { googleProviderCache = null; }, 60000); // cho phép thử lại sau khi quản trị bật
+      return googleProviderCache;
+    }catch(_){
+      return null;
+    }finally{
+      if(timer) clearTimeout(timer);
     }
   }
 
