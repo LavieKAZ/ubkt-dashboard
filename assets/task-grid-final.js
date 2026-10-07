@@ -1203,11 +1203,18 @@
     finally{taskLogsLoading=false;renderTaskLogHistory();}
   };
   window.closeTaskLogModal=function(){document.getElementById("taskLogModal")?.classList.remove("open");activeLogTaskId="";unlockScroll();};
+  /* Kết quả nhập ngay khi giao nhiệm vụ (trường result) — hiển thị khi chưa có báo cáo tiến độ nào. */
+  function initialResultCard(taskId){
+    const task=tasks.find(item=>String(item.id)===String(taskId));
+    const result=String(task?.result||"").trim();
+    if(!result)return "";
+    return `<article class="task-social-comment task-log-initial-result"><span class="task-social-avatar" aria-hidden="true">KQ</span><div class="task-social-bubble"><div class="task-social-comment-head"><div><b>Kết quả thực hiện</b><small>Ghi nhận khi giao nhiệm vụ</small></div></div><p>${html(result)}</p></div></article>`;
+  }
   window.renderTaskLogHistory=function(){
     const host=document.getElementById("taskLogHistory");if(!host)return;
     if(taskLogsLoading){host.innerHTML=`<div class="task-log-loading"><span></span><b>Đang tải lịch sử cập nhật...</b></div>`;return;}
     const rows=logsFor(activeLogTaskId);
-    host.innerHTML=rows.length?rows.map(log=>{const author=logAuthor(log);return `<article class="task-social-comment"><span class="task-social-avatar">${html(avatarText(author.name))}</span><div class="task-social-bubble"><div class="task-social-comment-head"><div><b>${html(author.name)}</b><small>${html(author.role)}</small></div><time title="${html(relativeLogTime(log.created_at))}">${html(notificationTime(log.created_at))}</time></div><p>${html(log.content)}</p><div class="task-social-comment-meta">${log.self_assessment?`<span>Tự đánh giá: <b>${html(log.self_assessment)}</b></span>`:""}<span>${html(log.reporting_period)}</span></div>${log.assessment_note?`<div class="task-social-note">${html(log.assessment_note)}</div>`:""}${log.evidence_url||log.evidence_path?`<a class="task-social-evidence" href="#" onclick="openTaskEvidence('${html(log.id)}');return false">${attachmentIcon()}<span>${html(log.evidence_name||"Mở minh chứng đính kèm")}</span></a>`:""}</div></article>`;}).join(""):`<div class="task-log-empty-state"><span aria-hidden="true">◎</span><b>Chưa có cập nhật nào</b><p>Hãy gửi báo cáo đầu tiên để bắt đầu luồng trao đổi tiến độ.</p></div>`;
+    host.innerHTML=rows.length?rows.map(log=>{const author=logAuthor(log);return `<article class="task-social-comment"><span class="task-social-avatar">${html(avatarText(author.name))}</span><div class="task-social-bubble"><div class="task-social-comment-head"><div><b>${html(author.name)}</b><small>${html(author.role)}</small></div><time title="${html(relativeLogTime(log.created_at))}">${html(notificationTime(log.created_at))}</time></div><p>${html(log.content)}</p><div class="task-social-comment-meta">${log.self_assessment?`<span>Tự đánh giá: <b>${html(log.self_assessment)}</b></span>`:""}<span>${html(log.reporting_period)}</span></div>${log.assessment_note?`<div class="task-social-note">${html(log.assessment_note)}</div>`:""}${log.evidence_url||log.evidence_path?`<a class="task-social-evidence" href="#" onclick="openTaskEvidence('${html(log.id)}');return false">${attachmentIcon()}<span>${html(log.evidence_name||"Mở minh chứng đính kèm")}</span></a>`:""}</div></article>`;}).join(""):initialResultCard(activeLogTaskId)||`<div class="task-log-empty-state"><span aria-hidden="true">◎</span><b>Chưa có cập nhật nào</b><p>Hãy gửi báo cáo đầu tiên để bắt đầu luồng trao đổi tiến độ.</p></div>`;
   };
   window.submitTaskProgressLog=async function(event,form){
     event.preventDefault();const task=tasks.find(item=>String(item.id)===activeLogTaskId);if(!task)return;
