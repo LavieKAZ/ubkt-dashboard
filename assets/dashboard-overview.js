@@ -148,8 +148,11 @@
   }
 
   /* ---------------- C2. Tiến độ theo đơn vị ---------------- */
+  function sortedUnits(s){
+    return [...s.units.values()].sort((a,b)=>b.late-a.late||b.total-a.total||a.name.localeCompare(b.name,"vi"));
+  }
   function renderUnits(s){
-    const units=[...s.units.values()].sort((a,b)=>b.late-a.late||b.total-a.total||a.name.localeCompare(b.name,"vi"));
+    const units=sortedUnits(s);
     if(!units.length)return emptyState("Chưa có đơn vị nào được giao việc","Số liệu từng đơn vị sẽ hiển thị khi có nhiệm vụ.");
     const num=(value,tone,label,title)=>`<span class="dov-unit-num ${tone}${value?"":" is-zero"}" title="${esc(title||label)}"><small>${label}</small><b>${value}</b></span>`;
     const rows=units.map(u=>{
@@ -305,6 +308,225 @@
   if(typeof legacyOpenTaskLogModal==="function"){
     window.openTaskLogModal=function(){window.closeDashboardDeadlinePanel();return legacyOpenTaskLogModal.apply(this,arguments);};
   }
+
+
+  /* ---------------- Xuất ảnh bảng "Tiến độ theo đơn vị" ----------------
+     - Vẽ trực tiếp bằng Canvas 2D từ cùng số liệu summarizeDashboard()/sortedUnits() của bảng trên màn hình,
+       nên ảnh luôn khớp số liệu, đủ mọi đơn vị và giống nhau trên desktop/điện thoại. Không dùng thư viện ngoài,
+       không gửi dữ liệu đi đâu.
+     - Chỉ Admin, UBKT, VPĐU (đã duyệt, đang hoạt động). Hàm tự kiểm tra quyền trước khi chạy. */
+  const EXPORT_ROLES=["admin","ubkt","vpdu"];
+  const EXPORT_WIDTH=1600;
+  const EXPORT_SCALE=2;
+  let exportBusy=false;
+
+  function canExportUnitProgress(){
+    const p=typeof currentProfile!=="undefined"?currentProfile:null;
+    if(!p||p.approval_status!=="approved"||p.is_active!==true)return false;
+    if(!EXPORT_ROLES.includes(String(p.role||"")))return false;
+    return typeof isOversightUser!=="function"||isOversightUser()===true;
+  }
+  window.canExportUnitProgress=canExportUnitProgress;
+
+  function exportToast(title,body){if(typeof showModuleToast==="function")showModuleToast(title,body);}
+  function exportMenu(){return document.getElementById("dovUnitsExportMenu");}
+  function exportButton(){return document.getElementById("dovUnitsExportBtn");}
+  function closeExportMenu(focusButton){
+    const menu=exportMenu();if(!menu||menu.hidden)return;
+    menu.hidden=true;exportButton()?.setAttribute("aria-expanded","false");
+    if(focusButton)exportButton()?.focus();
+  }
+  window.toggleUnitProgressExportMenu=function(force){
+    const menu=exportMenu();if(!menu)return;
+    if(!canExportUnitProgress()){menu.hidden=true;exportToast("Không có quyền xuất ảnh","Chỉ Admin, Ủy ban Kiểm tra và Văn phòng Đảng ủy được xuất số liệu tổng hợp.");return;}
+    const open=typeof force==="boolean"?force:menu.hidden;
+    menu.hidden=!open;exportButton()?.setAttribute("aria-expanded",String(open));
+    if(open)window.setTimeout(()=>menu.querySelector("button")?.focus(),0);
+  };
+  document.addEventListener("click",event=>{
+    const wrap=document.querySelector(".dov-export");
+    if(wrap&&!wrap.contains(event.target))closeExportMenu(false);
+  });
+  document.addEventListener("keydown",event=>{
+    const menu=exportMenu();if(!menu||menu.hidden)return;
+    if(event.key==="Escape"){event.preventDefault();closeExportMenu(true);return;}
+    if(event.key==="ArrowDown"||event.key==="ArrowUp"){
+      const items=[...menu.querySelectorAll("button")];const index=items.indexOf(document.activeElement);
+      event.preventDefault();items[(index+(event.key==="ArrowDown"?1:items.length-1))%items.length]?.focus();
+    }
+  });
+
+  function exportColors(){
+    const page=document.getElementById("page-dashboard")||document.documentElement;
+    const css=getComputedStyle(page);
+    const v=(name,fallback)=>(css.getPropertyValue(name)||"").trim()||fallback;
+    return {ink:v("--dov-ink","#172033"),text:v("--dov-text","#334155"),muted:v("--dov-muted","#5b6b80"),line:v("--dov-line","#dbe3ee"),soft:v("--dov-soft","#f6f8fb"),
+      done:v("--dov-done","#16a34a"),processing:v("--dov-processing","#2563eb"),unappraised:v("--dov-unappraised","#d99a06"),late:v("--dov-late","#dc2626"),paused:v("--dov-paused","#94a3b8"),track:"#e9eef5"};
+  }
+  function exportFont(weight,size){
+    return `${weight} ${size}px "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
+  }
+  function roundRect(ctx,x,y,w,h,r){
+    const radius=Math.min(r,h/2,w/2);
+    ctx.beginPath();ctx.moveTo(x+radius,y);ctx.arcTo(x+w,y,x+w,y+h,radius);ctx.arcTo(x+w,y+h,x,y+h,radius);ctx.arcTo(x,y+h,x,y,radius);ctx.arcTo(x,y,x+w,y,radius);ctx.closePath();
+  }
+  function fitText(ctx,text,maxWidth){
+    if(ctx.measureText(text).width<=maxWidth)return text;
+    let value=text;while(value.length>1&&ctx.measureText(value+"…").width>maxWidth)value=value.slice(0,-1);
+    return value+"…";
+  }
+  function formatStamp(date){
+    const time=new Intl.DateTimeFormat("vi-VN",{hour:"2-digit",minute:"2-digit",hour12:false}).format(date);
+    const day=new Intl.DateTimeFormat("vi-VN",{day:"2-digit",month:"2-digit",year:"numeric"}).format(date);
+    return `${time}, ${day}`;
+  }
+  function fileStamp(date){
+    const z=n=>String(n).padStart(2,"0");
+    return `${date.getFullYear()}-${z(date.getMonth()+1)}-${z(date.getDate())}_${z(date.getHours())}${z(date.getMinutes())}`;
+  }
+
+  /* Vẽ ảnh; trả về canvas. Dùng chung cho tải PNG và sao chép. */
+  function drawUnitProgressCanvas(summary,stamp){
+    const units=sortedUnits(summary);
+    const C=exportColors();
+    const W=EXPORT_WIDTH,PAD=64,ROW=84;
+    const cols={name:PAD+16,bar:PAD+500,barW:470,done:PAD+1120,proc:PAD+1260,late:PAD+1370,pct:W-PAD-16};
+    const totals=units.reduce((t,u)=>{t.total+=u.total;t.done+=u.done;t.proc+=u.processing+u.unappraised;t.late+=u.late;t.paused+=u.paused;["done","processing","unappraised","late","paused"].forEach(k=>{t.seg[k]+=u[k];});return t;},{total:0,done:0,proc:0,late:0,paused:0,seg:{done:0,processing:0,unappraised:0,late:0,paused:0}});
+    const headerH=210,tableHeadH=58,footerH=86;
+    const H=headerH+tableHeadH+units.length*ROW+ROW+footerH;
+    const canvas=document.createElement("canvas");
+    canvas.width=W*EXPORT_SCALE;canvas.height=H*EXPORT_SCALE;
+    const ctx=canvas.getContext("2d");
+    ctx.scale(EXPORT_SCALE,EXPORT_SCALE);
+    ctx.fillStyle="#ffffff";ctx.fillRect(0,0,W,H);
+    ctx.textBaseline="alphabetic";
+
+    // Tiêu đề + thời điểm số liệu
+    ctx.fillStyle=C.ink;ctx.font=exportFont(700,34);ctx.textAlign="left";
+    ctx.fillText("TIẾN ĐỘ THỰC HIỆN NHIỆM VỤ THEO ĐƠN VỊ",PAD,PAD+38);
+    ctx.fillStyle=C.muted;ctx.font=exportFont(400,21);
+    ctx.fillText(`Số liệu tính đến ${stamp} · Trạng thái theo Đánh giá của VPĐU · Tổng cộng ${totals.total} nhiệm vụ`,PAD,PAD+76);
+    // Chú thích màu
+    let lx=PAD;const ly=PAD+124;ctx.font=exportFont(500,20);
+    SEGMENTS.forEach(seg=>{
+      ctx.fillStyle=C[seg.key];roundRect(ctx,lx,ly-15,18,18,5);ctx.fill();
+      ctx.fillStyle=C.text;ctx.fillText(seg.label,lx+28,ly);
+      lx+=28+ctx.measureText(seg.label).width+36;
+    });
+
+    // Đầu bảng
+    let y=headerH;
+    ctx.strokeStyle=C.line;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(PAD,y+tableHeadH);ctx.lineTo(W-PAD,y+tableHeadH);ctx.stroke();
+    const hy=y+38;ctx.font=exportFont(700,20);
+    ctx.fillStyle=C.muted;ctx.textAlign="left";ctx.fillText("Đơn vị",cols.name,hy);ctx.fillText("Tiến độ",cols.bar,hy);
+    ctx.textAlign="right";
+    ctx.fillStyle=C.done;ctx.fillText("Hoàn thành",cols.done,hy);
+    ctx.fillStyle=C.processing;ctx.fillText("Đang xử lý",cols.proc,hy);
+    ctx.fillStyle=C.late;ctx.fillText("Trễ hạn",cols.late,hy);
+    ctx.fillStyle=C.muted;ctx.fillText("Tỷ lệ",cols.pct,hy);
+    y+=tableHeadH;
+
+    function drawRow(row,isTotal){
+      const top=y,mid=top+ROW/2;
+      if(isTotal){ctx.fillStyle=C.soft;ctx.fillRect(PAD,top,W-PAD*2,ROW);}
+      // Tên + số nhiệm vụ
+      ctx.textAlign="left";ctx.fillStyle=C.ink;ctx.font=exportFont(isTotal?800:700,24);
+      ctx.fillText(fitText(ctx,row.name,cols.bar-cols.name-40),cols.name,mid-4);
+      ctx.fillStyle=C.muted;ctx.font=exportFont(400,18);
+      ctx.fillText(`${row.total} nhiệm vụ${row.paused?` · ${row.paused} tạm dừng`:""}`,cols.name,mid+24);
+      // Thanh tiến độ
+      const bx=cols.bar,bw=cols.barW,bh=18,by=mid-bh/2;
+      ctx.save();roundRect(ctx,bx,by,bw,bh,bh/2);ctx.clip();
+      ctx.fillStyle=C.track;ctx.fillRect(bx,by,bw,bh);
+      let x=bx;
+      SEGMENTS.forEach(seg=>{const value=row.seg[seg.key];if(!value||!row.total)return;const w=value/row.total*bw;ctx.fillStyle=C[seg.key];ctx.fillRect(x,by,w,bh);x+=w;});
+      ctx.restore();
+      // Số liệu
+      ctx.textAlign="right";ctx.font=exportFont(700,26);
+      const num=(value,color,colX)=>{ctx.fillStyle=value?color:"#9aa7b8";ctx.font=exportFont(value?700:500,26);ctx.fillText(String(value),colX,mid+9);};
+      num(row.done,C.done,cols.done);num(row.proc,C.processing,cols.proc);num(row.late,C.late,cols.late);
+      ctx.fillStyle=C.ink;ctx.font=exportFont(800,26);ctx.fillText(`${pct(row.done,row.total)}%`,cols.pct,mid+9);
+      // Kẻ dòng
+      ctx.strokeStyle=C.line;ctx.lineWidth=isTotal?2:1;
+      ctx.beginPath();ctx.moveTo(PAD,top+ROW);ctx.lineTo(W-PAD,top+ROW);ctx.stroke();
+      if(isTotal){ctx.beginPath();ctx.moveTo(PAD,top);ctx.lineTo(W-PAD,top);ctx.stroke();}
+      y+=ROW;
+    }
+    units.forEach(u=>drawRow({name:u.name,total:u.total,paused:u.paused,done:u.done,proc:u.processing+u.unappraised,late:u.late,seg:{done:u.done,processing:u.processing,unappraised:u.unappraised,late:u.late,paused:u.paused}},false));
+    drawRow({name:"Tổng cộng",total:totals.total,paused:totals.paused,done:totals.done,proc:totals.proc,late:totals.late,seg:totals.seg},true);
+
+    // Chân ảnh
+    ctx.textAlign="left";ctx.fillStyle=C.muted;ctx.font=exportFont(400,18);
+    ctx.fillText("Nguồn: Hệ thống giám sát, kiểm tra — UBKT Đảng ủy phường Tân Mỹ",PAD,y+50);
+    ctx.textAlign="right";ctx.fillText(`Xuất lúc ${stamp}`,W-PAD,y+50);
+    canvas.__ubktTotals={units:units.length,total:totals.total,done:totals.done,processing:totals.proc,late:totals.late};
+    return canvas;
+  }
+
+  function canvasBlob(canvas){
+    return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("Trình duyệt không tạo được ảnh.")),"image/png"));
+  }
+  function downloadBlob(blob,name){
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement("a");link.href=url;link.download=name;link.rel="noopener";
+    document.body.appendChild(link);link.click();link.remove();
+    window.setTimeout(()=>URL.revokeObjectURL(url),4000);
+  }
+  function setExportBusy(busy){
+    exportBusy=busy;const button=exportButton();if(!button)return;
+    button.disabled=busy;button.classList.toggle("is-loading",busy);
+    if(busy)button.setAttribute("aria-busy","true");else button.removeAttribute("aria-busy");
+    const label=button.querySelector("[data-label]");if(label)label.textContent=busy?"Đang tạo ảnh…":"Xuất ảnh";
+  }
+
+  /* API dùng lại: exportUnitProgressImage({format:"png"|"clipboard"}) → Promise<{ok, format, fileName?}> */
+  window.exportUnitProgressImage=async function(options={}){
+    const format=options.format==="clipboard"?"clipboard":"png";
+    closeExportMenu(false);
+    if(!canExportUnitProgress()){
+      exportToast("Không có quyền xuất ảnh","Chỉ Admin, Ủy ban Kiểm tra và Văn phòng Đảng ủy được xuất số liệu tổng hợp.");
+      return {ok:false,reason:"forbidden"};
+    }
+    if(exportBusy)return {ok:false,reason:"busy"};
+    const summary=summarizeDashboard(Array.isArray(tasks)?tasks:[]);
+    if(!summary.units.size){exportToast("Chưa có số liệu","Chưa có đơn vị nào được giao nhiệm vụ để xuất ảnh.");return {ok:false,reason:"empty"};}
+    const now=new Date();const fileName=`tien-do-theo-don-vi_${fileStamp(now)}.png`;
+    setExportBusy(true);
+    try{
+      if(document.fonts&&document.fonts.ready)await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,800))]);
+      const canvas=drawUnitProgressCanvas(summary,formatStamp(now));
+      if(format==="clipboard"){
+        const canCopy=typeof ClipboardItem!=="undefined"&&navigator.clipboard&&typeof navigator.clipboard.write==="function";
+        if(canCopy){
+          try{
+            // Safari yêu cầu truyền Promise vào ClipboardItem để giữ thao tác của người dùng
+            await navigator.clipboard.write([new ClipboardItem({"image/png":canvasBlob(canvas)})]);
+            exportToast("Đã sao chép ảnh","Dán (Ctrl/⌘ + V) vào Word, Zalo hoặc email.");
+            return {ok:true,format:"clipboard"};
+          }catch(error){console.warn("Không sao chép được ảnh",error?.name||"");}
+        }
+        downloadBlob(await canvasBlob(canvas),fileName);
+        exportToast("Trình duyệt chưa cho sao chép ảnh","Ảnh đã được tải về máy dưới dạng PNG để chèn vào báo cáo.");
+        return {ok:true,format:"png",fileName,fallback:true};
+      }
+      downloadBlob(await canvasBlob(canvas),fileName);
+      exportToast("Đã tải ảnh PNG",`${fileName} · ${canvas.__ubktTotals.units} đơn vị, ${canvas.__ubktTotals.total} nhiệm vụ.`);
+      return {ok:true,format:"png",fileName};
+    }catch(error){
+      console.warn("Xuất ảnh lỗi",error?.name||"");
+      exportToast("Chưa xuất được ảnh","Vui lòng thử lại. Nếu vẫn lỗi, hãy dùng trình duyệt Chrome hoặc Safari bản mới.");
+      return {ok:false,reason:"error"};
+    }finally{
+      setExportBusy(false);
+    }
+  };
+  // Dùng cho kiểm thử: vẽ ảnh nhưng không tải về (vẫn kiểm tra quyền)
+  window.renderUnitProgressImagePreview=function(){
+    if(!canExportUnitProgress())return null;
+    const canvas=drawUnitProgressCanvas(summarizeDashboard(Array.isArray(tasks)?tasks:[]),formatStamp(new Date()));
+    return {dataUrl:canvas.toDataURL("image/png"),width:canvas.width,height:canvas.height,totals:canvas.__ubktTotals};
+  };
 
   /* ---------------- Nối vào vòng render hiện có ----------------
      render() gọi renderMetrics() ở mọi trang, rồi (khi ở Dashboard) gọi các hàm vẽ cũ.

@@ -245,3 +245,17 @@
 
 /* Sidebar dính đúng màn hình khi cuộn: body dùng clip thay vì hidden để không tạo vùng cuộn riêng */
 html>body{overflow-x:clip}
+/* Xuất ảnh bảng "Tiến độ theo đơn vị" */
+#page-dashboard .dov-export{position:relative;flex:0 0 auto}
+#page-dashboard .dov-export[hidden]{display:none}
+#appScreen #page-dashboard .dov-export-btn{min-height:38px;padding:7px 12px}
+#page-dashboard .dov-export-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;width:280px;max-width:calc(100vw - 32px);padding:6px;border:1px solid var(--dov-line);border-radius:12px;background:#fff;box-shadow:0 12px 32px -8px rgba(15,23,42,.22)}
+#page-dashboard .dov-export-menu[hidden]{display:none}
+#page-dashboard .dov-export-menu button{display:flex;align-items:flex-start;gap:10px;width:100%;padding:10px;border:0;border-radius:8px;background:transparent;color:var(--dov-ink);text-align:left;cursor:pointer}
+#page-dashboard .dov-export-menu button:hover,#page-dashboard .dov-export-menu button:focus-visible{background:var(--dov-soft)}
+#page-dashboard .dov-export-menu svg{width:20px;height:20px;flex:0 0 20px;margin-top:1px;fill:none;stroke:var(--dov-blue);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#page-dashboard .dov-export-menu span{display:flex;flex-direction:column;gap:1px;min-width:0}
+#page-dashboard .dov-export-menu b{font-size:14px;font-weight:650;line-height:1.35}
+#page-dashboard .dov-export-menu small{color:var(--dov-muted);font-size:13px;line-height:1.4}
+#page-dashboard .dov-export-btn.is-loading svg{animation:none;opacity:.55}
+#page-dashboard .dov-export-btn svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
