@@ -1113,7 +1113,7 @@
     wrap.innerHTML=`<div class="task-grid-skeleton" role="status" aria-live="polite"><span class="sr-only">Đang tải danh sách nhiệm vụ…</span>${'<i></i>'.repeat(6)}</div>`;
   };
   async function loadTaskGridCollections(){
-    if(!databaseReady||!getSupabaseClient())return;
+    if(!getSupabaseClient())return;
     const client=getSupabaseClient();
     const notificationsResult=await client.from("system_notifications").select("id,category,title,body,action_page,read_at,created_at").order("created_at",{ascending:false}).limit(100);
     if(!notificationsResult.error)systemNotifications=notificationsResult.data||[];
