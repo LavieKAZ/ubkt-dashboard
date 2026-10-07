@@ -259,3 +259,11 @@ html>body{overflow-x:clip}
 #page-dashboard .dov-export-menu small{color:var(--dov-muted);font-size:13px;line-height:1.4}
 #page-dashboard .dov-export-btn.is-loading svg{animation:none;opacity:.55}
 #page-dashboard .dov-export-btn svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+/* Khung chờ khi tải dữ liệu lần đầu */
+#page-dashboard .dov-skel-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+#page-dashboard .dov-skel-block{display:flex;flex-direction:column;gap:12px}
+#page-dashboard .dov-skel{display:block;height:22px;border-radius:8px;background:linear-gradient(90deg,#eef2f7 25%,#f7f9fc 50%,#eef2f7 75%);background-size:200% 100%;animation:dov-shimmer 1.2s ease-in-out infinite}
+#page-dashboard .dov-skel-kpi{height:112px;border-radius:14px}
+#page-dashboard .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+@keyframes dov-shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+@media (prefers-reduced-motion:reduce){#page-dashboard .dov-skel{animation:none}}

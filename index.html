@@ -5,8 +5,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ủy ban Kiểm tra Đảng ủy phường Tân Mỹ — Hệ thống giám sát dữ liệu</title>
-  <script src="./assets/vendor/chart.umd.4.5.1.min.js"></script>
-  <script src="./assets/vendor/supabase.2.117.2.js"></script>
+  <script defer src="./assets/vendor/chart.umd.4.5.1.min.js"></script>
+  <script defer src="./assets/vendor/supabase.2.117.2.js"></script>
   <script src="./config.js?v=20260806save1"></script>
   <style>
     /* GÓI B - Bento Grid Responsive Collapse */
@@ -1282,9 +1282,9 @@ body{
   <link rel="stylesheet" href="./assets/tailwind-compiled.css?v=20260725">
   <link rel="stylesheet" href="./assets/project-manager-v3.css?v=20260806save1">
   <link rel="stylesheet" href="./assets/resolution-tracker.css?v=20261001">
-  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261007tcr1">
+  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261007perf1">
   <link rel="stylesheet" href="./assets/task-approvals.css?v=20261005tap1">
-  <link rel="stylesheet" href="./assets/dashboard-overview.css?v=20261007dovx1">
+  <link rel="stylesheet" href="./assets/dashboard-overview.css?v=20261007perf1">
   <link rel="stylesheet" href="./assets/auth-experience.css?v=20261005auth1">
   <link rel="stylesheet" href="./assets/auth-register.css?v=20261006rg2">
 </head>
@@ -3284,6 +3284,8 @@ body{
     }
 
     async function seedIfEmpty(table, items){
+      // Không có dữ liệu mẫu cục bộ thì không cần đếm (truy vấn count=exact trên bảng lớn tốn 0,3–2 giây).
+      if(!items || !items.length) return false;
       const client=getSupabaseClient();
       const {count,error}=await client.from(table).select("id",{count:"exact",head:true});
       if(error) throw error;
@@ -3319,6 +3321,7 @@ body{
             || canonicalUnitValue(task?.coUnit)===assignedUnit
           );
           taskUpdateRequests = remoteRequests.data || [];
+          loadedCollections.add("tasks");
           databaseReady=true;
           updateDbStatus("CSDL: đã kết nối","db-online");
           persistLocal(false);
@@ -3328,52 +3331,34 @@ body{
 
         // VPĐU: chỉ tải nhiệm vụ (mọi đơn vị) và hàng đợi duyệt; không tải dữ liệu các phân hệ khác hay tài khoản.
         if(typeof window.isVpduUser==="function"&&window.isVpduUser()){
-          tasks=await fetchCollection(DB_TABLES.tasks);
+          const [remoteTasks]=await Promise.all([
+            fetchCollection(DB_TABLES.tasks),
+            loadAdminQueues(false)
+          ]);
+          tasks=remoteTasks;
+          loadedCollections.add("tasks");
           databaseReady=true;
-          await loadAdminQueues(false);
           updateDbStatus("CSDL: đã kết nối","db-online");
           persistLocal(false);
           render();
           return true;
         }
 
-        // If tables are empty, seed current packaged data once.
-        await Promise.all([
-          seedIfEmpty(DB_TABLES.tasks, tasks),
-          seedIfEmpty(DB_TABLES.periods, periods),
-          seedIfEmpty(DB_TABLES.opinions, opinions),
-          seedIfEmpty(DB_TABLES.conclusions, conclusions),
-          seedIfEmpty(DB_TABLES.baseOrgs, baseOrgs),
-          seedIfEmpty(DB_TABLES.baseReports, baseReports),
-          seedIfEmpty(DB_TABLES.dossiers, dossiers),
-          seedIfEmpty(DB_TABLES.audit, auditLogs)
-        ]);
-
-        const [remoteTasks, remotePeriods, remoteOpinions, remoteConclusions, remoteBaseOrgs, remoteBaseReports, remoteDossiers, remoteAudit] = await Promise.all([
+        // Pha 1 (đường găng): chỉ dữ liệu cần cho trang đầu — nhiệm vụ + hàng đợi quản trị, chạy song song.
+        const [remoteTasks]=await Promise.all([
           fetchCollection(DB_TABLES.tasks),
-          fetchCollection(DB_TABLES.periods),
-          fetchCollection(DB_TABLES.opinions),
-          fetchCollection(DB_TABLES.conclusions),
-          fetchCollection(DB_TABLES.baseOrgs),
-          fetchCollection(DB_TABLES.baseReports),
-          fetchCollection(DB_TABLES.dossiers),
-          fetchCollection(DB_TABLES.audit)
+          loadAdminQueues(false)
         ]);
-
         if(remoteTasks.length) tasks = remoteTasks;
-        if(remotePeriods.length) periods = remotePeriods;
-        if(remoteOpinions.length) opinions = remoteOpinions;
-        if(remoteConclusions.length) conclusions = remoteConclusions;
-        if(remoteBaseOrgs.length) baseOrgs = remoteBaseOrgs;
-        if(remoteBaseReports.length) baseReports = remoteBaseReports;
-        if(remoteDossiers.length) dossiers = remoteDossiers;
-        if(remoteAudit.length) auditLogs = remoteAudit;
+        else await seedIfEmpty(DB_TABLES.tasks, tasks);
+        loadedCollections.add("tasks");
 
         databaseReady=true;
-        await loadAdminQueues(false);
         updateDbStatus("CSDL: đã kết nối","db-online");
         persistLocal(false);
         render();
+        // Pha 2 chạy nền, không chặn Dashboard
+        window.setTimeout(()=>{loadSecondaryCollections();},0);
         return true;
       }catch(error){
         console.error("Lỗi tải Supabase", error);
@@ -3386,19 +3371,85 @@ body{
       }
     }
 
+    /* ---- Tải dữ liệu theo nhu cầu ----
+       loadedCollections: bảng nào đã tải từ Supabase trong phiên này. saveAllToDatabase chỉ ghi lại các bảng
+       đã tải, để dữ liệu mẫu cục bộ của bảng chưa tải không bao giờ ghi đè dữ liệu thật. */
+    const loadedCollections=new Set();
+    const SECONDARY_COLLECTIONS=Object.freeze([
+      ["periods",()=>periods,value=>{periods=value;}],
+      ["opinions",()=>opinions,value=>{opinions=value;}],
+      ["conclusions",()=>conclusions,value=>{conclusions=value;}],
+      ["baseOrgs",()=>baseOrgs,value=>{baseOrgs=value;}],
+      ["baseReports",()=>baseReports,value=>{baseReports=value;}],
+      ["dossiers",()=>dossiers,value=>{dossiers=value;}]
+    ]);
+    let secondaryCollectionsPromise=null;
+    /* Pha 2: dữ liệu các phân hệ khác (Dư luận, Kết luận, Cơ sở, Hồ sơ, Kỳ báo cáo) tải nền SAU khi Dashboard đã dùng được. */
+    function loadSecondaryCollections(){
+      if(isUnitUser() || (typeof window.isVpduUser==="function"&&window.isVpduUser())) return Promise.resolve(false);
+      const pending=SECONDARY_COLLECTIONS.filter(([key])=>!loadedCollections.has(key));
+      if(!pending.length) return Promise.resolve(true);
+      if(secondaryCollectionsPromise) return secondaryCollectionsPromise;
+      secondaryCollectionsPromise=(async()=>{
+        const results=await Promise.allSettled(pending.map(async([key,get,set])=>{
+          const remote=await fetchCollection(DB_TABLES[key]);
+          if(remote.length) set(remote);
+          else await seedIfEmpty(DB_TABLES[key], get());
+          loadedCollections.add(key);
+        }));
+        const failed=results.filter(result=>result.status==="rejected");
+        if(failed.length){
+          console.warn("Chưa tải được một phần dữ liệu phân hệ",failed[0].reason);
+          updateDbStatus("CSDL: tải thiếu dữ liệu","db-error");
+        }
+        if(currentProfile)render();
+        return !failed.length;
+      })().finally(()=>{secondaryCollectionsPromise=null;});
+      return secondaryCollectionsPromise;
+    }
+    window.loadSecondaryCollections=loadSecondaryCollections;
+
+    /* Nhật ký thao tác: không tải lúc đăng nhập (bảng ~31.000 dòng, truy vấn 1,1 giây). Chỉ tải 250 bản ghi mới nhất khi mở. */
+    const AUDIT_PAGE_SIZE=250;
+    const pendingAuditIds=new Set();
+    let auditLoaded=false;
+    async function loadRecentAuditLogs(){
+      const client=getSupabaseClient();
+      if(!client||!databaseReady)return false;
+      const {data,error}=await client.from(DB_TABLES.audit)
+        .select("id,data,updated_at")
+        .order("updated_at",{ascending:false})
+        .limit(AUDIT_PAGE_SIZE);
+      if(error)throw error;
+      const remote=(data||[]).map(row=>row.data).filter(Boolean);
+      const remoteIds=new Set((data||[]).map(row=>String(row.id)));
+      const local=auditLogs.filter(item=>pendingAuditIds.has(String(item.id))&&!remoteIds.has(String(item.id)));
+      auditLogs=[...local,...remote].slice(0,AUDIT_PAGE_SIZE);
+      auditLoaded=true;
+      return true;
+    }
+    function resetLazyCollections(){
+      loadedCollections.clear();
+      pendingAuditIds.clear();
+      auditLoaded=false;
+      auditLogs=[];
+      secondaryCollectionsPromise=null;
+    }
+
     async function saveAllToDatabase(){
       if(!databaseReady || !isAdminUser()) return;
       try{
+        const collections=[
+          ["tasks",tasks],["periods",periods],["opinions",opinions],["conclusions",conclusions],
+          ["baseOrgs",baseOrgs],["baseReports",baseReports],["dossiers",dossiers]
+        ].filter(([key])=>loadedCollections.has(key));
+        // Nhật ký: chỉ ghi các dòng phát sinh trong phiên (dòng cũ đã có trên máy chủ, không gửi lại).
+        const newAudit=auditLogs.filter(item=>pendingAuditIds.has(String(item.id)));
         await Promise.all([
-          upsertItems(DB_TABLES.tasks, tasks),
-          upsertItems(DB_TABLES.periods, periods),
-          upsertItems(DB_TABLES.opinions, opinions),
-          upsertItems(DB_TABLES.conclusions, conclusions),
-          upsertItems(DB_TABLES.baseOrgs, baseOrgs),
-          upsertItems(DB_TABLES.baseReports, baseReports),
-          upsertItems(DB_TABLES.dossiers, dossiers),
-          upsertItems(DB_TABLES.audit, auditLogs)
+          ...collections.map(([key,items])=>upsertItems(DB_TABLES[key], items)),
+          upsertItems(DB_TABLES.audit, newAudit)
         ]);
+        newAudit.forEach(item=>pendingAuditIds.delete(String(item.id)));
         updateDbStatus("CSDL: đã lưu","db-online");
       }catch(error){
         console.error("Không lưu được Supabase", error);
@@ -4237,6 +4288,7 @@ body{
       adminQueueInitialized=false;
       knownPendingAccountIds=new Set();
       databaseReady=false;
+      resetLazyCollections();
       clearCachedBusinessData();
       document.body.classList.remove("ubkt-unit-mode");
       document.getElementById("appScreen")?.classList.remove("active");
@@ -4856,7 +4908,7 @@ function filtered(){
         smartAlertText.textContent=alerts.length;
       }
       if(typeof auditCountText!=="undefined"){
-        auditCountText.textContent=auditLogs.length;
+        auditCountText.textContent=auditLoaded?String(auditLogs.length):(pendingAuditIds.size?`+${pendingAuditIds.size}`:"Xem");
       }
     }
 
@@ -5060,15 +5112,31 @@ function filtered(){
     }
     function closeAlertsModal(){alertsModal.classList.remove("open");unlockScroll()}
 
-    function openAuditModal(){
+    async function openAuditModal(){
+      if(!auditLoaded&&databaseReady&&getSupabaseClient()){
+        auditList.innerHTML=`<div class="text-center text-slate-500 py-10">Đang tải nhật ký thao tác…</div>`;
+        auditModal.classList.add("open");
+        lockScroll();
+        try{await loadRecentAuditLogs();renderProfessionalTools();}
+        catch(error){
+          console.warn("Không tải được nhật ký thao tác",error?.code||error?.name||"");
+          auditList.innerHTML=`<div class="text-center text-slate-500 py-10">Chưa tải được nhật ký thao tác. Vui lòng thử lại.</div>`;
+          return;
+        }
+        renderAuditList();
+        return;
+      }
+      renderAuditList();
+      auditModal.classList.add("open");
+      lockScroll();
+    }
+    function renderAuditList(){
       auditList.innerHTML=auditLogs.length?auditLogs.map(a=>`<div class="rounded-2xl border border-slate-200 bg-white p-4">
         <div class="flex flex-wrap items-center gap-2 mb-2"><span class="badge b-blue">${escapeHtml(a.action)}</span><span class="badge b-gray">${new Date(a.time).toLocaleString("vi-VN")}</span></div>
         <p class="font-bold">${escapeHtml(a.doc||"")}</p>
         <p class="text-sm text-slate-600 mt-1">${escapeHtml(a.task||"")}</p>
         <p class="text-xs text-slate-500 mt-1">${escapeHtml(a.unit||"")} ${a.details?`— ${escapeHtml(a.details)}`:""}</p>
       </div>`).join(""):`<div class="text-center text-slate-500 py-10">Chưa có thao tác nào được ghi nhận.</div>`;
-      auditModal.classList.add("open");
-      lockScroll();
     }
     function closeAuditModal(){auditModal.classList.remove("open");unlockScroll()}
 
@@ -8003,6 +8071,7 @@ function filterDashboardByDeadline(deadline){
     }
 
     function appendAuditEntry(item){
+      pendingAuditIds.add(String(item.id));
       auditLogs.unshift(item);
       auditLogs=auditLogs.slice(0,250);
       return item;
@@ -9777,10 +9846,10 @@ window.addEventListener("resize", ()=>{
 setTimeout(initLiquidScrollIndicators, 300);
   </script>
   <script src="./assets/resolution-tracker.js?v=20261001"></script>
-  <script src="./assets/task-grid-final.js?v=20261007tcr1"></script>
+  <script src="./assets/task-grid-final.js?v=20261007perf1"></script>
   <script src="./assets/task-approvals.js?v=20261005tap1"></script>
-  <script src="./assets/dashboard-overview.js?v=20261007dovx1"></script>
-  <script src="./assets/auth-experience.js?v=20261005auth1"></script>
+  <script src="./assets/dashboard-overview.js?v=20261007perf1"></script>
+  <script src="./assets/auth-experience.js?v=20261007perf1"></script>
   <script src="./assets/auth-register.js?v=20261006rg2"></script>
   <div id="moduleToast" class="module-toast" role="status" aria-live="polite" aria-atomic="true" data-tone="info">
     <div class="module-toast-icon" aria-hidden="true">

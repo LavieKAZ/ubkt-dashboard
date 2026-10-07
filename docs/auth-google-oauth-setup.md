@@ -13,6 +13,43 @@ service-role key, mật khẩu hay token. Mọi khóa được nhập trực ti�
 Ứng dụng luôn gửi `redirectTo = location.origin + location.pathname` (chính trang đang mở). Ứng dụng không bao giờ lấy
 địa chỉ chuyển hướng từ query string. Vì vậy chỉ cần khai báo đúng tên miền trong danh sách cho phép của Supabase.
 
+## 0. Chẩn đoán ngày 07/10/2026: vì sao bấm "Tiếp tục với Google" không ra màn chọn tài khoản
+
+- Cấu hình công khai của Supabase Auth (`GET /auth/v1/settings`, chỉ cần publishable key) đang trả về `"external": { "google": false, "email": true }`.
+  **Google Provider chưa được bật trên Supabase.**
+- Khi đó `signInWithOAuth` vẫn chuyển trình duyệt tới `/auth/v1/authorize?provider=google`. Supabase trả về trang lỗi JSON
+  `{"code":400,"error_code":"validation_failed","msg":"Unsupported provider: provider is not enabled"}` thay vì màn chọn tài khoản Google.
+- `auth.identities` hiện chưa có dòng `google` nào (chưa có lần đăng nhập Google thành công).
+- Đây là lỗi **cấu hình**, không phải lỗi mã nguồn. Migration `20261005200000` đã có trên production (cột `position_title`, RPC `submit_unit_registration`).
+- Nhánh `claude/google-oauth-performance` kiểm tra trước cấu hình này. Nếu Google chưa bật, giao diện báo
+  "Đăng nhập Google chưa được bật trên hệ thống…" và mở khóa nút, không đẩy người dùng sang trang lỗi JSON.
+
+**Kiểm tra nhanh sau khi cấu hình**: mở trong trình duyệt
+`https://hbygfheibcrqaqzoaass.supabase.co/auth/v1/settings?apikey=<publishable key trong config.js>`.
+Phải thấy `"google": true`. Publishable key là khóa công khai; **không** dùng service-role key.
+
+**Từng bước bật Google** (cần Client ID và Client Secret thật; tuyệt đối không tạo giá trị giả, không dán secret vào repo, chat hay ảnh chụp):
+
+1. https://console.cloud.google.com → chọn hoặc tạo project → **APIs & Services → OAuth consent screen**.
+   - Chọn User type, điền tên ứng dụng và email hỗ trợ.
+   - Scopes: `openid`, `email`, `profile`.
+   - Nếu để chế độ *Testing* thì thêm email thử nghiệm.
+2. **APIs & Services → Credentials → + Create credentials → OAuth client ID**.
+   - Application type: **Web application**.
+   - Authorized JavaScript origins: `https://ubkt-dashboard.vercel.app`.
+   - Authorized redirect URIs: `https://hbygfheibcrqaqzoaass.supabase.co/auth/v1/callback`.
+   - Bấm **Create**, rồi sao chép Client ID và Client Secret vào trình quản lý mật khẩu.
+3. https://supabase.com/dashboard/project/hbygfheibcrqaqzoaass/auth/providers → **Google**.
+   - Bật **Enable Sign in with Google**.
+   - Dán Client ID (Client IDs) và Client Secret.
+   - Để tắt "Skip nonce check".
+   - Bấm **Save**.
+4. https://supabase.com/dashboard/project/hbygfheibcrqaqzoaass/auth/url-configuration
+   - Site URL: `https://ubkt-dashboard.vercel.app`.
+   - Redirect URLs: `https://ubkt-dashboard.vercel.app/**`.
+   - Chỉ thêm `https://*-nguyentrandangkhoa96-3582s-projects.vercel.app/**` khi cần thử trên Preview.
+5. Mở lại liên kết kiểm tra ở trên (`"google": true`), rồi thử đăng nhập Google trên Production bằng một email thử nghiệm.
+
 ## 1. Áp migration (chỉ khi đã duyệt)
 
 1. Sao lưu: `pg_dump` hoặc bật PITR, rồi chụp lại `public.user_profiles`.
