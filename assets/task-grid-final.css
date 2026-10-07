@@ -392,3 +392,13 @@ div.task-grid-wrap+.task-grid-expand{margin-left:-8px}
 
 /* Menu theo vai trò: thuộc tính hidden phải thắng các quy tắc display:flex!important của sidebar/dock */
 #sidebar .nav-item[hidden],#sidebar .pm-nav-section[hidden],[data-full-access-only][hidden]{display:none!important}
+/* Popup Thêm nhiệm vụ: ô "Kết quả thực hiện" (không bắt buộc) gọn hơn ô Nội dung kết luận */
+.task-create-field textarea.task-create-result{min-height:96px;max-height:40dvh}
+#taskModal .task-create-field textarea#inConclusion{min-height:150px;height:150px}
+@media(max-width:640px){
+  /* Điện thoại: popup sát đáy màn hình, header không bị đẩy khỏi màn hình; nút cuối gọn 2 hàng, luôn nhìn thấy */
+  #taskModal .task-create-modal{margin-bottom:0!important;max-height:calc(100dvh - 12px)!important}
+  .task-create-footer .antd-form-required-note{display:none}
+  .task-create-footer>div:last-child{grid-template-columns:1fr 1fr 1.25fr}
+  .task-create-footer .task-create-save-more{grid-column:1/-1;order:1}
+}

@@ -1282,7 +1282,7 @@ body{
   <link rel="stylesheet" href="./assets/tailwind-compiled.css?v=20260725">
   <link rel="stylesheet" href="./assets/project-manager-v3.css?v=20260806save1">
   <link rel="stylesheet" href="./assets/resolution-tracker.css?v=20261001">
-  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261005tap1">
+  <link rel="stylesheet" href="./assets/task-grid-final.css?v=20261007tcr1">
   <link rel="stylesheet" href="./assets/task-approvals.css?v=20261005tap1">
   <link rel="stylesheet" href="./assets/dashboard-overview.css?v=20261004dov3">
   <link rel="stylesheet" href="./assets/auth-experience.css?v=20261005auth1">
@@ -1588,7 +1588,7 @@ body{
       <h3>Dự án và chương trình công việc</h3>
       <p>Mỗi Epic hoặc nhóm văn bản được xem như một dự án; toàn bộ số liệu được tổng hợp từ các nhiệm vụ đang có.</p>
     </div>
-    <button type="button" class="btn btn-primary" onclick="openTaskModal()">+ Tạo từ văn bản chỉ đạo</button>
+    <button type="button" class="btn btn-primary" onclick="openTaskModal()" data-task-creator>+ Tạo từ văn bản chỉ đạo</button>
   </div>
 
   <div class="pm-summary-grid">
@@ -1619,8 +1619,8 @@ body{
       <p>Biểu đồ Gantt theo Epic/dự án, lấy trực tiếp ngày văn bản, thời hạn và tiến độ của từng nhiệm vụ.</p>
     </div>
     <div class="flex flex-wrap gap-2">
-      <button type="button" class="btn btn-ghost" onclick="openTaskModal()">+ Tạo Epic</button>
-      <button type="button" class="btn btn-primary" onclick="openTaskIntakeChooser()">+ Tạo nhiệm vụ</button>
+      <button type="button" class="btn btn-ghost" onclick="openTaskModal()" data-task-creator>+ Tạo Epic</button>
+      <button type="button" class="btn btn-primary" onclick="openTaskIntakeChooser()" data-task-creator>+ Tạo nhiệm vụ</button>
     </div>
   </div>
 
@@ -2663,12 +2663,13 @@ body{
       </div>
 
       <div id="taskWizardBody" class="task-create-body">
-        <div class="task-create-note"><span aria-hidden="true">i</span><p><b>Mỗi dòng là một nhiệm vụ.</b> Kết quả thực hiện và tự đánh giá sẽ được đơn vị cập nhật sau trong Bảng nhiệm vụ.</p></div>
+        <div class="task-create-note"><span aria-hidden="true">i</span><p><b>Mỗi dòng là một nhiệm vụ.</b> Kết quả thực hiện có thể nhập ngay hoặc để đơn vị cập nhật sau; tự đánh giá do đơn vị cập nhật trong Bảng nhiệm vụ.</p></div>
         <div class="task-create-grid">
           <label class="task-create-field">Số, ký hiệu văn bản <span>*</span><input id="inDoc" class="field" placeholder="Ví dụ: 181-TB/ĐU" autocomplete="off"></label>
           <label class="task-create-field">Thời hạn thực hiện <em>Không bắt buộc</em><input id="inDeadline" class="field date-input-vi" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" autocomplete="off"><small>Có thể để trống và bổ sung sau; nếu nhập, dùng ngày/tháng/năm.</small></label>
           <label class="task-create-field task-create-span-2">Nội dung kết luận <span>*</span><textarea id="inConclusion" class="field" rows="7" placeholder="Nhập đầy đủ nội dung kết luận hoặc yêu cầu cần thực hiện"></textarea><small>Nội dung này sẽ hiển thị nguyên văn tại Bảng nhiệm vụ.</small></label>
           <label class="task-create-field task-create-span-2">Đơn vị thực hiện <span>*</span><select id="inUnit" class="field"><option value="">Chọn đơn vị được giao nhiệm vụ</option></select><small>Đơn vị được chọn chỉ nhìn thấy và cập nhật nhiệm vụ thuộc phạm vi của mình.</small></label>
+          <label class="task-create-field task-create-span-2 task-create-result-field" for="inResult">Kết quả thực hiện <em>Không bắt buộc</em><textarea id="inResult" class="field task-create-result" rows="3" maxlength="5000" placeholder="Nhập kết quả đã thực hiện (nếu có)" aria-describedby="inResultHelp"></textarea><small id="inResultHelp">Có thể để trống và cập nhật sau</small></label>
         </div>
 
         <div class="task-create-legacy-fields" hidden aria-hidden="true">
@@ -2679,7 +2680,7 @@ body{
           <input id="inCoUnit"><input id="inOwner"><textarea id="inTask"></textarea>
           <input id="inEpic"><input id="inSprint"><input id="inEstimateHours" type="number" value="0">
           <input id="inStatus" value="chưa thực hiện">
-          <input id="inProgress" type="number" value="0"><output id="inProgressValue">0%</output><textarea id="inResult"></textarea><textarea id="inNote"></textarea>
+          <input id="inProgress" type="number" value="0"><output id="inProgressValue">0%</output><textarea id="inNote"></textarea>
           <aside id="taskWizardReview"></aside>
         </div>
         <div id="dupWarning" class="hidden rounded-xl border border-yellow-200 bg-yellow-50 p-4 pm-duplicate-warning" role="alert"></div>
@@ -5708,7 +5709,7 @@ function convertOpinionToTask(id){
 
   const o = normalize1374Opinion(found);
 
-  openTaskModal();
+  if(!openTaskModal()) return;
 
   inGroup.value = "Thông tin phản ánh 1374";
   inType.value = "theo dõi thông tin phản ánh";
@@ -8070,7 +8071,7 @@ function filterDashboardByDeadline(deadline){
     }
 function openTaskIntakeChooser(){
   if(!canCreateTasks()){
-    showModuleToast("Không có quyền tạo nhiệm vụ","Nhiệm vụ mới do Admin tiếp nhận từ văn bản chỉ đạo.");
+    denyTaskCreation();
     return;
   }
   const modal=document.getElementById("taskIntakeChooserModal");
@@ -8112,6 +8113,7 @@ function emptyBulkTaskRow(){
 }
 
 function openBulkTaskModal(){
+  if(!canCreateTasks()){denyTaskCreation();return;}
   const modal = document.getElementById("bulkTaskModal");
   if(!modal){
     alert("Chưa tìm thấy giao diện nhập hàng loạt. Kiểm tra lại Bước 1.");
@@ -8354,7 +8356,7 @@ function parseBulkTaskPaste(text){
 }
 
 async function saveBulkTasks(triggerButton){
-  if(!canCreateTasks())return;
+  if(!canCreateTasks()){denyTaskCreation();return;}
   if(!validateBulkTasks(false)) return;
 
   const rows = getValidBulkRows();
@@ -8387,6 +8389,7 @@ async function saveBulkTasks(triggerButton){
   }));
 
   const auditItems=newItems.map(item=>createAuditEntry("Nhập hàng loạt nhiệm vụ",item,"Thêm từ bảng nhập hàng loạt"));
+  if(!(await verifyTaskCreatePermission()))return;
   const saveResult=await saveRecordsImmediately([
     {table:DB_TABLES.tasks,items:newItems},
     {table:DB_TABLES.audit,items:auditItems}
@@ -8462,7 +8465,7 @@ async function saveBulkTasks(triggerButton){
         <div><span>Kiểm soát</span><b>${escapeHtml(inStatus.value)} · ${progress}%</b><small>Hạn ${escapeHtml(formatDateInputValue(inDeadline.value)||"chưa xác định")}</small></div>`;
     }
 
-    function openTaskModal(){editingTaskId=null;duplicateConfirmed=false;document.getElementById("taskModalTitle").textContent="Tạo nhiệm vụ mới";document.getElementById("taskModalDesc").textContent="Nhập nội dung giao việc theo đúng cấu trúc của Bảng nhiệm vụ.";clearTaskForm();dupWarning.classList.add("hidden");taskModal.classList.add("open");setTaskFormStep(1);lockScroll();setTimeout(()=>inDoc?.focus(),80);}
+    function openTaskModal(){if(!canCreateTasks())return denyTaskCreation();editingTaskId=null;duplicateConfirmed=false;document.getElementById("taskModalTitle").textContent="Tạo nhiệm vụ mới";document.getElementById("taskModalDesc").textContent="Nhập nội dung giao việc theo đúng cấu trúc của Bảng nhiệm vụ.";clearTaskForm();dupWarning.classList.add("hidden");taskModal.classList.add("open");setTaskFormStep(1);lockScroll();setTimeout(()=>inDoc?.focus(),80);return true;}
     function closeTaskModal(){taskModal.classList.remove("open");unlockScroll()}
     function clearTaskForm(){
       ["inDoc","inDate","inMeet","inSummary","inConclusion","inTask","inUnit","inCoUnit","inOwner","inDeadline","inResult","inNote","inSourceResolution","inEpic","inSprint","inEstimateHours"].forEach(id=>{const el=document.getElementById(id);if(el)el.value=""});
@@ -8489,12 +8492,44 @@ async function saveBulkTasks(triggerButton){
       return errs;
     }
 
+    /* Quyền thêm nhiệm vụ: chỉ Admin, UBKT, VPĐU (tài khoản đã duyệt và đang hoạt động).
+       Máy chủ vẫn là chốt chặn cuối: RLS ubkt_tasks_admin_insert chỉ cho private.is_admin() (admin/ubkt/vpdu). */
+    const TASK_CREATOR_ROLES=Object.freeze(["admin","ubkt","vpdu"]);
+    function profileCanCreateTasks(profile){
+      return !!profile
+        && profile.approval_status==="approved"
+        && profile.is_active===true
+        && TASK_CREATOR_ROLES.includes(String(profile.role||""));
+    }
     function canCreateTasks(){
-      return typeof window.canAddTasks==="function"?window.canAddTasks():isAdminUser();
+      if(!profileCanCreateTasks(currentProfile))return false;
+      return typeof window.canAddTasks==="function"?window.canAddTasks()===true:true;
+    }
+    function denyTaskCreation(){
+      showModuleToast("Không có quyền tạo nhiệm vụ","Chỉ Admin, Ủy ban Kiểm tra và Văn phòng Đảng ủy được thêm nhiệm vụ mới.");
+      return false;
+    }
+    /* Kiểm tra lại quyền với máy chủ ngay trước khi ghi (phòng trường hợp quyền vừa bị thay đổi
+       hoặc biến trên trình duyệt bị sửa tay). */
+    async function verifyTaskCreatePermission(){
+      if(!canCreateTasks())return denyTaskCreation();
+      if(getSupabaseConfig().authMode!=="supabase")return true;
+      try{
+        const fresh=await fetchCurrentProfile(currentProfile.id);
+        if(!profileCanCreateTasks(fresh)){
+          if(typeof refreshCurrentAccessProfile==="function")await refreshCurrentAccessProfile(true);
+          return denyTaskCreation();
+        }
+        return true;
+      }catch(error){
+        console.warn("Không kiểm tra được quyền tạo nhiệm vụ",error?.code||error?.name||"");
+        showModuleToast("Chưa lưu nhiệm vụ","Không kiểm tra được quyền tài khoản. Vui lòng kiểm tra kết nối và thử lại.");
+        return false;
+      }
     }
 
     async function saveTask(addMore,triggerButton){
-      if(!canCreateTasks())return;
+      if(!canCreateTasks()){denyTaskCreation();return;}
       if(editingTaskId!==null&&!isAdminUser()){
         showModuleToast("Không sửa được nhiệm vụ đã có","Văn phòng Đảng ủy chỉ thêm nhiệm vụ mới; số văn bản, nội dung, đơn vị và thời hạn của nhiệm vụ cũ do Admin/UBKT điều chỉnh.");
         return;
@@ -8554,6 +8589,7 @@ async function saveBulkTasks(triggerButton){
       recordTaskActivity(t,"create","Đã tạo nhiệm vụ.");
       recordTaskNotification(t,"create","Nhiệm vụ mới được tạo",`${t.unit||"Chưa phân công"} · ${t.deadline?`hạn ${fmt(t.deadline)}`:"chưa đặt thời hạn"}`);
       const auditItem=createAuditEntry("Thêm nhiệm vụ",t,`Trạng thái: ${t.status}`);
+      if(!(await verifyTaskCreatePermission()))return;
       const saveResult=await saveRecordsImmediately([
         {table:DB_TABLES.tasks,items:[t]},
         {table:DB_TABLES.audit,items:[auditItem]}
@@ -9734,7 +9770,7 @@ window.addEventListener("resize", ()=>{
 setTimeout(initLiquidScrollIndicators, 300);
   </script>
   <script src="./assets/resolution-tracker.js?v=20261001"></script>
-  <script src="./assets/task-grid-final.js?v=20261005tap1"></script>
+  <script src="./assets/task-grid-final.js?v=20261007tcr1"></script>
   <script src="./assets/task-approvals.js?v=20261005tap1"></script>
   <script src="./assets/dashboard-overview.js?v=20261004dov3"></script>
   <script src="./assets/auth-experience.js?v=20261005auth1"></script>
